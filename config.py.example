@@ -1,0 +1,11 @@
+# 配置文件
+
+# 应用APP_ID&APP_SECRET https://bgm.tv/dev/app/create
+APP_ID = 'bgmxxxxxxxxx'
+APP_SECRET = 'xxxxxxxxxxxxxxxxxx'
+
+# OAuth 回调地址
+WEBSITE_BASE = 'http://localhost:6008/'
+
+# Telegram Bot Token
+BOT_TOKEN = 'xxxxxxxxxxxxxxxxxxxxxxx'
