@@ -9,16 +9,5 @@
             "user_id": 123456,
             "refresh_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         }
-    },
-    {
-        "tg_user_id": 633746866,
-        "data": {
-            "access_token": "24b17de80cb0d9b17df2228",
-            "expires_in": 604800,
-            "token_type": "Bearer",
-            "scope": null,
-            "user_id": 480908,
-            "refresh_token": "ae05454383bd8767cb7648"
-        }
     }
 ]
