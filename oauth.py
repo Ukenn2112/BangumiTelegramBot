@@ -5,6 +5,7 @@ Bangumi OAuth 用户授权机制文档 https://github.com/bangumi/api/blob/maste
 """
 import json.decoder
 import pathlib
+import datetime
 from os import path
 from urllib import parse as url_parse
 
@@ -21,12 +22,22 @@ base_dir = pathlib.Path(path.dirname(__file__))
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 
+# 错误访问
+@app.route('/')
+def index():
+    return render_template('error.html') # 发生错误
+
 # 获取code
 @app.route('/oauth_index')
 def oauth_index():
     tg_user_id = request.args.get('tg_id')
     if not tg_user_id:
         return render_template('error.html') # 发生错误
+    with open('bgm_data.json') as f:
+        data_seek = json.loads(f.read())
+    data_li = [i['tg_user_id'] for i in data_seek]
+    if int(tg_user_id) in data_li:
+        return render_template('verified.html') # 发生错误
     USER_AUTH_URL = 'https://bgm.tv/oauth/authorize?' + url_parse.urlencode({
     'client_id': APP_ID,
     'response_type': 'code',
@@ -67,11 +78,12 @@ def oauth_callback():
             data = json.load(f)                                 # 读取
         except:
             data = []                                           # 空文件
-        data.append({'tg_user_id': int(state), 'data': r})      # 添加
-        f.seek(0, 0)                                            # 重新定位回开头
-        json.dump(data, f, ensure_ascii=False, indent=4)        # 写入
+        expiry_time = (datetime.datetime.now()+datetime.timedelta(days=7)).strftime("%Y%m%d") # 加7天得到过期时间
+        data.append({'tg_user_id': int(state), 'data': r, 'expiry_time': expiry_time})
+        f.seek(0, 0)
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
-    return redirect('https://t.me/BangumiBot?start=outh')
+    return redirect('https://t.me/BangumiBot?start=none')
 
 '''
 {
@@ -85,4 +97,4 @@ def oauth_callback():
 '''
 
 if __name__ == '__main__':
-    app.run('0.0.0.0', 6008, True)
+    app.run('0.0.0.0', 6008)

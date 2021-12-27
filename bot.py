@@ -6,7 +6,8 @@ https://bangumi.github.io/api/
 import json
 import telebot
 import requests
-from config import BOT_TOKEN, APP_ID, WEBSITE_BASE
+import datetime
+from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE
 
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -20,7 +21,7 @@ def send_hideit(message):
             bot.send_message(message.chat.id, "已绑定", timeout=20)
         else:
             text = {'请绑定您的Bangumi'}
-            url= f'{WEBSITE_BASE}oauth_index?tg_id='+ str(test_id)
+            url= f'{WEBSITE_BASE}oauth_index?tg_id={test_id}'
             markup = telebot.types.InlineKeyboardMarkup()    
             markup.add(telebot.types.InlineKeyboardButton(text='绑定Bangumi',url=url))
             bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup ,timeout=20)
@@ -155,6 +156,59 @@ def data_seek_get(test_id):
 
 # 获取用户数据
 def user_data_get(test_id):
+    with open('bgm_data.json') as f:
+        data_seek = json.loads(f.read())
+    user_data = None
+    for i in data_seek:
+        if i.get('tg_user_id') == test_id:
+            expiry_time = i.get('expiry_time')
+            now_time = datetime.datetime.now().strftime("%Y%m%d")
+            if now_time >= expiry_time:   # 判断密钥是否过期
+                user_data = expiry_data_get(test_id)
+            else:
+                user_data = i.get('data',{})
+    return user_data
+
+# 更新过期用户数据
+def expiry_data_get(test_id):
+    with open('bgm_data.json') as f:
+        data_seek = json.loads(f.read())
+    refresh_token = None
+    for i in data_seek:
+        if i.get('tg_user_id') == test_id:
+            refresh_token = i.get('data',{}).get('refresh_token')
+    CALLBACK_URL = f'{WEBSITE_BASE}oauth_callback'
+    resp = requests.post(
+        'https://bgm.tv/oauth/access_token',
+        data={
+            'grant_type': 'refresh_token',
+            'client_id': APP_ID,
+            'client_secret': APP_SECRET,
+            'refresh_token': refresh_token,
+            'redirect_uri': CALLBACK_URL,
+        },
+        headers = {
+        "User-Agent": "",
+        }
+    )
+    access_token = json.loads(resp.text).get('access_token')    #更新access_token
+    refresh_token = json.loads(resp.text).get('refresh_token')  #更新refresh_token
+    expiry_time = (datetime.datetime.now()+datetime.timedelta(days=7)).strftime("%Y%m%d")#更新过期时间
+    
+    # 替换数据
+    if access_token or refresh_token != None:
+        with open("bgm_data.json", 'r+', encoding='utf-8') as f:
+            data = json.load(f)
+            for i in data:
+                if i['tg_user_id'] == test_id:
+                    i['data']['access_token'] = access_token
+                    i['data']['refresh_token'] = refresh_token
+                    i['expiry_time'] = expiry_time
+            f.seek(0)
+            json.dump(data, f, ensure_ascii=False, indent=4)
+            f.truncate()
+    
+    # 读取数据
     with open('bgm_data.json') as f:
         data_seek = json.loads(f.read())
     user_data = None

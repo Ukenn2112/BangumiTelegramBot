@@ -8,6 +8,7 @@
             "scope": null,
             "user_id": 123456,
             "refresh_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        }
+        },
+        "expiry_time": "20211226"
     }
 ]
