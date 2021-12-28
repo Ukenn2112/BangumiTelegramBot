@@ -8,6 +8,7 @@ import telebot
 import requests
 import datetime
 
+from bs4 import BeautifulSoup
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
 
 # 请求TG Bot api
@@ -94,10 +95,10 @@ def send_my(message):
 
         text = {'*Bangumi 用户数据统计：\n\n'+ 
                 nickname_data(test_id) +'*\n'
-                '动画：`'+ str(anime_do) +'在看，'+ str(anime_collect) +'看过`\n'
-                '图书：`'+ str(book_do)  +'在读，'+ str(book_collect)  +'读过`\n'
-                '音乐：`'+ str(music_do) +'在听，'+ str(music_collect) +'听过`\n'
-                '游戏：`'+ str(game_do)  +'在玩，'+ str(game_collect)  +'玩过`'
+                '➤ 动画：`'+ str(anime_do) +'在看，'+ str(anime_collect) +'看过`\n'
+                '➤ 图书：`'+ str(book_do)  +'在读，'+ str(book_collect)  +'读过`\n'
+                '➤ 音乐：`'+ str(music_do) +'在听，'+ str(music_collect) +'听过`\n'
+                '➤ 游戏：`'+ str(game_do)  +'在玩，'+ str(game_collect)  +'玩过`'
                 }
 
         bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
@@ -309,12 +310,14 @@ def subject_info_get(test_id, subject_id):
     
     info_data = json.loads(r.text)
     
+    name = info_data.get('name') # 剧集日文名
     name_cn = info_data.get('name_cn') # 剧集中文名
     air_date = info_data.get('air_date') # 放送开始日期
     air_weekday = str(info_data.get('air_weekday')).replace('1', '星期一').replace('2', '星期二').replace('3', '星期三').replace('4', '星期四').replace('5', '星期五').replace('6', '星期六').replace('7', '星期日') # 放送日期
     score = info_data.get('rating').get('score') # 评分
     # 输出
-    subject_info_data = {'name_cn': name_cn,
+    subject_info_data = {'name' : name,
+                         'name_cn': name_cn,
                          'air_date': air_date,
                          'air_weekday': air_weekday,
                          'score': score}
@@ -333,6 +336,46 @@ def eps_status_get(test_id, eps_id):
     
     return r
 
+# 动画评分图片获取
+def anime_img(test_id, subject_id):
+    anime_name = subject_info_get(test_id, subject_id)['name']
+    query = '''
+    query ($id: Int, $page: Int, $perPage: Int, $search: String) {
+        Page (page: $page, perPage: $perPage) {
+            pageInfo {
+                total
+                currentPage
+                lastPage
+                hasNextPage
+                perPage
+            }
+            media (id: $id, search: $search) {
+                id
+                title {
+                    romaji
+                }
+            }
+        }
+    }
+    '''
+    variables = {
+        'search': anime_name,
+        'page': 1,
+        'perPage': 1
+    }
+    url = 'https://graphql.anilist.co'
+    try:
+        r = requests.post(url, json={'query': query, 'variables': variables})
+    except requests.ConnectionError:
+        r = requests.post(url, json={'query': query, 'variables': variables})
+    
+    anilist_data = json.loads(r.text).get('data').get('Page').get('media')
+    anilist_id = [i['id'] for i in anilist_data][0]
+    
+    img_url = f'https://img.anili.st/media/{anilist_id}'
+
+    return img_url
+
 # 回调数据查询
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handle(call):
@@ -342,19 +385,25 @@ def callback_handle(call):
         test_id = int(call_data.split('subject_id')[0])
         if tg_from_id == test_id:
             subject_id = call_data.split('subject_id')[1]
-            
+            img_url = anime_img(test_id, subject_id)
+
             text = {'*'+ subject_info_get(test_id, subject_id)['name_cn'] +'*\n\n'
 
                     'BGM ID：`' + str(subject_id) + '`\n'
-                    '➤评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
-                    '➤放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
-                    '➤放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
-                    '➤观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
+                    '➤ 评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
+                    '➤ 放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
+                    '➤ 放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
+                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
 
             markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(eps_get(test_id, subject_id)['unwatched_id'][0])))
-
-            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+            unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
+            if unwatched_id == []:
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)))
+            else:    
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(unwatched_id[0])))
+            bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
+            bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=text, parse_mode='Markdown', reply_markup=markup)
+            # bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -368,15 +417,19 @@ def callback_handle(call):
             text = {'*'+ subject_info_get(test_id, subject_id)['name_cn'] +'*\n\n'
 
                     'BGM ID：`' + str(subject_id) + '`\n'
-                    '➤评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
-                    '➤放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
-                    '➤放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
-                    '➤观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
+                    '➤ 评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
+                    '➤ 放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
+                    '➤ 放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
+                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
 
             markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(eps_get(test_id, subject_id)['unwatched_id'][0])))
-
-            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+            unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
+            if unwatched_id == []:
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)))
+            else:    
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(unwatched_id[0])))
+            bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+            # bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -425,7 +478,8 @@ def callback_handle(call):
                     anime_data +
                     '共'+ str(anime_count) +'部'}
 
-            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+            bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
+            bot.send_message(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , reply_markup=markup)
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
