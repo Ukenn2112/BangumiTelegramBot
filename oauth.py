@@ -12,7 +12,7 @@ from urllib import parse as url_parse
 import requests
 from flask import Flask, jsonify, redirect, request, render_template
 
-from config import APP_ID, APP_SECRET, WEBSITE_BASE
+from config import APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
 
 
 CALLBACK_URL = f'{WEBSITE_BASE}oauth_callback'
@@ -83,7 +83,7 @@ def oauth_callback():
         f.seek(0, 0)
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-    return redirect('https://t.me/BangumiBot?start=none')
+    return redirect(f'https://t.me/{BOT_USERNAME}?start=none')
 
 '''
 {

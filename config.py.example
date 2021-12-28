@@ -7,5 +7,7 @@ APP_SECRET = 'xxxxxxxxxxxxxxxxxx'
 # OAuth 回调地址
 WEBSITE_BASE = 'http://localhost:6008/'
 
+# Telegram Bot Username 不带@
+BOT_USERNAME = 'BangumiBot'
 # Telegram Bot Token
 BOT_TOKEN = 'xxxxxxxxxxxxxxxxxxxxxxx'
