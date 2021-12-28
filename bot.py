@@ -8,7 +8,6 @@ import telebot
 import requests
 import datetime
 
-from bs4 import BeautifulSoup
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
 
 # 请求TG Bot api
@@ -100,9 +99,12 @@ def send_my(message):
                 '➤ 音乐：`'+ str(music_do) +'在听，'+ str(music_collect) +'听过`\n'
                 '➤ 游戏：`'+ str(game_do)  +'在玩，'+ str(game_collect)  +'玩过`'
                 }
+        
+        img_url = 'https://bgm.tv/chart/img/' + str(user_data_get(test_id).get('user_id'))
 
         bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
-        bot.send_message(message.chat.id, text=text, parse_mode='Markdown', timeout=20)
+        bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
+        # bot.send_message(message.chat.id, text=text, parse_mode='Markdown', timeout=20)
 
 # 查询 Bangumi 用户在看动画
 @bot.message_handler(commands=['anime'])
