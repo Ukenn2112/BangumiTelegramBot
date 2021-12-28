@@ -149,21 +149,25 @@ def send_anime(message):
                             for i in anime_do_list:
                                 subject_id_li = [i['subject_id'] for i in anime_do_list]
                                 subject_data_li = [i['subject']['name_cn'] for i in anime_do_list]
+            
+            if subject_id_li and subject_data_li == None:
+                bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+                bot.send_message(message.chat.id, text='出错啦，用于您的隐私设置我无法获取到您的在看', parse_mode='Markdown', timeout=20)
+            else:    
+                markup = telebot.types.InlineKeyboardMarkup()
+                for item in list(zip(subject_data_li,subject_id_li)):
+                    markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data=str(test_id)+'subject_id'+str(item[1])))
 
-            markup = telebot.types.InlineKeyboardMarkup()
-            for item in list(zip(subject_data_li,subject_id_li)):
-                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data=str(test_id)+'subject_id'+str(item[1])))
+                eps_li = [eps_get(test_id, subject_id)['watched'] for subject_id in subject_id_li]
 
-            eps_li = [eps_get(test_id, subject_id)['watched'] for subject_id in subject_id_li]
+                anime_data = ''.join([a +' `['+ b +']`\n\n' for a,b in zip(subject_data_li,eps_li)])
 
-            anime_data = ''.join([a +' `['+ b +']`\n\n' for a,b in zip(subject_data_li,eps_li)])
+                text = {'*'+ nickname_data(test_id) +' 在看的动画*\n\n'+
+                        anime_data +
+                        '共'+ str(anime_count) +'部'}
 
-            text = {'*'+ nickname_data(test_id) +' 在看的动画*\n\n'+
-                    anime_data +
-                    '共'+ str(anime_count) +'部'}
-
-            bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
-            bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+                bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+                bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
 
 # 判断是否绑定Bangumi
 def data_seek_get(test_id):
@@ -286,8 +290,12 @@ def eps_get(test_id, subject_id):
     except requests.ConnectionError:
         r = requests.get(url=url, params=params, headers=headers)
     
-    data_watched = json.loads(r.text).get('eps')
-    watched_id_li = [i['id'] for i in data_watched] # 已观看 eps_id
+    try:
+        data_watched = json.loads(r.text).get('eps')
+    except AttributeError:
+        watched_id_li = [0] # 已观看 eps_id
+    else:
+        watched_id_li = [i['id'] for i in data_watched] # 已观看 eps_id
 
     eps_n = len(set(epsid_li)) # 总集数
     watched_n = len(set(epsid_li) & set(watched_id_li)) # 已观看了集数
@@ -344,7 +352,37 @@ def eps_status_get(test_id, eps_id):
     
     return r
 
-# 动画评分图片获取
+# 更新收藏状态
+def collection_post(test_id, subject_id, status, rating):
+    access_token = user_data_get(test_id).get('access_token')
+    params = {"status": (None, status),"rating": (None, rating)}
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
+        'Authorization': 'Bearer ' + access_token}
+
+    url = f'https://api.bgm.tv/collection/{subject_id}/update'
+
+    r = requests.post(url=url, files=params, headers=headers)
+
+    return r
+
+# 获取用户评分
+def user_rating_get(test_id, subject_id):
+    access_token = user_data_get(test_id).get('access_token')
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
+        'Authorization': 'Bearer ' + access_token}
+
+    url = f'https://api.bgm.tv/collection/{subject_id}'
+
+    r = requests.get(url=url, headers=headers)
+    user_rating_data = json.loads(r.text)
+    user_rating = user_rating_data.get('rating')
+
+    return user_rating
+
+# 动画简介图片获取
 def anime_img(test_id, subject_id):
     anime_name = subject_info_get(test_id, subject_id)['name']
     query = '''
@@ -398,7 +436,8 @@ def callback_handle(call):
             text = {'*'+ subject_info_get(test_id, subject_id)['name_cn'] +'*\n\n'
 
                     'BGM ID：`' + str(subject_id) + '`\n'
-                    '➤ 评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
+                    '➤ BGM 平均评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
+                    '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)) +'`🌟\n'
                     '➤ 放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
                     '➤ 放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
                     '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
@@ -406,12 +445,84 @@ def callback_handle(call):
             markup = telebot.types.InlineKeyboardMarkup()
             unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
             if unwatched_id == []:
-                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)))
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='评分',callback_data=str(test_id)+'rating0'))
             else:    
-                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(unwatched_id[0])))
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='评分',callback_data=str(test_id)+'rating0'),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(unwatched_id[0])))
             bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
             bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=text, parse_mode='Markdown', reply_markup=markup)
             # bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+        else:
+            bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
+    if 'rating' in call_data:
+        test_id = int(call_data.split('rating')[0])
+        if tg_from_id == test_id:
+            rating_data = int(call_data.split('rating')[1])
+            try:
+                subject_id = call.message.reply_markup.keyboard[0][0].callback_data.split('anime_back')[1]
+            except IndexError:
+                subject_id = call.message.reply_markup.keyboard[0][0].callback_data.split('subject_id')[1]
+                
+            def rating_text():
+                
+                text = {'*'+ subject_info_get(test_id, subject_id)['name_cn'] +'*\n\n'
+
+                        'BGM ID：`' + str(subject_id) + '`\n\n'
+
+                        '➤ BGM 平均评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
+                        '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)) +'`🌟\n\n'
+
+                        '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
+
+                        '请点按下列数字进行评分'}
+
+                markup = telebot.types.InlineKeyboardMarkup()       
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'subject_id'+str(subject_id)),telebot.types.InlineKeyboardButton(text='1',callback_data=str(test_id)+'rating1'),telebot.types.InlineKeyboardButton(text='2',callback_data=str(test_id)+'rating2'),telebot.types.InlineKeyboardButton(text='3',callback_data=str(test_id)+'rating3'),telebot.types.InlineKeyboardButton(text='4',callback_data=str(test_id)+'rating4'),telebot.types.InlineKeyboardButton(text='5',callback_data=str(test_id)+'rating5'),telebot.types.InlineKeyboardButton(text='6',callback_data=str(test_id)+'rating6'),telebot.types.InlineKeyboardButton(text='7',callback_data=str(test_id)+'rating7'),telebot.types.InlineKeyboardButton(text='8',callback_data=str(test_id)+'rating8'),telebot.types.InlineKeyboardButton(text='9',callback_data=str(test_id)+'rating9'),telebot.types.InlineKeyboardButton(text='10',callback_data=str(test_id)+'rating10'))
+                bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+                
+            if rating_data == 0:
+                rating_text()
+            status = 'do'
+            if rating_data == 1:
+                rating = '1'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 2:
+                rating = '2'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 3:
+                rating = '3'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 4:
+                rating = '4'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 5:
+                rating = '5'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 6:
+                rating = '6'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 7:
+                rating = '7'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 8:
+                rating = '8'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 9:
+                rating = '9'
+                collection_post(test_id, subject_id, status, rating)
+                rating_text()
+            if rating_data == 3:
+                rating = '10'
+                collection_post(test_id, subject_id, status, rating) 
+                rating_text()          
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -421,11 +532,13 @@ def callback_handle(call):
             eps_id = int(call_data.split('anime_eps')[1])
             eps_status_get(test_id, eps_id) # 更新观看进度
             subject_id = call.message.reply_markup.keyboard[0][0].callback_data.split('anime_back')[1]
+            rating = user_rating_get(test_id, subject_id)
 
             text = {'*'+ subject_info_get(test_id, subject_id)['name_cn'] +'*\n\n'
 
                     'BGM ID：`' + str(subject_id) + '`\n'
-                    '➤ 评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
+                    '➤ BGM 平均评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
+                    '➤ 您的评分：`'+ str(rating) +'`🌟\n'
                     '➤ 放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
                     '➤ 放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
                     '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
@@ -433,6 +546,8 @@ def callback_handle(call):
             markup = telebot.types.InlineKeyboardMarkup()
             unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
             if unwatched_id == []:
+                status = 'collect'
+                collection_post(test_id, subject_id, status, rating) # 看完最后一集自动更新收藏状态为看过
                 markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)))
             else:    
                 markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(unwatched_id[0])))
