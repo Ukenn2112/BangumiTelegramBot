@@ -381,9 +381,16 @@ def user_rating_get(test_id, subject_id):
 
     r = requests.get(url=url, headers=headers)
     user_rating_data = json.loads(r.text)
-    user_rating = user_rating_data.get('rating')
+    try:
+        user_startus = user_rating_data.get('status',{}).get('type') # 用户收藏状态
+    except:
+        user_startus = 'collect'
+    user_rating = user_rating_data.get('rating') # 用户评分
 
-    return user_rating
+    user_rating_data = {'user_startus': user_startus,
+                        'user_rating': user_rating}
+
+    return user_rating_data
 
 # 动画简介图片获取
 def anime_img(test_id, subject_id):
@@ -442,7 +449,7 @@ def callback_handle(call):
 
                     'BGM ID：`' + str(subject_id) + '`\n'
                     '➤ BGM 平均评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
-                    '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)) +'`🌟\n'
+                    '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)['user_rating']) +'`🌟\n'
                     '➤ 放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
                     '➤ 放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
                     '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
@@ -478,7 +485,7 @@ def callback_handle(call):
                         'BGM ID：`' + str(subject_id) + '`\n\n'
 
                         '➤ BGM 平均评分：`'+ str(subject_info_get(test_id, subject_id)['score']) +'`🌟\n'
-                        '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)) +'`🌟\n\n'
+                        '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)['user_rating']) +'`🌟\n\n'
 
                         '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
 
@@ -492,7 +499,7 @@ def callback_handle(call):
                 
             if rating_data == 0:
                 rating_text()
-            status = 'do'
+            status = user_rating_get(test_id, subject_id)['user_startus']
             if rating_data == 1:
                 rating = '1'
                 collection_post(test_id, subject_id, status, rating)
@@ -543,7 +550,7 @@ def callback_handle(call):
             eps_id = int(call_data.split('anime_eps')[1])
             eps_status_get(test_id, eps_id) # 更新观看进度
             subject_id = call.message.reply_markup.keyboard[0][0].callback_data.split('anime_back')[1]
-            rating = user_rating_get(test_id, subject_id)
+            rating = user_rating_get(test_id, subject_id)['user_rating']
 
             text = {'*'+ subject_info_get(test_id, subject_id)['name_cn'] +'*\n\n'
 
