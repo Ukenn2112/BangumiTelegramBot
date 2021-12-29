@@ -100,7 +100,9 @@ def send_my(message):
                     '➤ 动画：`'+ str(anime_do) +'在看，'+ str(anime_collect) +'看过`\n'
                     '➤ 图书：`'+ str(book_do)  +'在读，'+ str(book_collect)  +'读过`\n'
                     '➤ 音乐：`'+ str(music_do) +'在听，'+ str(music_collect) +'听过`\n'
-                    '➤ 游戏：`'+ str(game_do)  +'在玩，'+ str(game_collect)  +'玩过`'
+                    '➤ 游戏：`'+ str(game_do)  +'在玩，'+ str(game_collect)  +'玩过`\n\n'
+
+                    '[🏠 个人主页](https://bgm.tv/user/'+ str(user_data_get(test_id).get('user_id')) +')\n'
                     }
             
             img_url = 'https://bgm.tv/chart/img/' + str(user_data_get(test_id).get('user_id'))
@@ -304,6 +306,7 @@ def eps_get(test_id, subject_id):
 
     # 输出
     eps_data = {'watched': str(watched_n) + '/' + str(eps_n),
+                'watch': str(watched_n),
                 'unwatched_id': unwatched_id}
 
     return eps_data
@@ -427,6 +430,8 @@ def anime_img(test_id, subject_id):
 def callback_handle(call):
     call_data = call.data
     tg_from_id = call.from_user.id
+
+    # 动画再看详情
     if 'subject_id' in call_data:
         test_id = int(call_data.split('subject_id')[0])
         if tg_from_id == test_id:
@@ -440,7 +445,9 @@ def callback_handle(call):
                     '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)) +'`🌟\n'
                     '➤ 放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
                     '➤ 放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
-                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
+                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
+                    
+                    '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n'}
 
             markup = telebot.types.InlineKeyboardMarkup()
             unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
@@ -454,6 +461,7 @@ def callback_handle(call):
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
+    # 评分
     if 'rating' in call_data:
         test_id = int(call_data.split('rating')[0])
         if tg_from_id == test_id:
@@ -473,6 +481,8 @@ def callback_handle(call):
                         '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)) +'`🌟\n\n'
 
                         '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
+
+                        '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n\n'
 
                         '请点按下列数字进行评分'}
 
@@ -526,6 +536,7 @@ def callback_handle(call):
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
+    # 已看最新
     if 'anime_eps' in call_data:
         test_id = int(call_data.split('anime_eps')[0])
         if tg_from_id == test_id:
@@ -541,14 +552,17 @@ def callback_handle(call):
                     '➤ 您的评分：`'+ str(rating) +'`🌟\n'
                     '➤ 放送开始：`'+ subject_info_get(test_id, subject_id)['air_date'] + '`\n'
                     '➤ 放送星期：`'+ subject_info_get(test_id, subject_id)['air_weekday'] + '`\n'
-                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`'}
+                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
+                    
+                    '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n'
+                    '📝 [第' + eps_get(test_id, subject_id)['watch'] +' 话评论](https://bgm.tv/ep/'+ str(eps_id) +')\n'}
 
             markup = telebot.types.InlineKeyboardMarkup()
             unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
             if unwatched_id == []:
                 status = 'collect'
                 collection_post(test_id, subject_id, status, rating) # 看完最后一集自动更新收藏状态为看过
-                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)))
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='评分',callback_data=str(test_id)+'rating0'))
             else:    
                 markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=str(test_id)+'anime_back'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data=str(test_id)+'anime_eps'+str(unwatched_id[0])))
             bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
@@ -556,6 +570,7 @@ def callback_handle(call):
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
+    # 动画再看详情页返回
     if 'anime_back' in call_data:
         test_id = int(call_data.split('anime_back')[0])
         if tg_from_id == test_id:
