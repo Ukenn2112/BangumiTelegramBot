@@ -1,6 +1,5 @@
-# Bangumi Telegram Bot
+[![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/BangumiTelegramBot.png)](https://github.com/Ukenn2112/BangumiTelegramBot/)
 
-为了实现在 Telegram 上简单操作 [Bangumi](https://bgm.tv/)
 
 # 功能
 
@@ -54,4 +53,6 @@ anime - Bangumi用户在看动画
 
 # 其它
 
-这是我第一次写的Python项目，没系统学习过Python，许多细节上可能没有规范还请大佬们多多包涵，如您有更好的解决方式欢迎提交PR，谢谢^_^
+- 这是我第一次写的Python项目，没系统学习过Python，许多细节上可能没有规范还请大佬们多多包涵，如您有更好的解决方式欢迎提交PR，谢谢^_^
+
+- 本项目目前所有功能均通过 [Bangumi API](https://github.com/bangumi/api) 实现，由于API的限制可能部分功能无法实现，后续将可能通过模拟网页操作来完善。
