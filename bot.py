@@ -790,12 +790,11 @@ def collection_callback(call):
     anime_search_keywords = call.data.split('|')[3]
     start = call.data.split('|')[4]
     status = call.data.split('|')[5]
-    rating = user_rating_get(test_id, subject_id)['user_rating']
     tg_from_id = call.from_user.id
     
     if status == 'null':
         if data_seek_get(test_id) == 'no':
-            bot.send_message(chat_id=call.message.chat.id, text='您未绑定Bangumi，请私聊使用[/start](https://t.me/"+BOT_USERNAME+"?start=none)进行绑定', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id, text='您未绑定Bangumi，请私聊使用[/start](https://t.me/'+BOT_USERNAME+'?start=none)进行绑定', parse_mode='Markdown', timeout=20)
         else:
             text = {'*您想将 “*`'+ subject_info_get(subject_id)['name'] +'`*” 收藏为*\n\n'}
             markup = telebot.types.InlineKeyboardMarkup()
@@ -803,6 +802,7 @@ def collection_callback(call):
                 markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
             else:
                 markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(subject_id)+'|'+str(start)), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
+            rating = user_rating_get(test_id, subject_id)['user_rating']
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
             else:
