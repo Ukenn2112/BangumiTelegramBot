@@ -185,7 +185,7 @@ def send_anime(message):
             search_name_li = search_get(anime_search_keywords, subject_type, start)['name_li'] # 所有查询结果名字列表
             markup = telebot.types.InlineKeyboardMarkup()
             for item in list(zip(search_name_li,search_subject_id_li)):
-                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])))
+                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+'0'))
             if search_results_n >= 5:
                 markup.add(telebot.types.InlineKeyboardButton(text='下一页',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+'5'))
 
