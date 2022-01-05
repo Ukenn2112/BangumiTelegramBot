@@ -161,7 +161,7 @@ def send_anime(message):
                 else:    
                     markup = telebot.types.InlineKeyboardMarkup()
                     for item in list(zip(subject_data_li,subject_id_li)):
-                        markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])))
+                        markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0'))
 
                     eps_li = [eps_get(test_id, subject_id)['watched'] for subject_id in subject_id_li]
 
@@ -186,7 +186,7 @@ def send_anime(message):
             search_name_li = search_get(anime_search_keywords, subject_type, start)['name_li'] # 所有查询结果名字列表
             markup = telebot.types.InlineKeyboardMarkup()
             for item in list(zip(search_name_li,search_subject_id_li)):
-                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+'0'))
+                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+'0'+'|0'))
             if search_results_n >= 5:
                 markup.add(telebot.types.InlineKeyboardButton(text='下一页',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+'5'))
 
@@ -196,6 +196,47 @@ def send_anime(message):
 
             bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
             bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+
+# 每日放送查询
+@bot.message_handler(commands=['week'])
+def send_week(message):
+    data = message.text.split(' ')
+    if data[0] != "/week":
+        bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+    else:
+        if len(data) == 2:
+            day = data[1]
+            check = is_number(day)
+            if check is False:
+                bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+            else:
+                if int(day) > 7:
+                    bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+                else:
+                    bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+                    text = week_text(day)['text']
+                    markup = week_text(day)['markup']
+                    bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+                    bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+        else:
+            bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+
+# 判断输入是否是数字
+def is_number(str):
+    try:
+        float(str)
+        return True
+    except ValueError:
+        pass
+
+    try:
+        import unicodedata
+        unicodedata.numeric(str)
+        return True
+    except (ValueError, TypeError):
+        pass
+
+    return False
 
 # 判断是否绑定Bangumi
 def data_seek_get(test_id):
@@ -506,13 +547,48 @@ def search_get(keywords, type, start):
 
     return search_data
 
+# 每日放送查询输出文字及其按钮
+def week_text(day):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',}
+    url = 'https://api.bgm.tv/calendar'
+    try:
+        r = requests.get(url=url, headers=headers)
+    except requests.ConnectionError:
+        r = requests.get(url=url, headers=headers)
+    week_data = json.loads(r.text)
+    for i in week_data:
+        if i.get('weekday',{}).get('id') == int(day):
+            items = i.get('items')
+            subject_id_li = [i['id'] for i in items]
+            subject_data_li = [i['name'] for i in items]
+            subject_cn_data_li = [i['name_cn'] for i in items]
+            markup = telebot.types.InlineKeyboardMarkup()
+            for item in list(zip(subject_data_li,subject_id_li)):
+                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+'week'+'|'+str(item[1])+'|'+str(day)+'|0'))
+
+            air_weekday = str(day).replace('1', '星期一').replace('2', '星期二').replace('3', '星期三').replace('4', '星期四').replace('5', '星期五').replace('6', '星期六').replace('7', '星期日') # 放送日期
+            anime_data = ''.join([a+'\n'+b+'\n\n' for a,b in zip(subject_data_li,subject_cn_data_li)])
+            anime_count = len(subject_id_li)
+            text = {'*在 '+ air_weekday +' 放送的节目*\n\n'+
+                    anime_data +
+                    '共'+ str(anime_count) +'部'}
+
+            week_text_data = {
+                'text': text,
+                'markup': markup
+            }
+
+    return week_text_data
+
 # 动画再看详情
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do')
 def anime_do_callback(call):
     tg_from_id = call.from_user.id
     test_id = int(call.data.split('|')[1])
+    subject_id = call.data.split('|')[2]
+    back = int(call.data.split('|')[3])
+
     if tg_from_id == test_id:
-        subject_id = call.data.split('|')[2]
         img_url = anime_img(subject_id)
 
         text = {'*'+ subject_info_get(subject_id)['name_cn'] +'*\n'
@@ -535,12 +611,18 @@ def anime_do_callback(call):
         else:    
             markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do_back'+'|'+str(test_id)),telebot.types.InlineKeyboardButton(text='评分',callback_data='rating'+'|'+str(test_id)+'|'+'0'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(unwatched_id[0])+'|'+str(subject_id)))
             markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'))
-        bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20) # 删除用户在看动画列表消息
-        if img_url == None: # 是否有动画简介图片
-            bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
+        if back == 1:
+            if call.message.content_type == 'photo':
+                bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+            else:
+                bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
         else:
-            bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=text, parse_mode='Markdown', reply_markup=markup)
-        # bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+            bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20) # 删除用户在看动画列表消息
+            if img_url == None: # 是否有动画简介图片
+                bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
+            else:
+                bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=text, parse_mode='Markdown', reply_markup=markup)
+            # bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -569,7 +651,7 @@ def rating_callback(call):
                     '请点按下列数字进行评分'}
 
             markup = telebot.types.InlineKeyboardMarkup()       
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='1',callback_data='rating'+'|'+str(test_id)+'|'+'1'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='2',callback_data='rating'+'|'+str(test_id)+'|'+'2'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='3',callback_data='rating'+'|'+str(test_id)+'|'+'3'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='4',callback_data='rating'+'|'+str(test_id)+'|'+'4'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='5',callback_data='rating'+'|'+str(test_id)+'|'+'5'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='6',callback_data='rating'+'|'+str(test_id)+'|'+'6'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='7',callback_data='rating'+'|'+str(test_id)+'|'+'7'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='8',callback_data='rating'+'|'+str(test_id)+'|'+'8'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='9',callback_data='rating'+'|'+str(test_id)+'|'+'9'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='10',callback_data='rating'+'|'+str(test_id)+'|'+'10'+'|'+str(subject_id)))
+            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'),telebot.types.InlineKeyboardButton(text='1',callback_data='rating'+'|'+str(test_id)+'|'+'1'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='2',callback_data='rating'+'|'+str(test_id)+'|'+'2'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='3',callback_data='rating'+'|'+str(test_id)+'|'+'3'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='4',callback_data='rating'+'|'+str(test_id)+'|'+'4'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='5',callback_data='rating'+'|'+str(test_id)+'|'+'5'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='6',callback_data='rating'+'|'+str(test_id)+'|'+'6'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='7',callback_data='rating'+'|'+str(test_id)+'|'+'7'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='8',callback_data='rating'+'|'+str(test_id)+'|'+'8'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='9',callback_data='rating'+'|'+str(test_id)+'|'+'9'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='10',callback_data='rating'+'|'+str(test_id)+'|'+'10'+'|'+str(subject_id)))
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
             else:
@@ -701,7 +783,7 @@ def anime_do_back_callback(call):
 
         markup = telebot.types.InlineKeyboardMarkup()
         for item in list(zip(subject_data_li,subject_id_li)):
-            markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])))
+            markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0'))
 
         eps_li = [eps_get(test_id, subject_id)['watched'] for subject_id in subject_id_li]
 
@@ -730,7 +812,7 @@ def spage_callback(call):
         search_name_li = search_get(anime_search_keywords, subject_type, start)['name_li'] # 所有查询结果名字列表
         markup = telebot.types.InlineKeyboardMarkup()
         for item in list(zip(search_name_li,search_subject_id_li)):
-            markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+str(start)))
+            markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+str(start)+'|0'))
         
         if search_results_n <= 5:
             markup.add()
@@ -757,6 +839,7 @@ def animesearch_callback(call):
     anime_search_keywords = call.data.split('|')[1]
     subject_id = call.data.split('|')[2]
     start = int(call.data.split('|')[3])
+    back = int(call.data.split('|')[4])
     
     img_url = anime_img(subject_id)
 
@@ -773,14 +856,24 @@ def animesearch_callback(call):
             '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n'}
 
     markup = telebot.types.InlineKeyboardMarkup()
-    tg_from_id = call.from_user.id
-    markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+str(start)), telebot.types.InlineKeyboardButton(text='收藏',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'null'))
+    if anime_search_keywords == 'week':
+        tg_from_id = call.from_user.id
+        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='back_week'+'|'+str(start)), telebot.types.InlineKeyboardButton(text='收藏',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'null'))
+    else:    
+        tg_from_id = call.from_user.id
+        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+str(start)), telebot.types.InlineKeyboardButton(text='收藏',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'null'))
     
-    bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
-    if img_url == None:
-        bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
+    if back == 1:
+        if call.message.content_type == 'photo':
+                bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+        else:
+            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
     else:
-        bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=text, parse_mode='Markdown', reply_markup=markup)
+        bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
+        if img_url == None:
+            bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
+        else:
+            bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=text, parse_mode='Markdown', reply_markup=markup)
 
 # 收藏
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
@@ -799,9 +892,9 @@ def collection_callback(call):
             text = {'*您想将 “*`'+ subject_info_get(subject_id)['name'] +'`*” 收藏为*\n\n'}
             markup = telebot.types.InlineKeyboardMarkup()
             if anime_search_keywords == 'anime_do':
-                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
             else:
-                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(subject_id)+'|'+str(start)), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
+                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(subject_id)+'|'+str(start)+'|1'), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
             else:
@@ -841,6 +934,15 @@ def collection_callback(call):
             bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
+# week 返回
+@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
+def back_week_callback(call):
+    day = int(call.data.split('|')[1])
+    text = week_text(day)['text']
+    markup = week_text(day)['markup']
+    bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
+    bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
 
 # 开始启动
 if __name__ == '__main__':
