@@ -36,7 +36,7 @@ def send_my(message):
     if data_seek_get(test_id) == 'no':
         bot.send_message(message.chat.id, "未绑定Bangumi，请私聊使用[/start](https://t.me/"+BOT_USERNAME+"?start=none)进行绑定", parse_mode='Markdown', timeout=20)
     else:
-        bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+        msg = bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
         access_token = user_data_get(test_id).get('access_token')
         params = {'app_id': APP_ID}
         headers = {
@@ -47,7 +47,7 @@ def send_my(message):
         r = requests.get(url=url, params=params, headers=headers)
         startus_data = json.loads(r.text)
         if startus_data == None:
-            bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+            bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
             bot.send_message(message.chat.id, text='您没有观看记录，快去bgm上点几个格子吧~', parse_mode='Markdown', timeout=20)
         else:
             book = None
@@ -107,7 +107,7 @@ def send_my(message):
             
             img_url = 'https://bgm.tv/chart/img/' + str(user_data_get(test_id).get('user_id'))
 
-            bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+            bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
             bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
             # bot.send_message(message.chat.id, text=text, parse_mode='Markdown', timeout=20)
 
@@ -120,7 +120,7 @@ def send_anime(message):
         if data_seek_get(test_id) == 'no':
             bot.send_message(message.chat.id, "未绑定Bangumi，请私聊使用[/start](https://t.me/"+BOT_USERNAME+"?start=none)进行绑定", parse_mode='Markdown', timeout=20)
         else:
-            bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+            msg = bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
             access_token = user_data_get(test_id).get('access_token')
             params = {'app_id': APP_ID}
             headers = {
@@ -135,7 +135,7 @@ def send_anime(message):
             anime_data = json.loads(r.text)
 
             if anime_data == None:
-                bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
                 bot.send_message(message.chat.id, text='您没有观看记录，快去bgm上点几个格子吧~', parse_mode='Markdown', timeout=20)
             else:
                 anime = None
@@ -156,7 +156,7 @@ def send_anime(message):
                                     subject_cn_data_li = [i['subject']['name_cn'] for i in anime_do_list]
                 
                 if subject_id_li and subject_data_li == None:
-                    bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
                     bot.send_message(message.chat.id, text='出错啦，用于您的隐私设置我无法获取到您的在看', parse_mode='Markdown', timeout=20)
                 else:    
                     markup = telebot.types.InlineKeyboardMarkup()
@@ -171,10 +171,10 @@ def send_anime(message):
                             anime_data +
                             '共'+ str(anime_count) +'部'}
 
-                    bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
                     bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
     else: # 动画条目搜索
-        bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+        msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
         anime_search_keywords = message_data[1]
         subject_type = 2 # 条目类型 1 = book 2 = anime 3 = music 4 = game 6 = real
         start = 0
@@ -194,7 +194,7 @@ def send_anime(message):
                         
                     '🔍 共'+ str(search_results_n) +'个结果'}
 
-            bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+            bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
             bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
 
 # 每日放送查询
@@ -213,10 +213,10 @@ def send_week(message):
                 if int(day) > 7:
                     bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
                 else:
-                    bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+                    msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
                     text = week_text(day)['text']
                     markup = week_text(day)['markup']
-                    bot.delete_message(message.chat.id, message_id=message.message_id+1, timeout=20)
+                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
                     bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
         else:
             bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
@@ -369,7 +369,12 @@ def eps_get(test_id, subject_id):
     eps_n = len(set(epsid_li)) # 总集数
     watched_n = len(set(epsid_li) & set(watched_id_li)) # 已观看了集数
     
-    unwatched_id = list(set(epsid_li) - set(watched_id_li))
+    unwatched_id = epsid_li # 去除已观看过集数的 eps_id
+    try:
+        for watched_li in watched_id_li:
+            unwatched_id.remove(watched_li)
+    except ValueError:
+        unwatched_id = epsid_li
 
     # 输出
     eps_data = {'watched': str(watched_n) + '/' + str(eps_n),
@@ -734,8 +739,10 @@ def anime_eps_callback(call):
             status = 'collect'
             collection_post(test_id, subject_id, status, rating) # 看完最后一集自动更新收藏状态为看过
             markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do_back'+'|'+str(test_id)),telebot.types.InlineKeyboardButton(text='评分',callback_data='rating'+'|'+str(test_id)+'|'+'0'+'|'+str(subject_id)))
+            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'))
         else:    
             markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do_back'+'|'+str(test_id)),telebot.types.InlineKeyboardButton(text='评分',callback_data='rating'+'|'+str(test_id)+'|'+'0'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='已看最新',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(unwatched_id[0])+'|'+str(subject_id)))
+            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'))
         if call.message.content_type == 'photo':
             bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
         else:
