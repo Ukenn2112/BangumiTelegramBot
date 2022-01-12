@@ -53,7 +53,7 @@
 
 ```
 start - 绑定Bangumi账号
-my - Bangumi收藏统计
+my - Bangumi收藏统计/空格加username或uid不绑定查询
 anime - Bangumi用户在看动画/空格加关键字查询
 week - 空格加数字查询每日放送
 ```
