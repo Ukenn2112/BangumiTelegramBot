@@ -96,7 +96,7 @@ def send_my(message):
                             game_collect = i.get('count')
 
             text = {'*Bangumi 用户数据统计：\n\n'+ 
-                    nickname_data(test_id) +'*\n'
+                    bgmuser_data(test_id)['nickname'] +'*\n'
                     '➤ 动画：`'+ str(anime_do) +'在看，'+ str(anime_collect) +'看过`\n'
                     '➤ 图书：`'+ str(book_do)  +'在读，'+ str(book_collect)  +'读过`\n'
                     '➤ 音乐：`'+ str(music_do) +'在听，'+ str(music_collect) +'听过`\n'
@@ -122,57 +122,42 @@ def send_anime(message):
         else:
             msg = bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
             access_token = user_data_get(test_id).get('access_token')
-            params = {'app_id': APP_ID}
+            params = {'subject_type': 2,
+                      'type': 3,
+                      'limit': 50
+                    }
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
                 'Authorization': 'Bearer ' + access_token}
 
-            url = 'https://api.bgm.tv/user/' + str(user_data_get(test_id).get('user_id')) + '/collections/anime'
+            url = 'https://api.bgm.tv/v0/users/'+bgmuser_data(test_id)['username']+'/collections'
             try:
                 r = requests.get(url=url, params=params, headers=headers)
             except requests.ConnectionError:
                 r = requests.get(url=url, params=params, headers=headers)
             anime_data = json.loads(r.text)
-
-            if anime_data == None:
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_message(message.chat.id, text='您没有观看记录，快去bgm上点几个格子吧~', parse_mode='Markdown', timeout=20)
-            else:
-                anime = None
-                anime_do_list = None
-                anime_count = 0
-                subject_id_li = None
-                subject_data_li = None
-                for i in anime_data:
-                    if i.get('name') == 'anime':
-                        anime = i.get('collects')
-                        for i in anime:
-                            if i.get('status').get('type') == 'do':
-                                anime_count = i.get('count')
-                                anime_do_list = i.get('list')
-                                for i in anime_do_list:
-                                    subject_id_li = [i['subject_id'] for i in anime_do_list]
-                                    subject_data_li = [i['subject']['name'] for i in anime_do_list]
-                                    subject_cn_data_li = [i['subject']['name_cn'] for i in anime_do_list]
+            anime_count = anime_data.get('total') # 总在看数 int
+            subject_id_li = [i['subject_id'] for i in anime_data.get('data')] # subject_id 列表 int
+            name_li = [subject_info_get(subject_id)['name'] for subject_id in subject_id_li] # 番剧名字 str
+            name_cn_li = [subject_info_get(subject_id)['name_cn'] for subject_id in subject_id_li] # 番剧中文名字 str
                 
-                if subject_id_li and subject_data_li == None:
-                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                    bot.send_message(message.chat.id, text='出错啦，用于您的隐私设置我无法获取到您的在看', parse_mode='Markdown', timeout=20)
-                else:    
-                    markup = telebot.types.InlineKeyboardMarkup()
-                    for item in list(zip(subject_data_li,subject_id_li)):
-                        markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0'))
+            if subject_id_li == []:
+                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
+                bot.send_message(message.chat.id, text='出错啦，您貌似没有收藏的再看', parse_mode='Markdown', timeout=20)
+            else:    
+                markup = telebot.types.InlineKeyboardMarkup()
+                no_li = list(range(1, len(subject_id_li)+ 1))
+                markup.add(*[telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0') for item in list(zip(no_li,subject_id_li))])
 
-                    eps_li = [eps_get(test_id, subject_id)['watched'] for subject_id in subject_id_li]
+                eps_li = [eps_get(test_id, subject_id)['progress'] for subject_id in subject_id_li]
+                anime_text_data = ''.join(['*['+str(a)+']* '+b+'\n'+c+' `['+ d +']`\n\n' for a,b,c,d in zip(no_li,name_li,name_cn_li,eps_li)])
 
-                    anime_data = ''.join([a+'\n'+b+' `['+ c +']`\n\n' for a,b,c in zip(subject_data_li,subject_cn_data_li,eps_li)])
+                text = {'*'+ bgmuser_data(test_id)['nickname'] +' 在看的动画*\n\n'+
+                        anime_text_data +
+                        '共'+ str(anime_count) +'部'}
 
-                    text = {'*'+ nickname_data(test_id) +' 在看的动画*\n\n'+
-                            anime_data +
-                            '共'+ str(anime_count) +'部'}
-
-                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                    bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
+                bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
     else: # 动画条目搜索
         msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
         anime_search_keywords = message_data[1]
@@ -312,8 +297,8 @@ def expiry_data_get(test_id):
             user_data = i.get('data',{})
     return user_data
 
-# 获取用户昵称
-def nickname_data(test_id):
+# 获取BGM用户信息
+def bgmuser_data(test_id):
     access_token = user_data_get(test_id).get('access_token')
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
@@ -323,9 +308,16 @@ def nickname_data(test_id):
         r = requests.get(url=url, headers=headers)
     except requests.ConnectionError:
         r = requests.get(url=url, headers=headers)
+    user_data = json.loads(r.text)
 
-    nickname = json.loads(r.text).get('nickname')
-    return nickname
+    nickname = user_data.get('nickname')
+    username = user_data.get('username')
+
+    user_data = {
+        'nickname': nickname, # 用户昵称 str
+        'username': username  # 用户username 没有设置则返回 uid str
+    }
+    return user_data
 
 # 获取用户观看eps
 def eps_get(test_id, subject_id):
@@ -362,7 +354,7 @@ def eps_get(test_id, subject_id):
     try:
         data_watched = json.loads(r.text).get('eps')
     except AttributeError:
-        watched_id_li = [0] # 已观看 eps_id
+        watched_id_li = [0] # 无观看集数
     else:
         watched_id_li = [i['id'] for i in data_watched] # 已观看 eps_id
 
@@ -374,12 +366,13 @@ def eps_get(test_id, subject_id):
         for watched_li in watched_id_li:
             unwatched_id.remove(watched_li)
     except ValueError:
-        unwatched_id = epsid_li
+        pass
 
     # 输出
-    eps_data = {'watched': str(watched_n) + '/' + str(eps_n),
-                'watch': str(watched_n),
-                'unwatched_id': unwatched_id}
+    eps_data = {'progress': str(watched_n) + '/' + str(eps_n),   # 已观看/总集数 进度 str
+                'watched': str(watched_n),                       # 已观看集数 str
+                'eps_n': str(eps_n),                             # 总集数 str
+                'unwatched_id': unwatched_id}                    # 未观看 eps_di list
 
     return eps_data
 
@@ -390,7 +383,7 @@ def subject_info_get(subject_id):
     
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',}
     
-    url = f'https://api.bgm.tv/subject/{subject_id}'
+    url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
 
     try:
         r = requests.get(url=url, params=params, headers=headers)
@@ -399,23 +392,28 @@ def subject_info_get(subject_id):
     
     info_data = json.loads(r.text)
     
-    name = info_data.get('name') # 剧集名
-    name_cn = info_data.get('name_cn') # 剧集中文名
-    eps_count = info_data.get('eps_count')
-    air_date = info_data.get('air_date') # 放送开始日期
-    air_weekday = str(info_data.get('air_weekday')).replace('1', '星期一').replace('2', '星期二').replace('3', '星期三').replace('4', '星期四').replace('5', '星期五').replace('6', '星期六').replace('7', '星期日') # 放送日期
+    name = info_data.get('name')
+    name_cn = info_data.get('name_cn')
+    eps_count = info_data.get('eps')
+    air_date = info_data.get('date')
+    platform = info_data.get('platform')
     try:
-        score = info_data.get('rating').get('score') # 评分
+        air_weekday = [i['value'] for i in info_data.get('infobox') if i['key'] == '放送星期'][0]
+    except IndexError:
+        air_weekday = 'None'
+    try:
+        score = info_data.get('rating').get('score')
     except AttributeError:
         score = 0
     
     # 输出
-    subject_info_data = {'name' : name,
-                         'name_cn': name_cn,
-                         'eps_count': eps_count,
-                         'air_date': air_date,
-                         'air_weekday': air_weekday,
-                         'score': score}
+    subject_info_data = {'name' : name,                 # 剧集名 str
+                         'name_cn': name_cn,            # 剧集中文名 str
+                         'eps_count': eps_count,        # 总集数 int
+                         'air_date': air_date,          # 放送开始日期 str
+                         'platform': platform,          # 放送类型 str
+                         'air_weekday': air_weekday,    # 每周放送星期 str
+                         'score': score}                # BGM 评分 int
     return subject_info_data
 
 # 更新收视进度为看过
@@ -461,13 +459,13 @@ def user_rating_get(test_id, subject_id):
     r = requests.get(url=url, headers=headers)
     user_rating_data = json.loads(r.text)
     try:
-        user_startus = user_rating_data.get('status',{}).get('type') # 用户收藏状态
+        user_startus = user_rating_data.get('status',{}).get('type')
     except:
         user_startus = 'collect'
-    user_rating = user_rating_data.get('rating') # 用户评分
+    user_rating = user_rating_data.get('rating')
 
-    user_rating_data = {'user_startus': user_startus,
-                        'user_rating': user_rating}
+    user_rating_data = {'user_startus': user_startus,   # 用户收藏状态 str
+                        'user_rating': user_rating}     # 用户评分 int
 
     return user_rating_data
 
@@ -546,9 +544,9 @@ def search_get(keywords, type, start):
         name_li = [i['name'] for i in subject_id_data]
 
     # 输出
-    search_data = {'search_results_n': search_results_n, # 搜索结果数量
-                   'subject_id_li': subject_id_li,       # 所有查询结果id列表
-                   'name_li': name_li}             # 所有查询结果名字列表
+    search_data = {'search_results_n': search_results_n, # 搜索结果数量 int
+                   'subject_id_li': subject_id_li,       # 所有查询结果id列表 list
+                   'name_li': name_li}                   # 所有查询结果名字列表 list
 
     return search_data
 
@@ -565,22 +563,22 @@ def week_text(day):
         if i.get('weekday',{}).get('id') == int(day):
             items = i.get('items')
             subject_id_li = [i['id'] for i in items]
-            subject_data_li = [i['name'] for i in items]
-            subject_cn_data_li = [i['name_cn'] for i in items]
+            name_li = [i['name'] for i in items]
+            name_cn_li = [i['name_cn'] for i in items]
+            no_li = list(range(1, len(subject_id_li)+ 1))
             markup = telebot.types.InlineKeyboardMarkup()
-            for item in list(zip(subject_data_li,subject_id_li)):
-                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+'week'+'|'+str(item[1])+'|'+str(day)+'|0'))
+            markup.add(*[telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+'week'+'|'+str(item[1])+'|'+str(day)+'|0') for item in list(zip(no_li,subject_id_li))])
 
             air_weekday = str(day).replace('1', '星期一').replace('2', '星期二').replace('3', '星期三').replace('4', '星期四').replace('5', '星期五').replace('6', '星期六').replace('7', '星期日') # 放送日期
-            anime_data = ''.join([a+'\n'+b+'\n\n' for a,b in zip(subject_data_li,subject_cn_data_li)])
+            text_data = ''.join(['*['+str(a)+']* '+b+'\n'+c+'\n\n' for a,b,c in zip(no_li,name_li,name_cn_li)])
             anime_count = len(subject_id_li)
             text = {'*在 '+ air_weekday +' 放送的节目*\n\n'+
-                    anime_data +
+                    text_data +
                     '共'+ str(anime_count) +'部'}
 
             week_text_data = {
-                'text': text,
-                'markup': markup
+                'text': text,    # 查询文字
+                'markup': markup # 按钮
             }
 
     return week_text_data
@@ -602,9 +600,10 @@ def anime_do_callback(call):
                 'BGM ID：`' + str(subject_id) + '`\n'
                 '➤ BGM 平均评分：`'+ str(subject_info_get(subject_id)['score']) +'`🌟\n'
                 '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)['user_rating']) +'`🌟\n'
+                '➤ 放送类型：`'+ subject_info_get(subject_id)['platform'] +'`\n'
                 '➤ 放送开始：`'+ subject_info_get(subject_id)['air_date'] + '`\n'
                 '➤ 放送星期：`'+ subject_info_get(subject_id)['air_weekday'] + '`\n'
-                '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
+                '➤ 观看进度：`'+ eps_get(test_id, subject_id)['progress'] + '`\n\n'
                 
                 '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n'}
 
@@ -649,7 +648,7 @@ def rating_callback(call):
                     '➤ BGM 平均评分：`'+ str(subject_info_get(subject_id)['score']) +'`🌟\n'
                     '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)['user_rating']) +'`🌟\n\n'
 
-                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
+                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['progress'] + '`\n\n'
 
                     '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n\n'
 
@@ -726,12 +725,13 @@ def anime_eps_callback(call):
                 'BGM ID：`' + str(subject_id) + '`\n'
                 '➤ BGM 平均评分：`'+ str(subject_info_get(subject_id)['score']) +'`🌟\n'
                 '➤ 您的评分：`'+ str(rating) +'`🌟\n'
+                '➤ 放送类型：`'+ subject_info_get(subject_id)['platform'] +'`\n'
                 '➤ 放送开始：`'+ subject_info_get(subject_id)['air_date'] + '`\n'
                 '➤ 放送星期：`'+ subject_info_get(subject_id)['air_weekday'] + '`\n'
-                '➤ 观看进度：`'+ eps_get(test_id, subject_id)['watched'] + '`\n\n'
+                '➤ 观看进度：`'+ eps_get(test_id, subject_id)['progress'] + '`\n\n'
                 
                 '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n'
-                '📝 [第'+ eps_get(test_id, subject_id)['watch'] +'话评论](https://bgm.tv/ep/'+ str(eps_id) +')\n'}
+                '📝 [第'+ eps_get(test_id, subject_id)['watched'] +'话评论](https://bgm.tv/ep/'+ str(eps_id) +')\n'}
 
         markup = telebot.types.InlineKeyboardMarkup()
         unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
@@ -758,46 +758,34 @@ def anime_do_back_callback(call):
     test_id = int(call.data.split('|')[1])
     if tg_from_id == test_id:
         access_token = user_data_get(test_id).get('access_token')
-        params = {'app_id': APP_ID}
+        params = {'subject_type': 2,
+                  'type': 3,
+                  'limit': 50
+                }
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
             'Authorization': 'Bearer ' + access_token}
 
-        url = 'https://api.bgm.tv/user/' + str(user_data_get(test_id).get('user_id')) + '/collections/anime'
-
+        url = 'https://api.bgm.tv/v0/users/'+bgmuser_data(test_id)['username']+'/collections'
         try:
             r = requests.get(url=url, params=params, headers=headers)
         except requests.ConnectionError:
             r = requests.get(url=url, params=params, headers=headers)
-        
         anime_data = json.loads(r.text)
-        anime = None
-        anime_do_list = None
-        anime_count = 0
-        subject_id_li = None
-        subject_data_li = None
-        for i in anime_data:
-            if i.get('name') == 'anime':
-                anime = i.get('collects')
-                for i in anime:
-                    if i.get('status').get('type') == 'do':
-                        anime_count = i.get('count')
-                        anime_do_list = i.get('list')
-                        for i in anime_do_list:
-                            subject_id_li = [i['subject_id'] for i in anime_do_list]
-                            subject_data_li = [i['subject']['name'] for i in anime_do_list]
-                            subject_cn_data_li = [i['subject']['name_cn'] for i in anime_do_list]
+        anime_count = anime_data.get('total') # 总在看数 int
+        subject_id_li = [i['subject_id'] for i in anime_data.get('data')] # subject_id 列表 int
+        name_li = [subject_info_get(subject_id)['name'] for subject_id in subject_id_li] # 番剧名字 str
+        name_cn_li = [subject_info_get(subject_id)['name_cn'] for subject_id in subject_id_li] # 番剧中文名字 str
 
         markup = telebot.types.InlineKeyboardMarkup()
-        for item in list(zip(subject_data_li,subject_id_li)):
-            markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0'))
+        no_li = list(range(1, len(subject_id_li)+ 1))
+        markup.add(*[telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0') for item in list(zip(no_li,subject_id_li))])
 
-        eps_li = [eps_get(test_id, subject_id)['watched'] for subject_id in subject_id_li]
+        eps_li = [eps_get(test_id, subject_id)['progress'] for subject_id in subject_id_li]
+        anime_text_data = ''.join(['*['+str(a)+']* '+b+'\n'+c+' `['+ d +']`\n\n' for a,b,c,d in zip(no_li,name_li,name_cn_li,eps_li)])
 
-        anime_data = ''.join([a+'\n'+b+' `['+ c +']`\n\n' for a,b,c in zip(subject_data_li,subject_cn_data_li,eps_li)])
-
-        text = {'*'+ nickname_data(test_id) +' 在看的动画*\n\n'+
-                anime_data +
+        text = {'*'+ bgmuser_data(test_id)['nickname'] +' 在看的动画*\n\n'+
+                anime_text_data +
                 '共'+ str(anime_count) +'部'}
 
         bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
@@ -855,6 +843,7 @@ def animesearch_callback(call):
 
             'BGM ID：`' + str(subject_id) + '`\n'
             '➤ BGM 平均评分：`'+ str(subject_info_get(subject_id)['score']) +'`🌟\n'
+            '➤ 放送类型：`'+ subject_info_get(subject_id)['platform'] +'`\n'
             '➤ 集数：共`'+ str(subject_info_get(subject_id)['eps_count']) +'`集\n'
             '➤ 放送开始：`'+ subject_info_get(subject_id)['air_date'] + '`\n'
             '➤ 放送星期：`'+ subject_info_get(subject_id)['air_weekday'] + '`\n\n' 
