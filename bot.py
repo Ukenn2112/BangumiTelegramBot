@@ -27,7 +27,10 @@ def send_start(message):
             markup.add(telebot.types.InlineKeyboardButton(text='绑定Bangumi',url=url))
             bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup ,timeout=20)
     else:
-        bot.send_message(message.chat.id, '请私聊我进行Bangumi绑定', parse_mode='Markdown' ,timeout=20)
+        if message.text == f'/start@{BOT_USERNAME}':
+            bot.send_message(message.chat.id, '请私聊我进行Bangumi绑定', parse_mode='Markdown' ,timeout=20)
+        else:
+            pass
 
 # 查询 Bangumi 用户收藏统计
 @bot.message_handler(commands=['my'])
@@ -194,7 +197,6 @@ def send_my(message):
 
                 bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
                 bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
-                # bot.send_message(message.chat.id, text=text, parse_mode='Markdown', timeout=20)
 
 # 动画条目搜索/查询 Bangumi 用户在看动画
 @bot.message_handler(commands=['anime'])
@@ -503,14 +505,14 @@ def subject_info_get(subject_id):
                          'score': score}                # BGM 评分 int
     return subject_info_data
 
-# 更新收视进度为看过
-def eps_status_get(test_id, eps_id):
+# 更新收视进度状态
+def eps_status_get(test_id, eps_id, status):
     access_token = user_data_get(test_id).get('access_token')
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         'Authorization': 'Bearer ' + access_token}
 
-    url = f'https://api.bgm.tv/ep/{eps_id}/status/watched'
+    url = f'https://api.bgm.tv/ep/{eps_id}/status/{status}'
 
     r = requests.get(url=url, headers=headers)
     
@@ -802,7 +804,13 @@ def anime_eps_callback(call):
     test_id = int(call.data.split('|')[1])
     if tg_from_id == test_id:
         eps_id = int(call.data.split('|')[2])
-        eps_status_get(test_id, eps_id) # 更新观看进度
+        try:
+            remove = call.data.split('|')[5]
+            if remove == 'remove':
+                eps_status_get(test_id, eps_id, 'remove')  # 更新观看进度为撤销
+                bot.send_message(chat_id=call.message.chat.id, text='已撤销，已看最新集数', parse_mode='Markdown', timeout=20)
+        except IndexError:
+                eps_status_get(test_id, eps_id, 'watched') # 更新观看进度为看过
 
         subject_id = int(call.data.split('|')[3])
         back_page = call.data.split('|')[4]
@@ -828,10 +836,10 @@ def anime_eps_callback(call):
             status = 'collect'
             collection_post(test_id, subject_id, status, rating) # 看完最后一集自动更新收藏状态为看过
             markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do_page'+'|'+str(test_id)+'|'+back_page),telebot.types.InlineKeyboardButton(text='评分',callback_data='rating'+'|'+str(test_id)+'|'+'0'+'|'+str(subject_id)+'|'+back_page))
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'+'|'+back_page))
+            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'+'|'+back_page),telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(eps_id)+'|'+str(subject_id)+'|'+back_page+'|remove'))
         else:    
             markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do_page'+'|'+str(test_id)+'|'+back_page),telebot.types.InlineKeyboardButton(text='评分',callback_data='rating'+'|'+str(test_id)+'|'+'0'+'|'+str(subject_id)+'|'+back_page),telebot.types.InlineKeyboardButton(text='已看最新',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(unwatched_id[0])+'|'+str(subject_id)+'|'+back_page))
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'+'|'+back_page))
+            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'+'|'+back_page),telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(eps_id)+'|'+str(subject_id)+'|'+back_page+'|remove'))
         if call.message.content_type == 'photo':
             bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
         else:
