@@ -275,42 +275,18 @@ def send_anime(message):
 @bot.message_handler(commands=['week'])
 def send_week(message):
     data = message.text.split(' ')
-    if data[0] != "/week":
-        bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+    day = data[1]
+    week_data=week_text(day)
+    if data[0] == "/week" and day.isnumeric():
+            if 1<=int(day)<=7:
+                msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+                text = week_data['text']
+                markup = week_data['markup']
+                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
+                bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
     else:
-        if len(data) == 2:
-            day = data[1]
-            check = is_number(day)
-            if check is False:
-                bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
-            else:
-                if int(day) > 7:
-                    bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
-                else:
-                    msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-                    text = week_text(day)['text']
-                    markup = week_text(day)['markup']
-                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                    bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
-        else:
-            bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+        bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
 
-# 判断输入是否是数字
-def is_number(str):
-    try:
-        float(str)
-        return True
-    except ValueError:
-        pass
-
-    try:
-        import unicodedata
-        unicodedata.numeric(str)
-        return True
-    except (ValueError, TypeError):
-        pass
-
-    return False
 
 # 判断是否绑定Bangumi
 def data_seek_get(test_id):
