@@ -733,14 +733,14 @@ def rating_callback(call):
         if rating_data != 0:
             status = user_rating_get(test_id, subject_id)['user_startus']
             collection_post(test_id, subject_id, status, str(rating_data))
-        text = {f'''*{subject_info['name_cn']}*\n
-                {subject_info['name']}\n\n
-                BGM ID：`{ str(subject_id) }`\n\n
-                ➤ BGM 平均评分：`{ str(subject_info['score']) }`🌟\n
-                ➤ 您的评分：`{str(user_rating_get(test_id, subject_id)['user_rating']) }`🌟\n\n
-                ➤ 观看进度：`{eps_get(test_id, subject_id)['progress'] }`\n\n
-                💬 [吐槽箱](https://bgm.tv/subject/{ str(subject_id) }/comments)\n\n
-                请点按下列数字进行评分'''}
+        text = {f'*{subject_info["name_cn"]}*\n'\
+                f'{subject_info["name"]}\n\n'\
+                f'BGM ID：`{ str(subject_id) }`\n\n'\
+                f'➤ BGM 平均评分：`{ str(subject_info["score"]) }`🌟\n'\
+                f'➤ 您的评分：`{str(user_rating_get(test_id, subject_id)["user_rating"]) }`🌟\n\n'\
+                f'➤ 观看进度：`{eps_get(test_id, subject_id)["progress"] }`\n\n'\
+                f'💬 [吐槽箱](https://bgm.tv/subject/{ str(subject_id) }/comments)\n\n'\
+                f'请点按下列数字进行评分'}
 
         markup = telebot.types.InlineKeyboardMarkup()       
         markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page),
