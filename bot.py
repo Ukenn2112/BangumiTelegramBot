@@ -753,33 +753,26 @@ def rating_callback(call):
         rating_data = int(call.data.split('|')[2])
         subject_id = call.data.split('|')[3]
         back_page = call.data.split('|')[4]
-        def rating_text():
-            text = {'*'+ subject_info_get(subject_id)['name_cn'] +'*\n'
-                    ''+ subject_info_get(subject_id)['name'] +'\n\n'
-
-                    'BGM ID：`' + str(subject_id) + '`\n\n'
-
-                    '➤ BGM 平均评分：`'+ str(subject_info_get(subject_id)['score']) +'`🌟\n'
-                    '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)['user_rating']) +'`🌟\n\n'
-
-                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['progress'] + '`\n\n'
-
-                    '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n\n'
-
-                    '请点按下列数字进行评分'}
-
-            markup = telebot.types.InlineKeyboardMarkup()       
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page),
-                *[telebot.types.InlineKeyboardButton(text=str(i),callback_data='rating|{}|{}|{}'.format(str(test_id),str(i),str(subject_id))) for i in range(1,11)])
-            if call.message.content_type == 'photo':
-                bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
-            else:
-                bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
-            
+        subject_info = subject_info_get(subject_id)
         if rating_data != 0:
             status = user_rating_get(test_id, subject_id)['user_startus']
             collection_post(test_id, subject_id, status, str(rating_data))
-        rating_text()       
+        text = {f'''*{subject_info['name_cn']}*\n
+                {subject_info['name']}\n\n
+                BGM ID：`{ str(subject_id) }`\n\n
+                ➤ BGM 平均评分：`{ str(subject_info['score']) }`🌟\n
+                ➤ 您的评分：`{str(user_rating_get(test_id, subject_id)['user_rating']) }`🌟\n\n
+                ➤ 观看进度：`{eps_get(test_id, subject_id)['progress'] }`\n\n
+                💬 [吐槽箱](https://bgm.tv/subject/{ str(subject_id) }/comments)\n\n
+                请点按下列数字进行评分'''}
+
+        markup = telebot.types.InlineKeyboardMarkup()       
+        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page),
+            *[telebot.types.InlineKeyboardButton(text=str(i),callback_data='rating|{}|{}|{}'.format(str(test_id),str(i),str(subject_id))) for i in range(1,11)])
+        if call.message.content_type == 'photo':
+            bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+        else:
+            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)     
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
