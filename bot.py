@@ -776,10 +776,9 @@ def rating_callback(call):
             else:
                 bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
             
-        if rating_data == 0:
-            rating_text()
-        status = user_rating_get(test_id, subject_id)['user_startus']
-        collection_post(test_id, subject_id, status, str(rating_data))
+        if rating_data != 0:
+            status = user_rating_get(test_id, subject_id)['user_startus']
+            collection_post(test_id, subject_id, status, str(rating_data))
         rating_text()       
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
