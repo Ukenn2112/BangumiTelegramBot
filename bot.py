@@ -278,13 +278,17 @@ def send_week(message):
     if len(data) == 2:
         day = data[1]
         if data[0] == "/week" and day.isnumeric():
-                if 1<=int(day)<=7:
-                    week_data=week_text(day)
-                    msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-                    text = week_data['text']
-                    markup = week_data['markup']
-                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                    bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+            if 1<=int(day)<=7:
+                week_data=week_text(day)
+                msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+                text = week_data['text']
+                markup = week_data['markup']
+                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
+                bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+            else:
+                bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+        else:
+            bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
     else:
         bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
 
@@ -1003,8 +1007,9 @@ def collection_callback(call):
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
     day = int(call.data.split('|')[1])
-    text = week_text(day)['text']
-    markup = week_text(day)['markup']
+    week_data = week_text(day)
+    text = week_data['text']
+    markup = week_data['markup']
     bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
     bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
 
