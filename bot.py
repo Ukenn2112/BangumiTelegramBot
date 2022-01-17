@@ -275,42 +275,23 @@ def send_anime(message):
 @bot.message_handler(commands=['week'])
 def send_week(message):
     data = message.text.split(' ')
-    if data[0] != "/week":
-        bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
-    else:
-        if len(data) == 2:
-            day = data[1]
-            check = is_number(day)
-            if check is False:
-                bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+    if len(data) == 2:
+        day = data[1]
+        if data[0] == "/week" and day.isnumeric():
+            if 1<=int(day)<=7:
+                week_data=week_text(day)
+                msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+                text = week_data['text']
+                markup = week_data['markup']
+                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
+                bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
             else:
-                if int(day) > 7:
-                    bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
-                else:
-                    msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-                    text = week_text(day)['text']
-                    markup = week_text(day)['markup']
-                    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                    bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+                bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
         else:
             bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+    else:
+        bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
 
-# 判断输入是否是数字
-def is_number(str):
-    try:
-        float(str)
-        return True
-    except ValueError:
-        pass
-
-    try:
-        import unicodedata
-        unicodedata.numeric(str)
-        return True
-    except (ValueError, TypeError):
-        pass
-
-    return False
 
 # 判断是否绑定Bangumi
 def data_seek_get(test_id):
@@ -753,71 +734,26 @@ def rating_callback(call):
         rating_data = int(call.data.split('|')[2])
         subject_id = call.data.split('|')[3]
         back_page = call.data.split('|')[4]
-        def rating_text():
-            text = {'*'+ subject_info_get(subject_id)['name_cn'] +'*\n'
-                    ''+ subject_info_get(subject_id)['name'] +'\n\n'
+        subject_info = subject_info_get(subject_id)
+        if rating_data != 0:
+            status = user_rating_get(test_id, subject_id)['user_startus']
+            collection_post(test_id, subject_id, status, str(rating_data))
+        text = {f'*{subject_info["name_cn"]}*\n'\
+                f'{subject_info["name"]}\n\n'\
+                f'BGM ID：`{ str(subject_id) }`\n\n'\
+                f'➤ BGM 平均评分：`{ str(subject_info["score"]) }`🌟\n'\
+                f'➤ 您的评分：`{str(user_rating_get(test_id, subject_id)["user_rating"]) }`🌟\n\n'\
+                f'➤ 观看进度：`{eps_get(test_id, subject_id)["progress"] }`\n\n'\
+                f'💬 [吐槽箱](https://bgm.tv/subject/{ str(subject_id) }/comments)\n\n'\
+                f'请点按下列数字进行评分'}
 
-                    'BGM ID：`' + str(subject_id) + '`\n\n'
-
-                    '➤ BGM 平均评分：`'+ str(subject_info_get(subject_id)['score']) +'`🌟\n'
-                    '➤ 您的评分：`'+ str(user_rating_get(test_id, subject_id)['user_rating']) +'`🌟\n\n'
-
-                    '➤ 观看进度：`'+ eps_get(test_id, subject_id)['progress'] + '`\n\n'
-
-                    '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n\n'
-
-                    '请点按下列数字进行评分'}
-
-            markup = telebot.types.InlineKeyboardMarkup()       
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page),telebot.types.InlineKeyboardButton(text='1',callback_data='rating'+'|'+str(test_id)+'|'+'1'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='2',callback_data='rating'+'|'+str(test_id)+'|'+'2'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='3',callback_data='rating'+'|'+str(test_id)+'|'+'3'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='4',callback_data='rating'+'|'+str(test_id)+'|'+'4'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='5',callback_data='rating'+'|'+str(test_id)+'|'+'5'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='6',callback_data='rating'+'|'+str(test_id)+'|'+'6'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='7',callback_data='rating'+'|'+str(test_id)+'|'+'7'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='8',callback_data='rating'+'|'+str(test_id)+'|'+'8'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='9',callback_data='rating'+'|'+str(test_id)+'|'+'9'+'|'+str(subject_id)),telebot.types.InlineKeyboardButton(text='10',callback_data='rating'+'|'+str(test_id)+'|'+'10'+'|'+str(subject_id)))
-            if call.message.content_type == 'photo':
-                bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
-            else:
-                bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
-            
-        if rating_data == 0:
-            rating_text()
-        status = user_rating_get(test_id, subject_id)['user_startus']
-        if rating_data == 1:
-            rating = '1'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 2:
-            rating = '2'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 3:
-            rating = '3'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 4:
-            rating = '4'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 5:
-            rating = '5'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 6:
-            rating = '6'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 7:
-            rating = '7'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 8:
-            rating = '8'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 9:
-            rating = '9'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 3:
-            rating = '10'
-            collection_post(test_id, subject_id, status, rating) 
-            rating_text()          
+        markup = telebot.types.InlineKeyboardMarkup()       
+        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page),
+            *[telebot.types.InlineKeyboardButton(text=str(i),callback_data='rating|{}|{}|{}|{}'.format(str(test_id),str(i),str(subject_id),back_page)) for i in range(1,11)])
+        if call.message.content_type == 'photo':
+            bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+        else:
+            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)     
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -1071,8 +1007,9 @@ def collection_callback(call):
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
     day = int(call.data.split('|')[1])
-    text = week_text(day)['text']
-    markup = week_text(day)['markup']
+    week_data = week_text(day)
+    text = week_data['text']
+    markup = week_data['markup']
     bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
     bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
 
