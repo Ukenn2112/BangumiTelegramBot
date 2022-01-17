@@ -778,46 +778,8 @@ def rating_callback(call):
         if rating_data == 0:
             rating_text()
         status = user_rating_get(test_id, subject_id)['user_startus']
-        if rating_data == 1:
-            rating = '1'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 2:
-            rating = '2'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 3:
-            rating = '3'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 4:
-            rating = '4'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 5:
-            rating = '5'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 6:
-            rating = '6'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 7:
-            rating = '7'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 8:
-            rating = '8'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 9:
-            rating = '9'
-            collection_post(test_id, subject_id, status, rating)
-            rating_text()
-        if rating_data == 3:
-            rating = '10'
-            collection_post(test_id, subject_id, status, rating) 
-            rating_text()          
+        collection_post(test_id, subject_id, status, str(rating_data))
+        rating_text()       
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
