@@ -744,7 +744,7 @@ def rating_callback(call):
 
         markup = telebot.types.InlineKeyboardMarkup()       
         markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page),
-            *[telebot.types.InlineKeyboardButton(text=str(i),callback_data='rating|{}|{}|{}'.format(str(test_id),str(i),str(subject_id))) for i in range(1,11)])
+            *[telebot.types.InlineKeyboardButton(text=str(i),callback_data='rating|{}|{}|{}|{}'.format(str(test_id),str(i),str(subject_id),back_page)) for i in range(1,11)])
         if call.message.content_type == 'photo':
             bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
         else:
