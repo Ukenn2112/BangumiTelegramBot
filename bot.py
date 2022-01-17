@@ -290,7 +290,16 @@ def send_week(message):
         else:
             bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
     else:
-        bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+        now_week = int(datetime.datetime.now().strftime("%w"))
+        if now_week == 0:
+            week_data = week_text(7)           
+        else:
+            week_data = week_text(now_week)
+        msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+        text = week_data['text']
+        markup = week_data['markup']
+        bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
+        bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
 
 
 # 判断是否绑定Bangumi
