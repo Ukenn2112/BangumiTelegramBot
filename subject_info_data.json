@@ -1,0 +1,52 @@
+[
+    {
+        "subject_id": 331887,
+        "name": "86―エイティシックス― 第2クール",
+        "name_cn": "86 -不存在的战区- 第二季",
+        "eps_count": 12,
+        "air_date": "2021-10-02",
+        "platform": "TV",
+        "air_weekday": "星期六",
+        "score": 7.5
+    },
+    {
+        "subject_id": 312958,
+        "name": "プリンセスコネクト！Re:Dive Season 2",
+        "name_cn": "公主连结 Re:Dive 第二季",
+        "eps_count": 12,
+        "air_date": "2022-01-10",
+        "platform": "TV",
+        "air_weekday": "星期一",
+        "score": 7.5
+    },
+    {
+        "subject_id": 321825,
+        "name": "殺し愛",
+        "name_cn": "杀爱",
+        "eps_count": 12,
+        "air_date": "2022-01-12",
+        "platform": "TV",
+        "air_weekday": "星期三",
+        "score": 5.9
+    },
+    {
+        "subject_id": 292316,
+        "name": "ありふれた職業で世界最強 2nd season",
+        "name_cn": "平凡职业成就世界最强 第二季",
+        "eps_count": 12,
+        "air_date": "2022-01-13",
+        "platform": "TV",
+        "air_weekday": "星期四",
+        "score": 6.6
+    },
+    {
+        "subject_id": 307378,
+        "name": "賢者の弟子を名乗る賢者",
+        "name_cn": "自称贤者弟子的贤者",
+        "eps_count": 12,
+        "air_date": "2022-01-11",
+        "platform": "TV",
+        "air_weekday": "星期二",
+        "score": 5.0
+    }
+]

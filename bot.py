@@ -467,42 +467,66 @@ def eps_get(test_id, subject_id):
 
 # 剧集信息获取 不需Access Token
 def subject_info_get(subject_id):
-    params = {
-        'responseGroup': 'large'}
-    
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',}
-    
-    url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
+    with open('subject_info_data.json', encoding='utf-8') as f:
+        info_data = json.loads(f.read())
+    id_li = [i['subject_id'] for i in info_data]
+    if int(subject_id) in id_li:
+        name = [i['name'] for i in info_data if i['subject_id'] == int(subject_id)][0]
+        name_cn = [i['name_cn'] for i in info_data if i['subject_id'] == int(subject_id)][0]
+        eps_count = [i['eps_count'] for i in info_data if i['subject_id'] == int(subject_id)][0]
+        air_date = [i['air_date'] for i in info_data if i['subject_id'] == int(subject_id)][0]
+        platform = [i['platform'] for i in info_data if i['subject_id'] == int(subject_id)][0]
+        air_weekday = [i['air_weekday'] for i in info_data if i['subject_id'] == int(subject_id)][0]
+        score = [i['score'] for i in info_data if i['subject_id'] == int(subject_id)][0]
+        # 输出
+        subject_info_data = {'name' : name,                 # 剧集名 str
+                             'name_cn': name_cn,            # 剧集中文名 str
+                             'eps_count': eps_count,        # 总集数 int
+                             'air_date': air_date,          # 放送开始日期 str
+                             'platform': platform,          # 放送类型 str
+                             'air_weekday': air_weekday,    # 每周放送星期 str
+                             'score': score}                # BGM 评分 int
+    else:
+        params = {'responseGroup': 'large'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
+        url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
+        try:
+            r = requests.get(url=url, params=params, headers=headers)
+        except requests.ConnectionError:
+            r = requests.get(url=url, params=params, headers=headers)
+        info_data = json.loads(r.text)
+        name = info_data.get('name')
+        name_cn = info_data.get('name_cn')
+        eps_count = info_data.get('eps')
+        air_date = info_data.get('date')
+        platform = info_data.get('platform')
+        try:
+            air_weekday = [i['value'] for i in info_data.get('infobox') if i['key'] == '放送星期'][0]
+        except IndexError:
+            air_weekday = 'None'
+        try:
+            score = info_data.get('rating').get('score')
+        except AttributeError:
+            score = 0
+        # 输出
+        subject_info_data = {'subject_id': int(subject_id),
+                             'name' : name,                 # 剧集名 str
+                             'name_cn': name_cn,            # 剧集中文名 str
+                             'eps_count': eps_count,        # 总集数 int
+                             'air_date': air_date,          # 放送开始日期 str
+                             'platform': platform,          # 放送类型 str
+                             'air_weekday': air_weekday,    # 每周放送星期 str
+                             'score': score}                # BGM 评分 int
 
-    try:
-        r = requests.get(url=url, params=params, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, params=params, headers=headers)
-    
-    info_data = json.loads(r.text)
-    
-    name = info_data.get('name')
-    name_cn = info_data.get('name_cn')
-    eps_count = info_data.get('eps')
-    air_date = info_data.get('date')
-    platform = info_data.get('platform')
-    try:
-        air_weekday = [i['value'] for i in info_data.get('infobox') if i['key'] == '放送星期'][0]
-    except IndexError:
-        air_weekday = 'None'
-    try:
-        score = info_data.get('rating').get('score')
-    except AttributeError:
-        score = 0
-    
-    # 输出
-    subject_info_data = {'name' : name,                 # 剧集名 str
-                         'name_cn': name_cn,            # 剧集中文名 str
-                         'eps_count': eps_count,        # 总集数 int
-                         'air_date': air_date,          # 放送开始日期 str
-                         'platform': platform,          # 放送类型 str
-                         'air_weekday': air_weekday,    # 每周放送星期 str
-                         'score': score}                # BGM 评分 int
+        with open("subject_info_data.json", 'r+', encoding='utf-8') as f:    # 打开文件
+            try:
+                data = json.load(f)                                          # 读取
+            except:
+                data = []                                                    # 空文件
+            data.append(subject_info_data)                                   # 添加
+            f.seek(0, 0)                                                     # 重新定位回开头
+            json.dump(data, f, ensure_ascii=False, indent=4)                 # 写入
+
     return subject_info_data
 
 # 更新收视进度状态
