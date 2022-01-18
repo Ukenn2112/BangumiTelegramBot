@@ -87,6 +87,7 @@ def send_my(message):
             bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
             return
         nickname = user_data.get('nickname')
+        bgm_id = user_data.get('id')
         r2.close()
         ##### 开始处理数据
         book_do, book_collect, anime_do, anime_collect \
@@ -239,7 +240,7 @@ def data_seek_get(test_id):
     with open('bgm_data.json') as f:                        # 打开文件
         data_seek = json.loads(f.read())                    # 读取
     data_li = [i['tg_user_id'] for i in data_seek]          # 写入列表
-    return int(test_id) in data_li                             # 判断列表内是否有被验证的UID
+    return int(test_id) in data_li                          # 判断列表内是否有被验证的UID
 
 
 def user_data_get(test_id):
