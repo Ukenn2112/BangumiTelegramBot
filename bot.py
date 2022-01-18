@@ -36,167 +36,99 @@ def send_start(message):
 @bot.message_handler(commands=['my'])
 def send_my(message):
     message_data = message.text.split(' ')
-    test_id = message.from_user.id
+    bgm_id = None
+    access_token = None
     if len(message_data) == 1:
-        if data_seek_get(test_id) == 'no':
-            bot.send_message(message.chat.id, "未绑定Bangumi，请私聊使用[/start](https://t.me/"+BOT_USERNAME+"?start=none)进行绑定", parse_mode='Markdown', timeout=20)
-        else:
-            msg = bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-            access_token = user_data_get(test_id).get('access_token')
-            params = {'app_id': APP_ID}
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-                'Authorization': 'Bearer ' + access_token}
-
-            url = 'https://api.bgm.tv/user/' + str(user_data_get(test_id).get('user_id')) + '/collections/status'
-            r = requests.get(url=url, params=params, headers=headers)
-            startus_data = json.loads(r.text)
-            if startus_data == None:
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_message(message.chat.id, text='您没有观看记录，快去bgm上点几个格子吧~', parse_mode='Markdown', timeout=20)
-            else:
-                book = None
-                book_do = 0
-                book_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'book':
-                        book = i.get('collects')
-                        for i in book:
-                            if i.get('status').get('type') == 'do':
-                                book_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                book_collect = i.get('count')
-                anime = None
-                anime_do = 0
-                anime_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'anime':
-                        anime = i.get('collects')
-                        for i in anime:
-                            if i.get('status').get('type') == 'do':
-                                anime_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                anime_collect = i.get('count')
-                music = None
-                music_do = 0
-                music_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'music':
-                        music = i.get('collects')
-                        for i in music:
-                            if i.get('status').get('type') == 'do':
-                                music_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                music_collect = i.get('count')
-                game = None
-                game_do = 0
-                game_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'game':
-                        game = i.get('collects')
-                        for i in game:
-                            if i.get('status').get('type') == 'do':
-                                game_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                game_collect = i.get('count')
-
-                text = {'*Bangumi 用户数据统计：\n\n'+ 
-                        bgmuser_data(test_id)['nickname'] +'*\n'
-                        '➤ 动画：`'+ str(anime_do) +'在看，'+ str(anime_collect) +'看过`\n'
-                        '➤ 图书：`'+ str(book_do)  +'在读，'+ str(book_collect)  +'读过`\n'
-                        '➤ 音乐：`'+ str(music_do) +'在听，'+ str(music_collect) +'听过`\n'
-                        '➤ 游戏：`'+ str(game_do)  +'在玩，'+ str(game_collect)  +'玩过`\n\n'
-
-                        '[🏠 个人主页](https://bgm.tv/user/'+ str(user_data_get(test_id).get('user_id')) +')\n'
-                        }
-                
-                img_url = 'https://bgm.tv/chart/img/' + str(user_data_get(test_id).get('user_id'))
-
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
-                # bot.send_message(message.chat.id, text=text, parse_mode='Markdown', timeout=20)
+        # 未加参数 查询自己
+        tg_id = message.from_user.id
+        user_data = user_data_get(tg_id)
+        if user_data is None:
+            # 如果未绑定 直接报错
+            bot.send_message(message.chat.id,
+                             "未绑定Bangumi，请私聊使用[/start](https://t.me/" + BOT_USERNAME + "?start=none)进行绑定",
+                             parse_mode='Markdown', timeout=20)
+            return
+        bgm_id = user_data.get('user_id')
+        access_token = user_data.get('access_token')
     else:
-        username = message_data[1]
-        msg = bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-        params = {'app_id': APP_ID}
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
-        url = 'https://api.bgm.tv/user/' + username + '/collections/status'
+        # 加了参数 查参数中的人
+        bgm_id = message_data[1]
+        access_token = ''
+    # 开始查询数据
+    msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id,
+                           parse_mode='Markdown', timeout=20)
+    params = {'app_id': APP_ID}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
+        'Authorization': 'Bearer ' + access_token}
+    url = f'https://api.bgm.tv/user/{bgm_id}/collections/status'
+    r = None
+    try:
         r = requests.get(url=url, params=params, headers=headers)
         startus_data = json.loads(r.text)
-        try:
-            if startus_data.get('code') == 404:
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_message(message.chat.id, text='出错了，没有查询到该用户', parse_mode='Markdown', timeout=20)
-        except AttributeError:
-            if startus_data == None:
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_message(message.chat.id, text='您没有观看记录，快去bgm上点几个格子吧~', parse_mode='Markdown', timeout=20)
-            else:
-                book = None
-                book_do = 0
-                book_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'book':
-                        book = i.get('collects')
-                        for i in book:
-                            if i.get('status').get('type') == 'do':
-                                book_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                book_collect = i.get('count')
-                anime = None
-                anime_do = 0
-                anime_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'anime':
-                        anime = i.get('collects')
-                        for i in anime:
-                            if i.get('status').get('type') == 'do':
-                                anime_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                anime_collect = i.get('count')
-                music = None
-                music_do = 0
-                music_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'music':
-                        music = i.get('collects')
-                        for i in music:
-                            if i.get('status').get('type') == 'do':
-                                music_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                music_collect = i.get('count')
-                game = None
-                game_do = 0
-                game_collect = 0
-                for i in startus_data:
-                    if i.get('name') == 'game':
-                        game = i.get('collects')
-                        for i in game:
-                            if i.get('status').get('type') == 'do':
-                                game_do = i.get('count')
-                            if i.get('status').get('type') == 'collect':
-                                game_collect = i.get('count')
-                
-                url = 'https://api.bgm.tv/user/' + username
-                r2 = requests.get(url=url, headers=headers)
-                user_data = json.loads(r2.text)
-                nickname = user_data.get('nickname') # 获取用户昵称
-                uid = user_data.get('id') #获取用户UID
+        if startus_data is None:
+            # Fixme 会有这种情况吗？
+            bot.send_message(message.chat.id, text='您没有观看记录，快去bgm上点几个格子吧~', parse_mode='Markdown', timeout=20)
+            return
+        if r.status_code != 200:
+            bot.edit_message_text(text="出错了", chat_id=message.chat.id, message_id=msg.message_id)
+            return
+        if isinstance(startus_data, dict) and startus_data.get('code') == 404:
+            bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
+            return
+        r.close()
+        # 查询用户名
+        r2 = requests.get(url=f'https://api.bgm.tv/user/{bgm_id}')
+        user_data = json.loads(r2.text)
+        if r2.status_code != 200:
+            bot.edit_message_text(text="出错了", chat_id=message.chat.id, message_id=msg.message_id)
+            return
+        if isinstance(user_data, dict) and user_data.get('code') == 404:
+            bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
+            return
+        nickname = user_data.get('nickname')
+        r2.close()
+        ##### 开始处理数据
+        book_do, book_collect, anime_do, anime_collect \
+            , music_do, music_collect, game_do, game_collect = 0, 0, 0, 0, 0, 0, 0, 0
+        for i in startus_data:
+            if i.get('name') == 'book':
+                for book in i.get('collects'):
+                    if book.get('status').get('type') == 'do':
+                        book_do = book.get('count')
+                    if book.get('status').get('type') == 'collect':
+                        book_collect = book.get('count')
+            elif i.get('name') == 'anime':
+                for anime in i.get('collects'):
+                    if anime.get('status').get('type') == 'do':
+                        anime_do = anime.get('count')
+                    if anime.get('status').get('type') == 'collect':
+                        anime_collect = anime.get('count')
+            elif i.get('name') == 'music':
+                for music in i.get('collects'):
+                    if music.get('status').get('type') == 'do':
+                        music_do = music.get('count')
+                    if music.get('status').get('type') == 'collect':
+                        music_collect = music.get('count')
+            elif i.get('name') == 'game':
+                for game in i.get('collects'):
+                    if game.get('status').get('type') == 'do':
+                        game_do = game.get('count')
+                    if game.get('status').get('type') == 'collect':
+                        game_collect = game.get('count')
+        text = f'*Bangumi 用户数据统计：\n\n{nickname}*\n' \
+               f'➤ 动画：`{anime_do}在看，{anime_collect}看过`\n' \
+               f'➤ 图书：`{book_do}在读，{book_collect}读过`\n' \
+               f'➤ 音乐：`{music_do}在听，{music_collect}听过`\n' \
+               f'➤ 游戏：`{game_do}在玩，{game_collect}玩过`\n\n' \
+               f'[🏠 个人主页](https://bgm.tv/user/{bgm_id})\n'
+        img_url = f'https://bgm.tv/chart/img/{bgm_id}'
+    except:
+        bot.edit_message_text(text="系统错误，请查看日志", chat_id=message.chat.id, message_id=msg.message_id)
+        raise
+    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
+    bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
 
-                text = {'*Bangumi 用户数据统计：\n\n'+ 
-                        nickname +'*\n'
-                        '➤ 动画：`'+ str(anime_do) +'在看，'+ str(anime_collect) +'看过`\n'
-                        '➤ 图书：`'+ str(book_do)  +'在读，'+ str(book_collect)  +'读过`\n'
-                        '➤ 音乐：`'+ str(music_do) +'在听，'+ str(music_collect) +'听过`\n'
-                        '➤ 游戏：`'+ str(game_do)  +'在玩，'+ str(game_collect)  +'玩过`\n\n'
-
-                        f'[🏠 个人主页](https://bgm.tv/user/{uid})\n'
-                        }
-                
-                img_url = f'https://bgm.tv/chart/img/{uid}'
-
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
 
 # 动画条目搜索/查询 Bangumi 用户在看动画
 @bot.message_handler(commands=['anime'])
