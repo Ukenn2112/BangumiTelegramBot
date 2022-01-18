@@ -7,7 +7,7 @@ import json
 import telebot
 import requests
 import datetime
-from utils import gender_anime_page_message, search_anime
+from utils import gender_anime_page_message, gender_week_message, search_anime
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
 
 # 请求TG Bot api
@@ -167,9 +167,9 @@ def send_week(message):
     if len(data) == 2:
         day = data[1]
         if data[0] == "/week" and day.isnumeric():
-            if 1<=int(day)<=7:
-                week_data=week_text(day)
+            if 1<=int(day)<=7:                
                 msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+                week_data = gender_week_message(msg, bot, day)
                 text = week_data['text']
                 markup = week_data['markup']
                 bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
@@ -179,12 +179,12 @@ def send_week(message):
         else:
             bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
     else:
+        msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
         now_week = int(datetime.datetime.now().strftime("%w"))
         if now_week == 0:
-            week_data = week_text(7)
+            week_data = gender_week_message(msg, bot, 7)
         else:
-            week_data = week_text(now_week)
-        msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+            week_data = gender_week_message(msg, bot, now_week)
         text = week_data['text']
         markup = week_data['markup']
         bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
@@ -537,39 +537,6 @@ def search_get(keywords, type, start):
 
     return search_data
 
-# 每日放送查询输出文字及其按钮
-def week_text(day):
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',}
-    url = 'https://api.bgm.tv/calendar'
-    try:
-        r = requests.get(url=url, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, headers=headers)
-    week_data = json.loads(r.text)
-    for i in week_data:
-        if i.get('weekday',{}).get('id') == int(day):
-            items = i.get('items')
-            subject_id_li = [i['id'] for i in items]
-            name_li = [i['name'] for i in items]
-            name_cn_li = [i['name_cn'] for i in items]
-            no_li = list(range(1, len(subject_id_li)+ 1))
-            markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(*[telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+'week'+'|'+str(item[1])+'|'+str(day)+'|0') for item in list(zip(no_li,subject_id_li))])
-
-            air_weekday = str(day).replace('1', '星期一').replace('2', '星期二').replace('3', '星期三').replace('4', '星期四').replace('5', '星期五').replace('6', '星期六').replace('7', '星期日') # 放送日期
-            text_data = ''.join(['*['+str(a)+']* '+b+'\n'+c+'\n\n' for a,b,c in zip(no_li,name_li,name_cn_li)])
-            anime_count = len(subject_id_li)
-            text = {'*在 '+ air_weekday +' 放送的节目*\n\n'+
-                    text_data +
-                    '共'+ str(anime_count) +'部'}
-
-            week_text_data = {
-                'text': text,    # 查询文字
-                'markup': markup # 按钮
-            }
-
-    return week_text_data
-
 @bot.callback_query_handler(func=lambda call: call.data == 'None')
 def callback_None(call):
     bot.answer_callback_query(call.id)
@@ -871,7 +838,8 @@ def collection_callback(call):
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
     day = int(call.data.split('|')[1])
-    week_data = week_text(day)
+    msg = call.message
+    week_data = gender_week_message(msg, bot, day)
     text = week_data['text']
     markup = week_data['markup']
     bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)

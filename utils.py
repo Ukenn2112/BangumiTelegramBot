@@ -4,9 +4,38 @@ import math
 import requests
 import telebot
 
+def gender_week_message(msg, bot, day):
+    """每日放送查询输出文字及其按钮"""
+    try:
+        r = requests.get(url='https://api.bgm.tv/calendar')
+    except requests.ConnectionError:
+        r = requests.get(url='https://api.bgm.tv/calendar')
+    if r.status_code != 200:
+        bot.edit_message_text(text="出错了!", chat_id=msg.chat.id, message_id=msg.message_id)
+        return
+    week_data = json.loads(r.text)
+    for i in week_data:
+        if i.get('weekday',{}).get('id') == int(day):
+            items = i.get('items')
+            subject_id_li = [i['id'] for i in items]
+            name_li = [i['name'] for i in items]
+            name_cn_li = [i['name_cn'] for i in items]
+            air_weekday = i.get('weekday',{}).get('cn')
+            anime_count = len(subject_id_li)
+            markup = telebot.types.InlineKeyboardMarkup()
+            week_text_data = ""
+            nums = list(range(1, len(subject_id_li) + 1))
+            button_list = []
+            for subject_id_li, name_li, name_cn_li, nums in zip(subject_id_li, name_li, name_cn_li, nums):
+                week_text_data += f'*[{nums}]* {name_cn_li if name_cn_li else name_li}\n\n'
+                button_list.append(telebot.types.InlineKeyboardButton(text=nums, callback_data=
+                f"animesearch|week|{subject_id_li}|{day}|0"))
+            text = f'*在{air_weekday}放送的节目*\n\n{week_text_data}' \
+                   f'共{anime_count}部'
+            markup.add(*button_list, row_width=4)
+    return {'text': text, 'markup': markup}
 
-
-def gender_anime_page_message(user_data, offset, msg, tg_id,bot):
+def gender_anime_page_message(user_data, offset, msg, tg_id, bot):
     bgm_id = user_data.get('user_id')
     access_token = user_data.get('access_token')
     # 查询用户名 TODO 将用户数据放入数据库
@@ -56,8 +85,8 @@ def gender_anime_page_message(user_data, offset, msg, tg_id,bot):
     nums = list(range(1, len(subject_list) + 1))
     nums_unicode = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩']
     button_list = []
-    for info, num ,nums_emoji in zip(subject_list, nums ,nums_unicode):
-        anime_text_data += f'*{nums_emoji}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
+    for info, num ,nums_unicode in zip(subject_list, nums, nums_unicode):
+        anime_text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
                            f' `[{info["ep_status"]}/{info["subject_info"]["eps_count"]}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(text=num, callback_data=
         f"anime_do|{tg_id}|{info['subject_id']}|0|{offset}"))
@@ -82,7 +111,7 @@ def gender_anime_page_message(user_data, offset, msg, tg_id,bot):
         markup.add(*button_list2)
     return {'text': text, 'markup': markup}
 
-def search_anime(anime_search_keywords, message,bot):
+def search_anime(anime_search_keywords, message, bot):
     """临时方法 TODO 修改"""
     msg = bot.send_message(message.chat.id, "正在搜索请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
                            timeout=20)
