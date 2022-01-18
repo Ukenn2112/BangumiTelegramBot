@@ -7,7 +7,7 @@ import json
 import telebot
 import requests
 import datetime
-
+from utils import gender_anime_page_message, search_anime
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
 
 # 请求TG Bot api
@@ -131,78 +131,34 @@ def send_my(message):
     bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
 
 
-# 动画条目搜索/查询 Bangumi 用户在看动画
+# 动画条目搜索/查询 Bangumi 用户在看动画 重写
 @bot.message_handler(commands=['anime'])
 def send_anime(message):
     message_data = message.text.split(' ')
-    test_id = message.from_user.id
-    if len(message_data) == 1: # 查询 Bangumi 用户在看动画
-        if not data_seek_get(test_id):
-            bot.send_message(message.chat.id, "未绑定Bangumi，请私聊使用[/start](https://t.me/"+BOT_USERNAME+"?start=none)进行绑定", parse_mode='Markdown', timeout=20)
-        else:
-            msg = bot.send_message(message.chat.id, "正在查询请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-            access_token = user_data_get(test_id).get('access_token')
-            params = {'subject_type': 2,
-                      'type': 3,
-                      'limit': 5, # 每页条数
-                      'offset': 0 # 开始页
-                    }
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-                'Authorization': 'Bearer ' + access_token}
+    if len(message_data) != 1:
+        search_anime(message_data[1], message, bot)
+        return
+        pass  # TODO 条目搜索
+    # 未加参数 查询自己
+    tg_id = message.from_user.id
+    offset = 0
+    user_data = user_data_get(tg_id)
+    if user_data is None:
+        # 如果未绑定 直接报错
+        bot.send_message(message.chat.id,
+                         "未绑定Bangumi，请私聊使用[/start](https://t.me/" + BOT_USERNAME + "?start=none)进行绑定",
+                         parse_mode='Markdown', timeout=20)
+        return
+    msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id,
+                           parse_mode='Markdown', timeout=20)
+    try:
+        page = gender_anime_page_message(user_data, offset, msg, tg_id, bot)
+    except:
+        bot.edit_message_text(text="出错了!请看日志", chat_id=message.chat.id, message_id=msg.message_id)
+        raise
+    bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id
+                          , parse_mode='Markdown', reply_markup=page['markup'])
 
-            url = 'https://api.bgm.tv/v0/users/'+bgmuser_data(test_id)['username']+'/collections'
-            try:
-                r = requests.get(url=url, params=params, headers=headers)
-            except requests.ConnectionError:
-                r = requests.get(url=url, params=params, headers=headers)
-            anime_data = json.loads(r.text)
-            anime_count = anime_data.get('total') # 总在看数 int
-            subject_id_li = [i['subject_id'] for i in anime_data.get('data')] # subject_id 列表 int
-            name_li = [subject_info_get(subject_id)['name'] for subject_id in subject_id_li] # 番剧名字 str
-            name_cn_li = [subject_info_get(subject_id)['name_cn'] for subject_id in subject_id_li] # 番剧中文名字 str
-
-            if subject_id_li == []:
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_message(message.chat.id, text='出错啦，您貌似没有收藏的再看', parse_mode='Markdown', timeout=20)
-            else:
-                markup = telebot.types.InlineKeyboardMarkup()
-                no_li = list(range(1, len(subject_id_li)+ 1))
-                markup.add(*[telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0'+'|0') for item in list(zip(no_li,subject_id_li))], row_width=5)
-                if anime_count > 5:
-                    markup.add(telebot.types.InlineKeyboardButton(text='下一页',callback_data='anime_do_page'+'|'+str(test_id)+'|'+'5'))
-                eps_li = [eps_get(test_id, subject_id)['progress'] for subject_id in subject_id_li]
-                anime_text_data = ''.join(['*['+str(a)+']* '+b+'\n'+c+' `['+ d +']`\n\n' for a,b,c,d in zip(no_li,name_li,name_cn_li,eps_li)])
-
-                text = {'*'+ bgmuser_data(test_id)['nickname'] +' 在看的动画*\n\n'+
-                        anime_text_data +
-                        '共'+ str(anime_count) +'部'}
-
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
-    else: # 动画条目搜索
-        msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-        anime_search_keywords = message_data[1]
-        subject_type = 2 # 条目类型 1 = book 2 = anime 3 = music 4 = game 6 = real
-        start = 0
-        search_results_n = search_get(anime_search_keywords, subject_type, start)['search_results_n'] # 搜索结果数量
-        if search_results_n == 0:
-            bot.send_message(message.chat.id, text='抱歉，没能搜索到您想要的内容', parse_mode='Markdown', timeout=20)
-        else:
-            search_subject_id_li = search_get(anime_search_keywords, subject_type, start)['subject_id_li'] # 所有查询结果id列表
-            search_name_li = search_get(anime_search_keywords, subject_type, start)['name_li'] # 所有查询结果名字列表
-            markup = telebot.types.InlineKeyboardMarkup()
-            for item in list(zip(search_name_li,search_subject_id_li)):
-                markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+'0'+'|0'))
-            if search_results_n > 5:
-                markup.add(telebot.types.InlineKeyboardButton(text='下一页',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+'5'))
-
-            text = {'*关于您的 “*`'+ str(anime_search_keywords) +'`*” 搜索结果*\n\n'+
-
-                    '🔍 共'+ str(search_results_n) +'个结果'}
-
-            bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-            bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
 
 # 每日放送查询
 @bot.message_handler(commands=['week'])
@@ -304,7 +260,7 @@ def expiry_data_get(test_id):
             user_data = i.get('data',{})
     return user_data
 
-# 获取BGM用户信息
+# 获取BGM用户信息 TODO 存入数据库
 def bgmuser_data(test_id):
     access_token = user_data_get(test_id).get('access_token')
     headers = {
@@ -383,7 +339,7 @@ def eps_get(test_id, subject_id):
 
     return eps_data
 
-# 剧集信息获取 不需Access Token
+# 剧集信息获取 不需Access Token TODO 重写
 def subject_info_get(subject_id):
     with open('subject_info_data.json', encoding='utf-8') as f:
         info_data = json.loads(f.read())
@@ -745,61 +701,28 @@ def anime_eps_callback(call):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
-# 动画再看详情页返回翻页
+# 动画在看详情页 翻页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do_page')
 def anime_do_page_callback(call):
-    test_id = int(call.data.split('|')[1])
-    offset = int(call.data.split('|')[2])
-    tg_from_id = call.from_user.id
-    if tg_from_id == test_id:
-        access_token = user_data_get(test_id).get('access_token')
-        params = {'subject_type': 2,
-                  'type': 3,
-                  'limit': 5, # 每页条数
-                  'offset': offset # 开始页
-                }
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-            'Authorization': 'Bearer ' + access_token}
-
-        url = 'https://api.bgm.tv/v0/users/'+bgmuser_data(test_id)['username']+'/collections'
-        try:
-            r = requests.get(url=url, params=params, headers=headers)
-        except requests.ConnectionError:
-            r = requests.get(url=url, params=params, headers=headers)
-        anime_data = json.loads(r.text)
-        anime_count = anime_data.get('total') # 总在看数 int
-        subject_id_li = [i['subject_id'] for i in anime_data.get('data')] # subject_id 列表 int
-        name_li = [subject_info_get(subject_id)['name'] for subject_id in subject_id_li] # 番剧名字 str
-        name_cn_li = [subject_info_get(subject_id)['name_cn'] for subject_id in subject_id_li] # 番剧中文名字 str
-
-        markup = telebot.types.InlineKeyboardMarkup()
-        no_li = list(range(1, len(subject_id_li)+ 1))
-        markup.add(*[telebot.types.InlineKeyboardButton(text=item[0],callback_data='anime_do'+'|'+str(test_id)+'|'+str(item[1])+'|0'+'|'+str(offset)) for item in list(zip(no_li,subject_id_li))], row_width=5)
-
-        if anime_count <= 5:
-            markup.add()
-        elif offset == 0:
-            markup.add(telebot.types.InlineKeyboardButton(text='下一页',callback_data='anime_do_page'+'|'+str(test_id)+'|'+str(offset+5)))
-        elif offset+5 >= anime_count:
-            markup.add(telebot.types.InlineKeyboardButton(text='上一页',callback_data='anime_do_page'+'|'+str(test_id)+'|'+str(offset-5)))
-        else:
-            markup.add(telebot.types.InlineKeyboardButton(text='上一页',callback_data='anime_do_page'+'|'+str(test_id)+'|'+str(offset-5)),telebot.types.InlineKeyboardButton(text='下一页',callback_data='anime_do_page'+'|'+str(test_id)+'|'+str(offset+5)))
-
-        eps_li = [eps_get(test_id, subject_id)['progress'] for subject_id in subject_id_li]
-        anime_text_data = ''.join(['*['+str(a)+']* '+b+'\n'+c+' `['+ d +']`\n\n' for a,b,c,d in zip(no_li,name_li,name_cn_li,eps_li)])
-
-        text = {'*'+ bgmuser_data(test_id)['nickname'] +' 在看的动画*\n\n'+
-                anime_text_data +
-                '共'+ str(anime_count) +'部'}
-
-        if call.message.content_type == 'photo':
-            bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
-            bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
-        else:
-            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
-    else:
+    call_tg_id = call.from_user.id
+    msg = call.message
+    tg_id = call.data.split('|')[1]
+    if str(call_tg_id) != tg_id:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+        return
+    offset = int(call.data.split('|')[2])
+    user_data = user_data_get(call_tg_id)
+
+    page = gender_anime_page_message(user_data,offset,msg,call_tg_id,bot)
+    if call.message.content_type == 'text':
+        bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id
+                          , parse_mode='Markdown', reply_markup=page['markup'])
+    else:
+        bot.delete_message(chat_id=msg.chat.id, message_id=msg.message_id)
+        bot.send_message(text=page['text'], chat_id=msg.chat.id
+                         , parse_mode='Markdown', reply_markup=page['markup'])
+
+
 
 # 搜索翻页
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'spage')
