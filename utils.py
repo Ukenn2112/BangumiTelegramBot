@@ -20,7 +20,7 @@ def gender_anime_page_message(user_data, offset, msg, tg_id,bot):
         return
     nickname = user_data.get('nickname')
     username = user_data.get('username')
-    limit = 4
+    limit = 10
 
     params = {
         'subject_type': 2,
