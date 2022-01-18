@@ -20,7 +20,7 @@ def gender_anime_page_message(user_data, offset, msg, tg_id,bot):
         return
     nickname = user_data.get('nickname')
     username = user_data.get('username')
-    limit = 10
+    limit = 5
 
     params = {
         'subject_type': 2,
@@ -54,13 +54,13 @@ def gender_anime_page_message(user_data, offset, msg, tg_id,bot):
     markup = telebot.types.InlineKeyboardMarkup()
     anime_text_data = ""
     nums = list(range(1, len(subject_list) + 1))
+    nums_unicode = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩']
     button_list = []
-    for info, num in zip(subject_list, nums):
-        anime_text_data += f'*[{num}]* {info["subject_info"]["name"]}\n' \
-                           f'{info["subject_info"]["name_cn"]} ' \
-                           f'`[{info["ep_status"]}/{info["subject_info"]["eps_count"]}]`\n\n'
+    for info, num ,nums_emoji in zip(subject_list, nums ,nums_unicode):
+        anime_text_data += f'*{nums_emoji}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
+                           f' `[{info["ep_status"]}/{info["subject_info"]["eps_count"]}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(text=num, callback_data=
-        f"anime_do|{tg_id}|{info['subject_id']}|0|0"))
+        f"anime_do|{tg_id}|{info['subject_id']}|0|{offset}"))
     text = f'*{nickname} 在看的动画*\n\n{anime_text_data}' \
            f'共{anime_count}部'
     markup.add(*button_list, row_width=5)

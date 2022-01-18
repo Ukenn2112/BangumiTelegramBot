@@ -570,6 +570,10 @@ def week_text(day):
 
     return week_text_data
 
+@bot.callback_query_handler(func=lambda call: call.data == 'None')
+def callback_None(call):
+    bot.answer_callback_query(call.id)
+
 # 动画再看详情
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do')
 def anime_do_callback(call):
@@ -704,16 +708,16 @@ def anime_eps_callback(call):
 # 动画在看详情页 翻页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do_page')
 def anime_do_page_callback(call):
-    call_tg_id = call.from_user.id
+    # call_tg_id = call.from_user.id
     msg = call.message
-    tg_id = call.data.split('|')[1]
-    if str(call_tg_id) != tg_id:
-        bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
-        return
+    tg_id = int(call.data.split('|')[1])
+    # if str(call_tg_id) != tg_id:
+    #     bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+    #     return
     offset = int(call.data.split('|')[2])
-    user_data = user_data_get(call_tg_id)
+    user_data = user_data_get(tg_id)
 
-    page = gender_anime_page_message(user_data,offset,msg,call_tg_id,bot)
+    page = gender_anime_page_message(user_data,offset,msg,tg_id,bot)
     if call.message.content_type == 'text':
         bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id
                           , parse_mode='Markdown', reply_markup=page['markup'])
