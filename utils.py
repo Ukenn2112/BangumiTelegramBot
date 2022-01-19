@@ -5,15 +5,14 @@ import requests
 import telebot
 
 
-def gender_week_message(msg, bot, day):
+def gender_week_message(day):
     """每日放送查询页"""
     try:
         r = requests.get(url='https://api.bgm.tv/calendar')
     except requests.ConnectionError:
         r = requests.get(url='https://api.bgm.tv/calendar')
     if r.status_code != 200:
-        bot.edit_message_text(text="出错了!", chat_id=msg.chat.id, message_id=msg.message_id)
-        return
+        return {'text': "出错了!", 'markup': None}
     week_data = json.loads(r.text)
     for i in week_data:
         if i.get('weekday', {}).get('id') == int(day):

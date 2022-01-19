@@ -164,31 +164,24 @@ def send_anime(message):
 @bot.message_handler(commands=['week'])
 def send_week(message):
     data = message.text.split(' ')
-    if len(data) == 2:
-        day = data[1]
-        if data[0] == "/week" and day.isnumeric():
-            if 1<=int(day)<=7:                
-                msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-                week_data = gender_week_message(msg, bot, day)
-                text = week_data['text']
-                markup = week_data['markup']
-                bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-                bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
-            else:
-                bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+    day = None
+    if len(data) == 1:
+        # 如果未传参数
+        now_week = int(datetime.datetime.now().strftime("%w"))
+        day = 7 if now_week == 0 else now_week
+    else:
+        if data[1].isnumeric() and 1 <= int(data[1]) <= 7:
+            day = data[1]
         else:
             bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
-    else:
-        msg = bot.send_message(message.chat.id, "正在搜索请稍后...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
-        now_week = int(datetime.datetime.now().strftime("%w"))
-        if now_week == 0:
-            week_data = gender_week_message(msg, bot, 7)
-        else:
-            week_data = gender_week_message(msg, bot, now_week)
-        text = week_data['text']
-        markup = week_data['markup']
-        bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-        bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup , timeout=20)
+            return
+    msg = bot.send_message(message.chat.id, "正在搜索请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
+                           timeout=20)
+    week_data = gender_week_message(day)
+    text = week_data['text']
+    markup = week_data['markup']
+    bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=text, parse_mode='Markdown',
+                          reply_markup=markup)
 
 
 def data_seek_get(test_id):
