@@ -12,7 +12,7 @@ import telebot
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
-from utils import gender_anime_page_message, gander_anime_message, gender_week_message, search_anime
+from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, search_anime
 
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
@@ -339,71 +339,6 @@ def eps_get(test_id, subject_id):
 
     return eps_data
 
-# 剧集信息获取 不需Access Token 已废弃
-def subject_info_get(subject_id):
-    """已废弃 请用 get_subject_info """
-    with open('subject_info_data.json', encoding='utf-8') as f:
-        info_data = json.loads(f.read())
-    id_li = [i['subject_id'] for i in info_data]
-    if int(subject_id) in id_li:
-        name = [i['name'] for i in info_data if i['subject_id'] == int(subject_id)][0]
-        name_cn = [i['name_cn'] for i in info_data if i['subject_id'] == int(subject_id)][0]
-        eps_count = [i['eps_count'] for i in info_data if i['subject_id'] == int(subject_id)][0]
-        air_date = [i['air_date'] for i in info_data if i['subject_id'] == int(subject_id)][0]
-        platform = [i['platform'] for i in info_data if i['subject_id'] == int(subject_id)][0]
-        air_weekday = [i['air_weekday'] for i in info_data if i['subject_id'] == int(subject_id)][0]
-        score = [i['score'] for i in info_data if i['subject_id'] == int(subject_id)][0]
-        # 输出
-        subject_info_data = {'name' : name,                 # 剧集名 str
-                             'name_cn': name_cn,            # 剧集中文名 str
-                             'eps_count': eps_count,        # 总集数 int
-                             'air_date': air_date,          # 放送开始日期 str
-                             'platform': platform,          # 放送类型 str
-                             'air_weekday': air_weekday,    # 每周放送星期 str
-                             'score': score}                # BGM 评分 int
-    else:
-        params = {'responseGroup': 'large'}
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
-        url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
-        try:
-            r = requests.get(url=url, params=params, headers=headers)
-        except requests.ConnectionError:
-            r = requests.get(url=url, params=params, headers=headers)
-        info_data = json.loads(r.text)
-        name = info_data.get('name')
-        name_cn = info_data.get('name_cn')
-        eps_count = info_data.get('eps')
-        air_date = info_data.get('date')
-        platform = info_data.get('platform')
-        try:
-            air_weekday = [i['value'] for i in info_data.get('infobox') if i['key'] == '放送星期'][0]
-        except IndexError:
-            air_weekday = 'None'
-        try:
-            score = info_data.get('rating').get('score')
-        except AttributeError:
-            score = 0
-        # 输出
-        subject_info_data = {'subject_id': int(subject_id),
-                             'name' : name,                 # 剧集名 str
-                             'name_cn': name_cn,            # 剧集中文名 str
-                             'eps_count': eps_count,        # 总集数 int
-                             'air_date': air_date,          # 放送开始日期 str
-                             'platform': platform,          # 放送类型 str
-                             'air_weekday': air_weekday,    # 每周放送星期 str
-                             'score': score}                # BGM 评分 int
-
-        with open("subject_info_data.json", 'r+', encoding='utf-8') as f:    # 打开文件
-            try:
-                data = json.load(f)                                          # 读取
-            except:
-                data = []                                                    # 空文件
-            data.append(subject_info_data)                                   # 添加
-            f.seek(0, 0)                                                     # 重新定位回开头
-            json.dump(data, f, ensure_ascii=False, indent=4)                 # 写入
-
-    return subject_info_data
-
 # 更新收视进度状态
 def eps_status_get(test_id, eps_id, status):
     access_token = user_data_get(test_id).get('access_token')
@@ -509,10 +444,9 @@ def anime_do_callback(call):
     back_page = call.data.split('|')[4]
     if call_tg_id == tg_id:
         img_url = utils.anime_img(subject_id)
-        subject_info = subject_info_get(subject_id)
         user_rating = user_rating_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
-        anime_do_message = gander_anime_message(call_tg_id, subject_id, subject_info, tg_id=tg_id, back_page=back_page, user_rating=user_rating, eps_data=eps_data)
+        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, back_page=back_page, user_rating=user_rating, eps_data=eps_data)
         if back == 1:
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
@@ -520,7 +454,7 @@ def anime_do_callback(call):
                 bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
         else:
             bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20) # 删除用户在看动画列表消息
-            if img_url == None: # 是否有动画简介图片
+            if img_url == 'None__' or img_url == None: # 是否有动画简介图片
                 bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
             else:
                 bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
@@ -528,35 +462,26 @@ def anime_do_callback(call):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
-# 评分
+# 评分 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'rating')
 def rating_callback(call):
-    tg_from_id = call.from_user.id
-    test_id = int(call.data.split('|')[1])
-    if tg_from_id == test_id:
+    call_tg_id = call.from_user.id
+    tg_id = int(call.data.split('|')[1])
+    if call_tg_id == tg_id:
         rating_data = int(call.data.split('|')[2])
         subject_id = call.data.split('|')[3]
         back_page = call.data.split('|')[4]
-        subject_info = subject_info_get(subject_id)
+        eps_data = eps_get(tg_id, subject_id)
+        user_rating = user_rating_get(tg_id, subject_id)
         if rating_data != 0:
-            status = user_rating_get(test_id, subject_id)['user_startus']
-            collection_post(test_id, subject_id, status, str(rating_data))
-        text = {f'*{subject_info["name_cn"]}*\n'\
-                f'{subject_info["name"]}\n\n'\
-                f'BGM ID：`{ str(subject_id) }`\n\n'\
-                f'➤ BGM 平均评分：`{ str(subject_info["score"]) }`🌟\n'\
-                f'➤ 您的评分：`{str(user_rating_get(test_id, subject_id)["user_rating"]) }`🌟\n\n'\
-                f'➤ 观看进度：`{eps_get(test_id, subject_id)["progress"] }`\n\n'\
-                f'💬 [吐槽箱](https://bgm.tv/subject/{ str(subject_id) }/comments)\n\n'\
-                f'请点按下列数字进行评分'}
-
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page),
-            *[telebot.types.InlineKeyboardButton(text=str(i),callback_data='rating|{}|{}|{}|{}'.format(str(test_id),str(i),str(subject_id),back_page)) for i in range(1,11)])
-        if call.message.content_type == 'photo':
-            bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
-        else:
-            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+            collection_post(tg_id, subject_id, user_rating['user_startus'], str(rating_data))
+            user_rating = user_rating_get(tg_id, subject_id)
+        rating_message = grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page)
+        if rating_data == 0 or rating_data != user_rating['user_rating']:
+            if call.message.content_type == 'photo':
+                bot.edit_message_caption(caption=rating_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=rating_message['markup'])
+            else:
+                bot.edit_message_text(text=rating_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=rating_message['markup'])
         bot.answer_callback_query(call.id)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
@@ -579,10 +504,9 @@ def anime_eps_callback(call):
                 bot.answer_callback_query(call.id, text='更新观看进度为看过')
         subject_id = int(call.data.split('|')[3])
         back_page = call.data.split('|')[4]
-        subject_info = subject_info_get(subject_id)
         user_rating = user_rating_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
-        anime_do_message = gander_anime_message(call_tg_id, subject_id, subject_info, tg_id=tg_id, user_rating=user_rating, eps_data=eps_data, eps_id=eps_id, back_page=back_page)
+        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, user_rating=user_rating, eps_data=eps_data, eps_id=eps_id, back_page=back_page)
         if eps_data['unwatched_id'] == []:
             status = 'collect'
             collection_post(tg_id, subject_id, status, str(user_rating['user_rating'])) # 看完最后一集自动更新收藏状态为看过
@@ -659,9 +583,8 @@ def animesearch_callback(call):
     start = int(call.data.split('|')[3])
     back = int(call.data.split('|')[4])
     call_tg_id = call.from_user.id
-    subject_info = subject_info_get(subject_id)
     img_url = utils.anime_img(subject_id)
-    anime_do_message = gander_anime_message(call_tg_id, subject_id, subject_info, start=start, anime_search_keywords=anime_search_keywords)
+    anime_do_message = gander_anime_message(call_tg_id, subject_id, start=start, anime_search_keywords=anime_search_keywords)
     if back == 1:
         if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
@@ -669,7 +592,7 @@ def animesearch_callback(call):
             bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
     else:
         bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
-        if img_url == None:
+        if img_url == 'None__' or img_url == None:
             bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
         else:
             bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
@@ -684,12 +607,13 @@ def collection_callback(call):
     start = call.data.split('|')[4]
     status = call.data.split('|')[5]
     tg_from_id = call.from_user.id
-
+    name = utils.get_subject_info(subject_id)['name']
+    rating = str(user_rating_get(test_id, subject_id)['user_rating'])
     if status == 'null':
         if not data_seek_get(tg_from_id):
             bot.send_message(chat_id=call.message.chat.id, text='您未绑定Bangumi，请私聊使用[/start](https://t.me/'+BOT_USERNAME+'?start=none)进行绑定', parse_mode='Markdown', timeout=20)
         else:
-            text = {'*您想将 “*`'+ subject_info_get(subject_id)['name'] +'`*” 收藏为*\n\n'}
+            text = f'*您想将 “*`{name}`*” 收藏为*\n\n'
             markup = telebot.types.InlineKeyboardMarkup()
             if anime_search_keywords == 'anime_do':
                 back_page = call.data.split('|')[6]
@@ -703,41 +627,36 @@ def collection_callback(call):
             bot.answer_callback_query(call.id)
     if status == 'wish':    # 想看
         if tg_from_id == test_id:
-            rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
-            bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为想看', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为想看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为想看')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'collect': # 看过
         if tg_from_id == test_id:
-            rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
-            bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为看过', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为看过', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为看过')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'do':      # 在看
         if tg_from_id == test_id:
-            rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
-            bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为在看', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为在看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为在看')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'on_hold': # 搁置
         if tg_from_id == test_id:
-            rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
-            bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为搁置', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为搁置', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为搁置')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'dropped': # 抛弃
         if tg_from_id == test_id:
-            rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
-            bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为抛弃')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
