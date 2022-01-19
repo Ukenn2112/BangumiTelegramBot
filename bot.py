@@ -3,12 +3,19 @@
 https://bangumi.github.io/api/
 '''
 
-import json
-import telebot
-import requests
 import datetime
-from utils import gender_anime_page_message, gander_anime_message, gender_week_message, search_anime
+import json
+import logging
+
+import requests
+import telebot
+
+import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
+from utils import gender_anime_page_message, gander_anime_message, gender_week_message, search_anime
+
+logger = telebot.logger
+telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
 
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -332,8 +339,9 @@ def eps_get(test_id, subject_id):
 
     return eps_data
 
-# 剧集信息获取 不需Access Token TODO 重写
+# 剧集信息获取 不需Access Token 已废弃
 def subject_info_get(subject_id):
+    """已废弃 请用 get_subject_info """
     with open('subject_info_data.json', encoding='utf-8') as f:
         info_data = json.loads(f.read())
     id_li = [i['subject_id'] for i in info_data]
@@ -449,49 +457,6 @@ def user_rating_get(test_id, subject_id):
 
     return user_rating_data
 
-# 动画简介图片获取 不需Access Token
-def anime_img(subject_id):
-    anime_name = subject_info_get(subject_id)['name']
-    query = '''
-    query ($id: Int, $page: Int, $perPage: Int, $search: String) {
-        Page (page: $page, perPage: $perPage) {
-            pageInfo {
-                total
-                currentPage
-                lastPage
-                hasNextPage
-                perPage
-            }
-            media (id: $id, search: $search) {
-                id
-                title {
-                    romaji
-                }
-            }
-        }
-    }
-    '''
-    variables = {
-        'search': anime_name,
-        'page': 1,
-        'perPage': 1
-    }
-    url = 'https://graphql.anilist.co'
-    try:
-        r = requests.post(url, json={'query': query, 'variables': variables})
-    except requests.ConnectionError:
-        r = requests.post(url, json={'query': query, 'variables': variables})
-
-    anilist_data = json.loads(r.text).get('data').get('Page').get('media')
-
-    try:
-        anilist_id = [i['id'] for i in anilist_data][0]
-    except IndexError:
-        img_url = None
-    else:
-        img_url = f'https://img.anili.st/media/{anilist_id}'
-
-    return img_url
 
 # 条目搜索 不需Access Token
 def search_get(keywords, type, start):
@@ -543,7 +508,7 @@ def anime_do_callback(call):
     back = int(call.data.split('|')[3])
     back_page = call.data.split('|')[4]
     if call_tg_id == tg_id:
-        img_url = anime_img(subject_id)
+        img_url = utils.anime_img(subject_id)
         subject_info = subject_info_get(subject_id)
         user_rating = user_rating_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
@@ -689,7 +654,7 @@ def animesearch_callback(call):
     back = int(call.data.split('|')[4])
     call_tg_id = call.from_user.id
     subject_info = subject_info_get(subject_id)
-    img_url = anime_img(subject_id)
+    img_url = utils.anime_img(subject_id)
     anime_do_message = gander_anime_message(call_tg_id, subject_id, subject_info, start=start, anime_search_keywords=anime_search_keywords)
     if back == 1:
         if call.message.content_type == 'photo':

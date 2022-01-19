@@ -218,6 +218,8 @@ def get_subject_info(subject_id, t_dict=None):
     subject = redis_cli.get(f"subject:{subject_id}")
     if subject:
         loads = json.loads(subject)
+    elif subject == "None__":
+        raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
         try:
@@ -225,9 +227,58 @@ def get_subject_info(subject_id, t_dict=None):
         except requests.ConnectionError:
             r = requests.get(url=url)
         if r.status_code != 200:
+            redis_cli.set(f"subject:{subject_id}", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
             raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
         redis_cli.set(f"subject:{subject_id}", r.text, ex=60 * 60 * 24 + random.randint(-3600, 3600))
         loads = json.loads(r.text)
     if t_dict:
         t_dict["subject_info"] = loads
     return loads
+
+
+
+def anime_img(subject_id):
+    """动画简介图片获取 不需Access Token 并使用Redis缓存"""
+    img_url = redis_cli.get(f"anime_img:{subject_id}")
+    if img_url:
+        return img_url.decode()
+    if img_url == "None__":
+        return None
+    anime_name = get_subject_info(subject_id)['name']
+    query = '''
+    query ($id: Int, $page: Int, $perPage: Int, $search: String) {
+        Page (page: $page, perPage: $perPage) {
+            pageInfo {
+                total
+                currentPage
+                lastPage
+                hasNextPage
+                perPage
+            }
+            media (id: $id, search: $search) {
+                id
+                title {
+                    romaji
+                }
+            }
+        }
+    }
+    '''
+    variables = {
+        'search': anime_name,
+        'page': 1,
+        'perPage': 1
+    }
+    url = 'https://graphql.anilist.co'
+    try:
+        r = requests.post(url, json={'query': query, 'variables': variables})
+    except requests.ConnectionError:
+        r = requests.post(url, json={'query': query, 'variables': variables})
+    anilist_data = json.loads(r.text).get('data').get('Page').get('media')
+    if len(anilist_data) > 0:
+        img_url = f'https://img.anili.st/media/{anilist_data[0]["id"]}'
+        redis_cli.set(f"anime_img:{subject_id}", img_url, ex=60 * 60 * 24 + random.randint(-3600, 3600))
+        return img_url
+    else:
+        redis_cli.set(f"anime_img:{subject_id}", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+        return None
