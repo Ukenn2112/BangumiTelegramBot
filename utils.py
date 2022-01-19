@@ -6,7 +6,7 @@ import telebot
 
 
 def gender_week_message(msg, bot, day):
-    """每日放送查询输出文字及其按钮"""
+    """每日放送查询页"""
     try:
         r = requests.get(url='https://api.bgm.tv/calendar')
     except requests.ConnectionError:
@@ -36,6 +36,30 @@ def gender_week_message(msg, bot, day):
             markup.add(*button_list, row_width=4)
     return {'text': text, 'markup': markup}
 
+def gander_anime_do_message(call_tg_id, tg_id, subject_id, back_page, subject_info, user_rating, eps_data):
+    """动画在看详情页"""
+    unwatched_id = eps_data['unwatched_id']
+    text = f"*{subject_info['name_cn']}*\n" \
+           f"{subject_info['name']}\n\n" \
+           f"BGM ID：`{subject_id}`\n" \
+           f"➤ BGM 平均评分：`{subject_info['score']}`🌟\n" \
+           f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n" \
+           f"➤ 放送类型：`{subject_info['platform']}`\n" \
+           f"➤ 放送开始：`{subject_info['air_date']}`\n" \
+           f"➤ 放送星期：`{subject_info['air_weekday']}`\n" \
+           f"➤ 观看进度：`{eps_data['progress']}`\n\n" \
+           f"💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
+    markup = telebot.types.InlineKeyboardMarkup()
+    if unwatched_id == []:
+        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+        telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
+        markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+    else:
+        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+        telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
+        telebot.types.InlineKeyboardButton(text='已看最新',callback_data=f'anime_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
+        markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+    return {'text': text, 'markup': markup}
 
 def gender_anime_page_message(user_data, offset, tg_id):
     bgm_id = user_data.get('user_id')
