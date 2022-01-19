@@ -1,9 +1,16 @@
 import json
+import random
+import threading
 
 import math
+import redis
 import requests
 import telebot
 
+from config import REDIS_HOST, REDIS_PORT, REDIS_DATABASE
+
+# FIXME 似乎不应该在这里创建对象
+redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
 def gender_week_message(day):
     """每日放送查询页"""
@@ -91,21 +98,24 @@ def gender_anime_page_message(user_data, offset, tg_id):
     subject_list = response['data']
     if subject_list is None or len(subject_list) == 0:  # 是否有数据
         return {'text': '出错啦，您貌似没有收藏的在看', 'markup': None}
-        # 循环查询 将条目信息数据存进去 TODO 多线程获取
+    # 循环查询 将条目信息数据存进去 多线程获取
+    thread_list = []
     for info in subject_list:
-        from bot import subject_info_get
-        subject_info = subject_info_get(info['subject_id'])
-        info['subject_info'] = subject_info
+        th = threading.Thread(target=get_subject_info, args=[info['subject_id'], info])
+        th.start()
+        thread_list.append(th)
+    for th in thread_list:
+        th.join()
     # 开始处理Telegram消息
     # 拼接字符串
     markup = telebot.types.InlineKeyboardMarkup()
     anime_text_data = ""
-    nums = list(range(1, len(subject_list) + 1))
+    nums = range(1, len(subject_list) + 1)
     nums_unicode = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
     button_list = []
     for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
         anime_text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
-                           f' `[{info["ep_status"]}/{info["subject_info"]["eps_count"]}]`\n\n'
+                           f' `[{info["ep_status"]}/{info["subject_info"]["eps"]}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(text=num, callback_data=
         f"anime_do|{tg_id}|{info['subject_id']}|0|{offset}"))
     text = f'*{nickname} 在看的动画*\n\n{anime_text_data}' \
@@ -176,3 +186,23 @@ def get_collection(subject_id: str, token: str = "", tg_id=""):
     except requests.ConnectionError:
         r = requests.get(url=url, params=params, headers=headers)
     return json.loads(r.text)
+
+
+def get_subject_info(subject_id, t_dict=None):
+    """获取指定条目信息 并使用Redis缓存"""
+    subject = redis_cli.get(f"subject:{subject_id}")
+    if subject:
+        loads = json.loads(subject)
+    else:
+        url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
+        try:
+            r = requests.get(url=url)
+        except requests.ConnectionError:
+            r = requests.get(url=url)
+        if r.status_code != 200:
+            raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
+        redis_cli.set(f"subject:{subject_id}", r.text, ex=60 * 60 * 24 + random.randint(-3600, 3600))
+        loads = json.loads(r.text)
+    if t_dict:
+        t_dict["subject_info"] = loads
+    return loads

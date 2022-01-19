@@ -11,3 +11,7 @@ WEBSITE_BASE = 'http://localhost:6008/'
 BOT_USERNAME = 'BangumiBot'
 # Telegram Bot Token
 BOT_TOKEN = 'xxxxxxxxxxxxxxxxxxxxxxx'
+# Redis
+REDIS_HOST = 'localhost'
+REDIS_PORT = '6379'
+REDIS_DATABASE = 0
