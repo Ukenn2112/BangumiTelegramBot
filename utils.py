@@ -33,40 +33,53 @@ def gender_week_message(day):
             return {'text': text, 'markup': markup}
 
 
-def gander_anime_do_message(call_tg_id, tg_id, subject_id, back_page, subject_info, user_rating, eps_data,
-    eps_id: Optional[bool]=None):
-    """动画在看详情页"""
-    unwatched_id = eps_data['unwatched_id']
+def gander_anime_message(call_tg_id, subject_id, subject_info,
+    tg_id: Optional[bool]=None, user_rating: Optional[bool]=None, eps_data: Optional[bool]=None, back_page: Optional[bool]=None, eps_id: Optional[bool]=None, start: Optional[bool]=None, anime_search_keywords: Optional[bool]=None):
+    """动画详情页"""
     text = f"*{subject_info['name_cn']}*\n" \
            f"{subject_info['name']}\n\n" \
            f"BGM ID：`{subject_id}`\n" \
-           f"➤ BGM 平均评分：`{subject_info['score']}`🌟\n" \
-           f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n" \
-           f"➤ 放送类型：`{subject_info['platform']}`\n" \
-           f"➤ 放送开始：`{subject_info['air_date']}`\n" \
-           f"➤ 放送星期：`{subject_info['air_weekday']}`\n" \
-           f"➤ 观看进度：`{eps_data['progress']}`\n\n" \
-           f"💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
-    markup = telebot.types.InlineKeyboardMarkup()
-    if unwatched_id == []:
-        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
-                   telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
-        if eps_id is not None:
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
-                       telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
-        else:
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+           f"➤ BGM 平均评分：`{subject_info['score']}`🌟\n"
+    if user_rating is not None:
+        text += f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n"
     else:
-        markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
-                   telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
-                   telebot.types.InlineKeyboardButton(text='已看最新',callback_data=f'anime_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
-        if eps_id is not None and eps_data['watched'] != 1:
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
-                       telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+        text += f"➤ 集数：共`{subject_info['eps_count']}`集\n"
+    text +=f"➤ 放送类型：`{subject_info['platform']}`\n" \
+           f"➤ 放送开始：`{subject_info['air_date']}`\n" \
+           f"➤ 放送星期：`{subject_info['air_weekday']}`\n"
+    if eps_data is not None:
+        text += f"➤ 观看进度：`{eps_data['progress']}`\n"
+    text +=f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
+           f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
+    markup = telebot.types.InlineKeyboardMarkup()
+    if eps_data is not None:
+        unwatched_id = eps_data['unwatched_id']
+        if unwatched_id == []:
+            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+                    telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
+            if eps_id is not None:
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
+                        telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+            else:
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
-    if eps_id is not None:
-        text += f"📝 [第{eps_data['watched']}话评论](https://bgm.tv/ep/{eps_id})\n"
+            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+                    telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
+                    telebot.types.InlineKeyboardButton(text='已看最新',callback_data=f'anime_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
+            if eps_id is not None and eps_data['watched'] != 1:
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
+                        telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+            else:
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+        if eps_id is not None:
+            text += f"\n📝 [第{eps_data['watched']}话评论](https://bgm.tv/ep/{eps_id})\n"
+    elif anime_search_keywords is not None:
+        if anime_search_keywords == 'week':
+            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'back_week|{start}'),
+                       telebot.types.InlineKeyboardButton(text='收藏',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
+        else:
+            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'spage|{anime_search_keywords}|{start}'),
+                       telebot.types.InlineKeyboardButton(text='收藏',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
     return {'text': text, 'markup': markup}
 
 def gender_anime_page_message(user_data, offset, tg_id):
