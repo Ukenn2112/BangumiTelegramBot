@@ -152,7 +152,7 @@ def send_anime(message):
     msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id,
                            parse_mode='Markdown', timeout=20)
     try:
-        page = gender_anime_page_message(user_data, offset, msg, tg_id, bot)
+        page = gender_anime_page_message(user_data, offset, tg_id)
     except:
         bot.edit_message_text(text="出错了!请看日志", chat_id=message.chat.id, message_id=msg.message_id)
         raise
@@ -684,7 +684,7 @@ def anime_do_page_callback(call):
     offset = int(call.data.split('|')[2])
     user_data = user_data_get(tg_id)
 
-    page = gender_anime_page_message(user_data,offset,msg,tg_id,bot)
+    page = gender_anime_page_message(user_data,offset,tg_id)
     if call.message.content_type == 'text':
         bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id
                           , parse_mode='Markdown', reply_markup=page['markup'])

@@ -4,6 +4,7 @@ import math
 import requests
 import telebot
 
+
 def gender_week_message(msg, bot, day):
     """每日放送查询输出文字及其按钮"""
     try:
@@ -15,12 +16,12 @@ def gender_week_message(msg, bot, day):
         return
     week_data = json.loads(r.text)
     for i in week_data:
-        if i.get('weekday',{}).get('id') == int(day):
+        if i.get('weekday', {}).get('id') == int(day):
             items = i.get('items')
             subject_id_li = [i['id'] for i in items]
             name_li = [i['name'] for i in items]
             name_cn_li = [i['name_cn'] for i in items]
-            air_weekday = i.get('weekday',{}).get('cn')
+            air_weekday = i.get('weekday', {}).get('cn')
             anime_count = len(subject_id_li)
             markup = telebot.types.InlineKeyboardMarkup()
             week_text_data = ""
@@ -35,18 +36,17 @@ def gender_week_message(msg, bot, day):
             markup.add(*button_list, row_width=4)
     return {'text': text, 'markup': markup}
 
-def gender_anime_page_message(user_data, offset, msg, tg_id, bot):
+
+def gender_anime_page_message(user_data, offset, tg_id):
     bgm_id = user_data.get('user_id')
     access_token = user_data.get('access_token')
     # 查询用户名 TODO 将用户数据放入数据库
     r2 = requests.get(url=f'https://api.bgm.tv/user/{bgm_id}')
     user_data = json.loads(r2.text)
     if r2.status_code != 200:
-        bot.edit_message_text(text="出错了", chat_id=msg.chat.id, message_id=msg.message_id)
-        return
+        return {'text': '出错了', 'markup': None}
     if isinstance(user_data, dict) and user_data.get('code') == 404:
-        bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=msg.chat.id, message_id=msg.message_id)
-        return
+        return {'text': '出错了，没有查询到该用户', 'markup': None}
     nickname = user_data.get('nickname')
     username = user_data.get('username')
     limit = 5
@@ -64,16 +64,13 @@ def gender_anime_page_message(user_data, offset, msg, tg_id, bot):
     except requests.ConnectionError:
         r = requests.get(url=url, params=params, headers=headers)
     if r.status_code != 200:
-        bot.edit_message_text(text="出错了!", chat_id=msg.chat.id, message_id=msg.message_id)
-        return
+        return {'text': '出错了', 'markup': None}
     response = json.loads(r.text)
     anime_count = response.get('total')  # 总在看数 int
     subject_list = response['data']
     if subject_list is None or len(subject_list) == 0:  # 是否有数据
-        bot.edit_message_text(text="出错啦，您貌似没有收藏的在看", chat_id=msg.chat.id
-                              , message_id=msg.message_id)
-        return
-    # 循环查询 将条目信息数据存进去 TODO 多线程获取
+        return {'text': '出错啦，您貌似没有收藏的在看', 'markup': None}
+        # 循环查询 将条目信息数据存进去 TODO 多线程获取
     for info in subject_list:
         from bot import subject_info_get
         subject_info = subject_info_get(info['subject_id'])
@@ -83,9 +80,9 @@ def gender_anime_page_message(user_data, offset, msg, tg_id, bot):
     markup = telebot.types.InlineKeyboardMarkup()
     anime_text_data = ""
     nums = list(range(1, len(subject_list) + 1))
-    nums_unicode = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩']
+    nums_unicode = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
     button_list = []
-    for info, num ,nums_unicode in zip(subject_list, nums, nums_unicode):
+    for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
         anime_text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
                            f' `[{info["ep_status"]}/{info["subject_info"]["eps_count"]}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(text=num, callback_data=
@@ -110,6 +107,7 @@ def gender_anime_page_message(user_data, offset, msg, tg_id, bot):
             button_list2.append(telebot.types.InlineKeyboardButton(text='这是末页', callback_data="None"))
         markup.add(*button_list2)
     return {'text': text, 'markup': markup}
+
 
 def search_anime(anime_search_keywords, message, bot):
     """临时方法 TODO 修改"""
