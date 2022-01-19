@@ -809,8 +809,7 @@ def collection_callback(call):
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
     day = int(call.data.split('|')[1])
-    msg = call.message
-    week_data = gender_week_message(msg, bot, day)
+    week_data = gender_week_message(day)
     text = week_data['text']
     markup = week_data['markup']
     bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)

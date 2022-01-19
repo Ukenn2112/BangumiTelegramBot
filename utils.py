@@ -17,23 +17,21 @@ def gender_week_message(day):
     for i in week_data:
         if i.get('weekday', {}).get('id') == int(day):
             items = i.get('items')
-            subject_id_li = [i['id'] for i in items]
-            name_li = [i['name'] for i in items]
-            name_cn_li = [i['name_cn'] for i in items]
             air_weekday = i.get('weekday', {}).get('cn')
-            anime_count = len(subject_id_li)
+            anime_count = len(items)
             markup = telebot.types.InlineKeyboardMarkup()
             week_text_data = ""
-            nums = list(range(1, len(subject_id_li) + 1))
+            nums = range(1, anime_count + 1)
             button_list = []
-            for subject_id_li, name_li, name_cn_li, nums in zip(subject_id_li, name_li, name_cn_li, nums):
-                week_text_data += f'*[{nums}]* {name_cn_li if name_cn_li else name_li}\n\n'
-                button_list.append(telebot.types.InlineKeyboardButton(text=nums, callback_data=
-                f"animesearch|week|{subject_id_li}|{day}|0"))
+            for item, num in zip(items, nums):
+                week_text_data += f'*[{num}]* {item["name_cn"] if item["name_cn"] else item["name"]}\n\n'
+                button_list.append(telebot.types.InlineKeyboardButton(
+                    text=str(num), callback_data=f"animesearch|week|{item['id']}|{day}|0"))
             text = f'*在{air_weekday}放送的节目*\n\n{week_text_data}' \
                    f'共{anime_count}部'
-            markup.add(*button_list, row_width=4)
-    return {'text': text, 'markup': markup}
+            markup.add(*button_list, row_width=5)
+            return {'text': text, 'markup': markup}
+
 
 def gander_anime_do_message(call_tg_id, tg_id, subject_id, back_page, subject_info, user_rating, eps_data):
     """动画在看详情页"""
