@@ -326,7 +326,7 @@ def eps_get(test_id, subject_id):
 
     # 输出
     eps_data = {'progress': str(watched_n) + '/' + str(eps_n),   # 已观看/总集数 进度 str
-                'watched': str(watched_n),                       # 已观看集数 str
+                'watched': watched_n,                            # 已观看集数 int
                 'eps_n': str(eps_n),                             # 总集数 str
                 'unwatched_id': unwatched_id}                    # 未观看 eps_di list
 
@@ -597,51 +597,30 @@ def rating_callback(call):
 # 已看最新
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_eps')
 def anime_eps_callback(call):
-    tg_from_id = call.from_user.id
-    test_id = int(call.data.split('|')[1])
-    if tg_from_id == test_id:
+    call_tg_id = call.from_user.id
+    tg_id = int(call.data.split('|')[1])
+    if call_tg_id == tg_id:
         eps_id = int(call.data.split('|')[2])
         try:
             remove = call.data.split('|')[5]
             if remove == 'remove':
-                eps_status_get(test_id, eps_id, 'remove')  # 更新观看进度为撤销
-                bot.send_message(chat_id=call.message.chat.id, text='已撤销，已看最新集数', parse_mode='Markdown', timeout=20)
+                eps_status_get(tg_id, eps_id, 'remove')  # 更新观看进度为撤销
+                bot.send_message(chat_id=call.message.chat.id, text='已撤销，最新已看集数', parse_mode='Markdown', timeout=20)
         except IndexError:
-                eps_status_get(test_id, eps_id, 'watched') # 更新观看进度为看过
-
+                eps_status_get(tg_id, eps_id, 'watched') # 更新观看进度为看过
         subject_id = int(call.data.split('|')[3])
         back_page = call.data.split('|')[4]
-        rating = str(user_rating_get(test_id, subject_id)['user_rating'])
-
-        text = {'*'+ subject_info_get(subject_id)['name_cn'] +'*\n'
-                ''+ subject_info_get(subject_id)['name'] +'\n\n'
-
-                'BGM ID：`' + str(subject_id) + '`\n'
-                '➤ BGM 平均评分：`'+ str(subject_info_get(subject_id)['score']) +'`🌟\n'
-                '➤ 您的评分：`'+ str(rating) +'`🌟\n'
-                '➤ 放送类型：`'+ subject_info_get(subject_id)['platform'] +'`\n'
-                '➤ 放送开始：`'+ subject_info_get(subject_id)['air_date'] + '`\n'
-                '➤ 放送星期：`'+ subject_info_get(subject_id)['air_weekday'] + '`\n'
-                '➤ 观看进度：`'+ eps_get(test_id, subject_id)['progress'] + '`\n\n'
-                
-                '💬 [吐槽箱](https://bgm.tv/subject/'+ str(subject_id) +'/comments)\n'
-                '📝 [第'+ eps_get(test_id, subject_id)['watched'] +'话评论](https://bgm.tv/ep/'+ str(eps_id) +')\n'}
-
-        markup = telebot.types.InlineKeyboardMarkup()
-        unwatched_id = eps_get(test_id, subject_id)['unwatched_id']
-        if unwatched_id == []:
+        subject_info = subject_info_get(subject_id)
+        user_rating = user_rating_get(tg_id, subject_id)
+        eps_data = eps_get(tg_id, subject_id)
+        anime_do_message = gander_anime_do_message(call_tg_id, tg_id, subject_id, back_page, subject_info, user_rating, eps_data, eps_id)
+        if eps_data['unwatched_id'] == []:
             status = 'collect'
-            collection_post(test_id, subject_id, status, rating) # 看完最后一集自动更新收藏状态为看过
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do_page'+'|'+str(test_id)+'|'+back_page),telebot.types.InlineKeyboardButton(text='评分',callback_data='rating'+'|'+str(test_id)+'|'+'0'+'|'+str(subject_id)+'|'+back_page))
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'+'|'+back_page),telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(eps_id)+'|'+str(subject_id)+'|'+back_page+'|remove'))
-        else:
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do_page'+'|'+str(test_id)+'|'+back_page),telebot.types.InlineKeyboardButton(text='评分',callback_data='rating'+'|'+str(test_id)+'|'+'0'+'|'+str(subject_id)+'|'+back_page),telebot.types.InlineKeyboardButton(text='已看最新',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(unwatched_id[0])+'|'+str(subject_id)+'|'+back_page))
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+'anime_do'+'|'+'0'+'|'+'null'+'|'+back_page),telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data='anime_eps'+'|'+str(test_id)+'|'+str(eps_id)+'|'+str(subject_id)+'|'+back_page+'|remove'))
+            collection_post(tg_id, subject_id, status, str(user_rating['user_rating'])) # 看完最后一集自动更新收藏状态为看过
         if call.message.content_type == 'photo':
-            bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+            bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
         else:
-            bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
-            # bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+            bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
