@@ -524,6 +524,7 @@ def anime_do_callback(call):
                 bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
             else:
                 bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+        bot.answer_callback_query(call.id)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -556,6 +557,7 @@ def rating_callback(call):
             bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
         else:
             bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+        bot.answer_callback_query(call.id)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -571,8 +573,10 @@ def anime_eps_callback(call):
             if remove == 'remove':
                 eps_status_get(tg_id, eps_id, 'remove')  # 更新观看进度为撤销
                 bot.send_message(chat_id=call.message.chat.id, text='已撤销，最新已看集数', parse_mode='Markdown', timeout=20)
+                bot.answer_callback_query(call.id, text='撤销最新观看进度')
         except IndexError:
                 eps_status_get(tg_id, eps_id, 'watched') # 更新观看进度为看过
+                bot.answer_callback_query(call.id, text='更新观看进度为看过')
         subject_id = int(call.data.split('|')[3])
         back_page = call.data.split('|')[4]
         subject_info = subject_info_get(subject_id)
@@ -609,6 +613,7 @@ def anime_do_page_callback(call):
         bot.delete_message(chat_id=msg.chat.id, message_id=msg.message_id)
         bot.send_message(text=page['text'], chat_id=msg.chat.id
                          , parse_mode='Markdown', reply_markup=page['markup'])
+    bot.answer_callback_query(call.id)
 
 # 搜索翻页
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'spage')
@@ -644,6 +649,7 @@ def spage_callback(call):
         bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
     else:
         bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+    bot.answer_callback_query(call.id)
 
 # 搜索动画详情页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'animesearch')
@@ -667,6 +673,7 @@ def animesearch_callback(call):
             bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
         else:
             bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+    bot.answer_callback_query(call.id)
 
 # 收藏
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
@@ -693,11 +700,13 @@ def collection_callback(call):
                 bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
             else:
                 bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+            bot.answer_callback_query(call.id)
     if status == 'wish':    # 想看
         if tg_from_id == test_id:
             rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为想看', parse_mode='Markdown', timeout=20)
+            bot.answer_callback_query(call.id, text='已将收藏更改为想看')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'collect': # 看过
@@ -705,6 +714,7 @@ def collection_callback(call):
             rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为看过', parse_mode='Markdown', timeout=20)
+            bot.answer_callback_query(call.id, text='已将收藏更改为看过')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'do':      # 在看
@@ -712,6 +722,7 @@ def collection_callback(call):
             rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为在看', parse_mode='Markdown', timeout=20)
+            bot.answer_callback_query(call.id, text='已将收藏更改为在看')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'on_hold': # 搁置
@@ -719,6 +730,7 @@ def collection_callback(call):
             rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为搁置', parse_mode='Markdown', timeout=20)
+            bot.answer_callback_query(call.id, text='已将收藏更改为搁置')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     if status == 'dropped': # 抛弃
@@ -726,6 +738,7 @@ def collection_callback(call):
             rating = str(user_rating_get(test_id, subject_id)['user_rating'])
             collection_post(test_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text='已将 “`'+ subject_info_get(subject_id)['name'] +'`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
+            bot.answer_callback_query(call.id, text='已将收藏更改为抛弃')
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
@@ -738,6 +751,7 @@ def back_week_callback(call):
     markup = week_data['markup']
     bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
     bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
+    bot.answer_callback_query(call.id)
 
 # 开始启动
 if __name__ == '__main__':
