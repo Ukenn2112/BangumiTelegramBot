@@ -51,22 +51,48 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
     text = f"*{subject_info['name_cn']}*\n" \
            f"{subject_info['name']}\n\n" \
            f"BGM ID：`{subject_id}`\n"
-    try:
+    if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
         text += f"➤ BGM 平均评分：`{subject_info['rating']['score']}`🌟\n"
-    except IndexError:
+    else:
         text += f"➤ BGM 平均评分：暂无评分\n"
-    if user_rating is not None:
-        text += f"➤ 您的评分：`{user_rating['rating']}`🌟\n"
+    if user_rating:
+        if 'rating' in user_rating:
+            if user_rating['rating'] == 0:
+                text += f"➤ 您的评分：暂未评分\n"
+            else:
+                text += f"➤ 您的评分：`{user_rating['rating']}`🌟\n"
     else:
         text += f"➤ 集数：共`{subject_info['eps']}`集\n"
     text += f"➤ 放送类型：`{subject_info['platform']}`\n" \
             f"➤ 放送开始：`{subject_info['date']}`\n"
-    try:
-        text += f"➤ 放送星期：`{[i['value'] for i in subject_info['infobox'] if i['key'] == '放送星期'][0]}`\n"
-    except IndexError:
-        pass
+    if subject_info["_air_weekday"]:
+        text += f"➤ 放送星期：`{subject_info['_air_weekday']}`\n"
     if eps_data is not None:
         text += f"➤ 观看进度：`{eps_data['progress']}`\n"
+    if user_rating and user_rating['tag'] and len(user_rating['tag']) == 1 and user_rating['tag'][0] == "":
+        user_rating['tag'] = []  # 鬼知道为什么没标签会返回个空字符串
+    if subject_info['tags'] and len(subject_info['tags']) == 1 and subject_info['tags'][0] == "":
+        subject_info['tags'] = []
+    if (user_rating and user_rating['tag']) or (subject_info['tags']):
+        text += f"➤ 标签："
+    if user_rating and user_rating['tag']:
+        for tag in user_rating['tag'][:10]:
+            text += f"#{'x' if tag.isdecimal() else ''}{tag} "
+        if subject_info['tags']:
+            tag_not_click = [i for i in subject_info['tags'] if i['name'] not in user_rating['tag']]
+        else:
+            tag_not_click = []
+    else:
+        tag_not_click = subject_info['tags']
+    if not (user_rating and user_rating['tag']) or \
+            (user_rating and user_rating['tag'] and len(user_rating['tag']) < 10):
+        # 如果没有用户标签 或 用户标签数小于10
+        if tag_not_click and tag_not_click[0]:
+            for tag in tag_not_click[:10 - len(user_rating['tag'])]:
+                text += f"`{tag['name']}` "
+    if (user_rating and user_rating['tag']) or (subject_info['tags']):
+        text += "\n"
+
     text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
             f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
     markup = telebot.types.InlineKeyboardMarkup()
@@ -176,7 +202,7 @@ def gender_anime_page_message(user_data, offset, tg_id):
     button_list = []
     for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
         anime_text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
-                           f' `[{info["ep_status"]}/{info["subject_info"]["eps"]}]`\n\n'
+                           f' `[{info["ep_status"]}/{info["subject_info"]["total_episodes"]}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
             text=num, callback_data=f"anime_do|{tg_id}|{info['subject_id']}|0|{offset}"))
     text = f'*{nickname} 在看的动画*\n\n{anime_text_data}' \
@@ -231,7 +257,7 @@ def search_anime(anime_search_keywords, message, bot):
 
 
 def get_collection(subject_id: str, token: str = "", tg_id=""):
-    """获取用户指定条目收藏信息 token 和tg_id须传一个"""
+    """获取用户指吧定条目收藏信息 token 和tg_id须传一个"""
     if token == "":
         if tg_id == "":
             raise ValueError("参数错误,token 和tg_id须传一个")
@@ -239,13 +265,12 @@ def get_collection(subject_id: str, token: str = "", tg_id=""):
         token = user_data_get(tg_id).get('access_token')
     if subject_id is None or subject_id == "":
         raise ValueError("subject_id不能为空")
-    params = {'subject_id': subject_id}
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': f'Bearer {token}'}
     url = f"https://api.bgm.tv/collection/{subject_id}"
     try:
-        r = requests.get(url=url, params=params, headers=headers)
+        r = requests.get(url=url, headers=headers)
     except requests.ConnectionError:
-        r = requests.get(url=url, params=params, headers=headers)
+        r = requests.get(url=url, headers=headers)
     return json.loads(r.text)
 
 

@@ -455,7 +455,7 @@ def anime_do_callback(call):
                 bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
         else:
             bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20) # 删除用户在看动画列表消息
-            if img_url == 'None__' or img_url == None: # 是否有动画简介图片
+            if img_url == 'None__' or not img_url: # 是否有动画简介图片
                 bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
             else:
                 bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
