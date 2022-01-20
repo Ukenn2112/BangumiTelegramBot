@@ -475,15 +475,17 @@ def rating_callback(call):
         back_page = call.data.split('|')[4]
         eps_data = eps_get(tg_id, subject_id)
         user_collection_data = user_collection_get(tg_id, subject_id)
+        user_now_rating = user_collection_data['rating']
         if rating_data != 0:
             try:
                 user_startus = user_collection_data.get('status',{}).get('type')
             except:
                 user_startus = 'collect'
             collection_post(tg_id, subject_id, user_startus, str(rating_data))
+            bot.answer_callback_query(call.id, text="已成功更新评分,稍后更新当前页面...")
             user_collection_data = user_collection_get(tg_id, subject_id)
         rating_message = grnder_rating_message(tg_id, subject_id, eps_data, user_collection_data, back_page)
-        if rating_data == 0 or rating_data != user_collection_data['rating']:
+        if rating_data == 0 or user_now_rating != user_collection_data['rating']:
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=rating_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=rating_message['markup'])
             else:
