@@ -278,6 +278,35 @@ def get_collection(subject_id: str, token: str = "", tg_id=""):
     return json.loads(r.text)
 
 
+def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=None, private=None):
+    r"""管理收藏
+
+    :param tg_id: Telegram 用户id
+    :param subject_id: 条目id
+    :param status: 状态 wish collect do on_hold dropped
+    :param comment: 简评
+    :param tags: 标签 以半角空格分割
+    :param rating: 评分 1-10 不填默认重置为未评分
+    :param private: 收藏隐私 0 = 公开 1 = 私密 不填默认为0
+    :return 请求结果
+    """
+    from bot import user_data_get
+    access_token = user_data_get(tg_id).get('access_token')
+    params = {"status": status}  #
+    if comment is not None:
+        params['comment'] = comment
+    if tags is not None:
+        params['tags'] = tags
+    if rating is not None:
+        params['rating'] = rating
+    if private is not None:
+        params['private'] = private
+    headers = {'Authorization': f'Bearer {access_token}'}
+    url = f'https://api.bgm.tv/collection/{subject_id}/update'
+    return requests.post(url=url, data=params, headers=headers)
+
+
+
 def get_subject_info(subject_id, t_dict=None):
     """获取指定条目信息 并使用Redis缓存"""
     subject = redis_cli.get(f"subject:{subject_id}")
