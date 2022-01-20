@@ -614,66 +614,60 @@ def animesearch_callback(call):
 # 收藏
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
 def collection_callback(call):
-    test_id = int(call.data.split('|')[1])
+    tg_id = int(call.data.split('|')[1])
     subject_id = call.data.split('|')[2]
     anime_search_keywords = call.data.split('|')[3]
     start = call.data.split('|')[4]
     status = call.data.split('|')[5]
-    tg_from_id = call.from_user.id
+    call_tg_id = call.from_user.id
     name = utils.get_subject_info(subject_id)['name']
-    rating = str(user_collection_get(test_id, subject_id)['rating'])
     if status == 'null':
-        if not data_seek_get(tg_from_id):
-            bot.send_message(chat_id=call.message.chat.id, text='您未绑定Bangumi，请私聊使用[/start](https://t.me/'+BOT_USERNAME+'?start=none)进行绑定', parse_mode='Markdown', timeout=20)
+        if not data_seek_get(call_tg_id):
+            bot.send_message(chat_id=call.message.chat.id, text=f'您未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定', parse_mode='Markdown', timeout=20)
         else:
             text = f'*您想将 “*`{name}`*” 收藏为*\n\n'
             markup = telebot.types.InlineKeyboardMarkup()
+            button_list = []
             if anime_search_keywords == 'anime_do':
                 back_page = call.data.split('|')[6]
-                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='anime_do'+'|'+str(test_id)+'|'+str(subject_id)+'|1'+'|'+back_page), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(test_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
+                button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
             else:
-                markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(subject_id)+'|'+str(start)+'|1'), telebot.types.InlineKeyboardButton(text='想看',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'wish'), telebot.types.InlineKeyboardButton(text='看过',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'collect'), telebot.types.InlineKeyboardButton(text='在看',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'do'), telebot.types.InlineKeyboardButton(text='搁置',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'on_hold'), telebot.types.InlineKeyboardButton(text='抛弃',callback_data='collection'+'|'+str(tg_from_id)+'|'+str(subject_id)+'|'+str(anime_search_keywords)+'|'+str(start)+'|'+'dropped'))
+                button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'animesearch|{anime_search_keywords}|{subject_id}|{start}|1'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='想看',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|wish'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='看过',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|collect'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='在看',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|do'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='搁置',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|on_hold'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='抛弃',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|dropped'))
+            markup.add(*button_list, row_width=3)
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
             else:
                 bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
             bot.answer_callback_query(call.id)
-    if status == 'wish':    # 想看
-        if tg_from_id == test_id:
-            collection_post(test_id, subject_id, status, rating)
+    if call_tg_id == tg_id:
+        rating = str(user_collection_get(tg_id, subject_id).get('rating'))
+        if status == 'wish':    # 想看
+            collection_post(tg_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为想看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为想看')
-        else:
-            bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
-    if status == 'collect': # 看过
-        if tg_from_id == test_id:
-            collection_post(test_id, subject_id, status, rating)
+        if status == 'collect': # 看过
+            collection_post(tg_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为看过', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为看过')
-        else:
-            bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
-    if status == 'do':      # 在看
-        if tg_from_id == test_id:
-            collection_post(test_id, subject_id, status, rating)
+        if status == 'do':      # 在看
+            collection_post(tg_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为在看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为在看')
-        else:
-            bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
-    if status == 'on_hold': # 搁置
-        if tg_from_id == test_id:
-            collection_post(test_id, subject_id, status, rating)
+        if status == 'on_hold': # 搁置
+            collection_post(tg_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为搁置', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为搁置')
-        else:
-            bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
-    if status == 'dropped': # 抛弃
-        if tg_from_id == test_id:
-            collection_post(test_id, subject_id, status, rating)
+        if status == 'dropped': # 抛弃
+            collection_post(tg_id, subject_id, status, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为抛弃')
-        else:
-            bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
-
+    else:
+         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
 # week 返回
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
