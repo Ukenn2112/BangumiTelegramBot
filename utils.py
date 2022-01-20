@@ -168,7 +168,7 @@ def gender_anime_page_message(user_data, offset, tg_id):
         return {'text': '出错了，没有查询到该用户', 'markup': None}
     nickname = user_data.get('nickname')
     username = user_data.get('username')
-    limit = 5
+    limit = 10
 
     params = {
         'subject_type': 2,
