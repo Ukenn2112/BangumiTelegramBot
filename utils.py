@@ -257,8 +257,13 @@ def get_subject_info(subject_id, t_dict=None):
         if r.status_code != 200:
             redis_cli.set(f"subject:{subject_id}", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
             raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
-        redis_cli.set(f"subject:{subject_id}", r.text, ex=60 * 60 * 24 + random.randint(-3600, 3600))
         loads = json.loads(r.text)
+        loads['_air_weekday'] = None
+        for info in loads['infobox']:
+            if info['key'] == '放送星期':
+                loads['_air_weekday'] = info['value']  # 加一个下划线 用于区别
+                break
+        redis_cli.set(f"subject:{subject_id}", json.dumps(loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
     if t_dict:
         t_dict["subject_info"] = loads
     return loads
