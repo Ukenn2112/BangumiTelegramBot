@@ -20,6 +20,10 @@
 ......
 # 使用方法
 
+- 安装 [Redis](https://redis.io/)
+
+  您可以参考 [Redis 安装教程](https://www.google.com/search?q=Redis%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B)
+
 - 修改文件后缀 `config.py.example` 为 `config.py`
 
   根据文件内提示修改 `config.py` 配置文件
