@@ -179,7 +179,7 @@ def send_week(message):
         now_week = int(datetime.datetime.now().strftime("%w"))
         day = 7 if now_week == 0 else now_week
     else:
-        if data[1].isnumeric() and 1 <= int(data[1]) <= 7:
+        if data[1].isdecimal() and 1 <= int(data[1]) <= 7:
             day = data[1]
         else:
             bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
