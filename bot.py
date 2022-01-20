@@ -377,9 +377,8 @@ def collection_post(test_id, subject_id, status, rating):
 
     return r
 
-
-# 获取用户评分
-def user_rating_get(test_id, subject_id):
+# 获取指定条目收藏信息
+def user_collection_get(test_id, subject_id):
     access_token = user_data_get(test_id).get('access_token')
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
@@ -388,17 +387,9 @@ def user_rating_get(test_id, subject_id):
     url = f'https://api.bgm.tv/collection/{subject_id}'
 
     r = requests.get(url=url, headers=headers)
-    user_rating_data = json.loads(r.text)
-    try:
-        user_startus = user_rating_data.get('status',{}).get('type')
-    except:
-        user_startus = 'collect'
-    user_rating = user_rating_data.get('rating')
+    user_collection_data = json.loads(r.text)
 
-    user_rating_data = {'user_startus': user_startus,   # 用户收藏状态 str
-                        'user_rating': user_rating}     # 用户评分 int
-
-    return user_rating_data
+    return user_collection_data
 
 
 # 条目搜索 不需Access Token
@@ -454,9 +445,9 @@ def anime_do_callback(call):
     back_page = call.data.split('|')[4]
     if call_tg_id == tg_id:
         img_url = utils.anime_img(subject_id)
-        user_rating = user_rating_get(tg_id, subject_id)
+        user_collection_data = user_collection_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
-        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, back_page=back_page, user_rating=user_rating, eps_data=eps_data)
+        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, back_page=back_page, user_rating=user_collection_data, eps_data=eps_data)
         if back == 1:
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
@@ -483,12 +474,16 @@ def rating_callback(call):
         subject_id = call.data.split('|')[3]
         back_page = call.data.split('|')[4]
         eps_data = eps_get(tg_id, subject_id)
-        user_rating = user_rating_get(tg_id, subject_id)
+        user_collection_data = user_collection_get(tg_id, subject_id)
         if rating_data != 0:
-            collection_post(tg_id, subject_id, user_rating['user_startus'], str(rating_data))
-            user_rating = user_rating_get(tg_id, subject_id)
-        rating_message = grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page)
-        if rating_data == 0 or rating_data != user_rating['user_rating']:
+            try:
+                user_startus = user_collection_data.get('status',{}).get('type')
+            except:
+                user_startus = 'collect'
+            collection_post(tg_id, subject_id, user_startus, str(rating_data))
+            user_collection_data = user_collection_get(tg_id, subject_id)
+        rating_message = grnder_rating_message(tg_id, subject_id, eps_data, user_collection_data, back_page)
+        if rating_data == 0 or rating_data != user_collection_data['rating']:
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=rating_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=rating_message['markup'])
             else:
@@ -516,12 +511,12 @@ def anime_eps_callback(call):
                 bot.answer_callback_query(call.id, text='更新观看进度为看过')
         subject_id = int(call.data.split('|')[3])
         back_page = call.data.split('|')[4]
-        user_rating = user_rating_get(tg_id, subject_id)
+        user_collection_data = user_collection_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
-        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, user_rating=user_rating, eps_data=eps_data, eps_id=eps_id, back_page=back_page)
+        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, user_rating=user_collection_data, eps_data=eps_data, eps_id=eps_id, back_page=back_page)
         if eps_data['unwatched_id'] == []:
             status = 'collect'
-            collection_post(tg_id, subject_id, status, str(user_rating['user_rating'])) # 看完最后一集自动更新收藏状态为看过
+            collection_post(tg_id, subject_id, status, str(user_collection_data['rating'])) # 看完最后一集自动更新收藏状态为看过
         if call.message.content_type == 'photo':
             bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
         else:
@@ -624,7 +619,7 @@ def collection_callback(call):
     status = call.data.split('|')[5]
     tg_from_id = call.from_user.id
     name = utils.get_subject_info(subject_id)['name']
-    rating = str(user_rating_get(test_id, subject_id)['user_rating'])
+    rating = str(user_collection_get(test_id, subject_id)['rating'])
     if status == 'null':
         if not data_seek_get(tg_from_id):
             bot.send_message(chat_id=call.message.chat.id, text='您未绑定Bangumi，请私聊使用[/start](https://t.me/'+BOT_USERNAME+'?start=none)进行绑定', parse_mode='Markdown', timeout=20)

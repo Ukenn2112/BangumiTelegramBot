@@ -56,7 +56,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
     except IndexError:
         text += f"➤ BGM 平均评分：暂无评分\n"
     if user_rating is not None:
-        text += f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n"
+        text += f"➤ 您的评分：`{user_rating['rating']}`🌟\n"
     else:
         text += f"➤ 集数：共`{subject_info['eps']}`集\n"
     text += f"➤ 放送类型：`{subject_info['platform']}`\n" \
@@ -110,7 +110,7 @@ def grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page):
             f"{subject_info['name']}\n\n"
             f"BGM ID：`{subject_id}`\n\n"
             f"➤ BGM 平均评分：`{subject_info['rating']['score']}`🌟\n"
-            f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n\n"
+            f"➤ 您的评分：`{user_rating['rating']}`🌟\n\n"
             f"➤ 观看进度：`{eps_data['progress']}`\n\n"
             f"💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n\n"
             f"请点按下列数字进行评分"}
