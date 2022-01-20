@@ -13,6 +13,7 @@ from config import REDIS_HOST, REDIS_PORT, REDIS_DATABASE
 # FIXME 似乎不应该在这里创建对象
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
+
 def gender_week_message(day):
     """每日放送查询页"""
     try:
@@ -41,8 +42,10 @@ def gender_week_message(day):
             return {'text': text, 'markup': markup}
 
 
-def gander_anime_message(call_tg_id, subject_id,
-    tg_id: Optional[bool]=None, user_rating: Optional[bool]=None, eps_data: Optional[bool]=None, back_page: Optional[bool]=None, eps_id: Optional[bool]=None, start: Optional[bool]=None, anime_search_keywords: Optional[bool]=None):
+def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, user_rating: Optional[dict] = None,
+                         eps_data: Optional[dict] = None, back_page: Optional[str] = None,
+                         eps_id: Optional[int] = None, start: Optional[int] = None,
+                         anime_search_keywords: Optional[str] = None):
     """动画详情页"""
     subject_info = get_subject_info(subject_id)
     text = f"*{subject_info['name_cn']}*\n" \
@@ -56,67 +59,72 @@ def gander_anime_message(call_tg_id, subject_id,
         text += f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n"
     else:
         text += f"➤ 集数：共`{subject_info['eps']}`集\n"
-    text +=f"➤ 放送类型：`{subject_info['platform']}`\n" \
-           f"➤ 放送开始：`{subject_info['date']}`\n"
+    text += f"➤ 放送类型：`{subject_info['platform']}`\n" \
+            f"➤ 放送开始：`{subject_info['date']}`\n"
     try:
         text += f"➤ 放送星期：`{[i['value'] for i in subject_info['infobox'] if i['key'] == '放送星期'][0]}`\n"
     except IndexError:
         pass
     if eps_data is not None:
         text += f"➤ 观看进度：`{eps_data['progress']}`\n"
-    text +=f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
-           f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
+    text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
+            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
     markup = telebot.types.InlineKeyboardMarkup()
     if eps_data is not None:
         unwatched_id = eps_data['unwatched_id']
-        if unwatched_id == []:
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
-                       telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
+        if not unwatched_id:
+            markup.add(telebot.types.InlineKeyboardButton(
+                text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+                telebot.types.InlineKeyboardButton(
+                    text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
             if eps_id is not None:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
-                           telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
+                           telebot.types.InlineKeyboardButton(text='撤销最新观看', callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
             else:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do_page|{tg_id}|{back_page}'),
-                       telebot.types.InlineKeyboardButton(text='评分',callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
-                       telebot.types.InlineKeyboardButton(text='已看最新',callback_data=f'anime_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
+            markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+                       telebot.types.InlineKeyboardButton(text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
+                       telebot.types.InlineKeyboardButton(text='已看最新', callback_data=f'anime_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
             if eps_id is not None and eps_data['watched'] != 1:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
-                           telebot.types.InlineKeyboardButton(text='撤销最新观看',callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
+                           telebot.types.InlineKeyboardButton(text='撤销最新观看', callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
             else:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
         if eps_id is not None:
             text += f"\n📝 [第{eps_data['watched']}话评论](https://bgm.tv/ep/{eps_id})\n"
     elif anime_search_keywords is not None:
         if anime_search_keywords == 'week':
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'back_week|{start}'),
-                       telebot.types.InlineKeyboardButton(text='收藏',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
+            markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'back_week|{start}'),
+                       telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'spage|{anime_search_keywords}|{start}'),
-                       telebot.types.InlineKeyboardButton(text='收藏',callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
+            markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'spage|{anime_search_keywords}|{start}'),
+                       telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
     return {'text': text, 'markup': markup}
+
 
 def grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page):
     """评分页"""
     subject_info = get_subject_info(subject_id)
-    text = {f"*{subject_info['name_cn']}*\n" \
-                f"{subject_info['name']}\n\n" \
-                f"BGM ID：`{subject_id}`\n\n" \
-                f"➤ BGM 平均评分：`{subject_info['rating']['score']}`🌟\n" \
-                f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n\n" \
-                f"➤ 观看进度：`{eps_data['progress']}`\n\n" \
-                f"💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n\n" \
-                f"请点按下列数字进行评分"}
+    text = {f"*{subject_info['name_cn']}*\n"
+            f"{subject_info['name']}\n\n"
+            f"BGM ID：`{subject_id}`\n\n"
+            f"➤ BGM 平均评分：`{subject_info['rating']['score']}`🌟\n"
+            f"➤ 您的评分：`{user_rating['user_rating']}`🌟\n\n"
+            f"➤ 观看进度：`{eps_data['progress']}`\n\n"
+            f"💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n\n"
+            f"请点按下列数字进行评分"}
     markup = telebot.types.InlineKeyboardMarkup()
-    nums = range(1,11)
+    nums = range(1, 11)
     button_list = []
     for num in nums:
         button_list.append(telebot.types.InlineKeyboardButton(
-            text=str(num),callback_data=f'rating|{tg_id}|{num}|{subject_id}|{back_page}'))
+            text=str(num), callback_data=f'rating|{tg_id}|{num}|{subject_id}|{back_page}'))
     markup.add(*button_list, row_width=5)
-    markup.add(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
+    markup.add(telebot.types.InlineKeyboardButton(
+        text='返回', callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
     return {'text': text, 'markup': markup}
+
 
 def gender_anime_page_message(user_data, offset, tg_id):
     bgm_id = user_data.get('user_id')
@@ -169,8 +177,8 @@ def gender_anime_page_message(user_data, offset, tg_id):
     for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
         anime_text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
                            f' `[{info["ep_status"]}/{info["subject_info"]["eps"]}]`\n\n'
-        button_list.append(telebot.types.InlineKeyboardButton(text=num, callback_data=
-        f"anime_do|{tg_id}|{info['subject_id']}|0|{offset}"))
+        button_list.append(telebot.types.InlineKeyboardButton(
+            text=num, callback_data=f"anime_do|{tg_id}|{info['subject_id']}|0|{offset}"))
     text = f'*{nickname} 在看的动画*\n\n{anime_text_data}' \
            f'共{anime_count}部'
     markup.add(*button_list, row_width=5)
@@ -267,7 +275,6 @@ def get_subject_info(subject_id, t_dict=None):
     if t_dict:
         t_dict["subject_info"] = loads
     return loads
-
 
 
 def anime_img(subject_id):

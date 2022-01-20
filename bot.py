@@ -20,6 +20,7 @@ telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
+
 # 绑定 Bangumi
 @bot.message_handler(commands=['start'])
 def send_start(message):
@@ -28,7 +29,7 @@ def send_start(message):
         if data_seek_get(test_id):
             bot.send_message(message.chat.id, "已绑定", timeout=20)
         else:
-            text = {'请绑定您的Bangumi'}
+            text = '请绑定您的Bangumi'
             url= f'{WEBSITE_BASE}oauth_index?tg_id={test_id}'
             markup = telebot.types.InlineKeyboardMarkup()
             markup.add(telebot.types.InlineKeyboardButton(text='绑定Bangumi',url=url))
@@ -38,6 +39,7 @@ def send_start(message):
             bot.send_message(message.chat.id, '请私聊我进行Bangumi绑定', parse_mode='Markdown' ,timeout=20)
         else:
             pass
+
 
 # 查询 Bangumi 用户收藏统计
 @bot.message_handler(commands=['my'])
@@ -212,6 +214,7 @@ def user_data_get(test_id):
             else:
                 return i.get('data',{})
 
+
 # 更新过期用户数据
 def expiry_data_get(test_id):
     with open('bgm_data.json') as f:
@@ -260,6 +263,7 @@ def expiry_data_get(test_id):
             user_data = i.get('data',{})
     return user_data
 
+
 # 获取BGM用户信息 TODO 存入数据库
 def bgmuser_data(test_id):
     access_token = user_data_get(test_id).get('access_token')
@@ -281,6 +285,7 @@ def bgmuser_data(test_id):
         'username': username  # 用户username 没有设置则返回 uid str
     }
     return user_data
+
 
 # 获取用户观看eps
 def eps_get(test_id, subject_id):
@@ -339,6 +344,7 @@ def eps_get(test_id, subject_id):
 
     return eps_data
 
+
 # 更新收视进度状态
 def eps_status_get(test_id, eps_id, status):
     access_token = user_data_get(test_id).get('access_token')
@@ -351,6 +357,7 @@ def eps_status_get(test_id, eps_id, status):
     r = requests.get(url=url, headers=headers)
 
     return r
+
 
 # 更新收藏状态
 def collection_post(test_id, subject_id, status, rating):
@@ -369,6 +376,7 @@ def collection_post(test_id, subject_id, status, rating):
     r = requests.post(url=url, files=params, headers=headers)
 
     return r
+
 
 # 获取用户评分
 def user_rating_get(test_id, subject_id):
@@ -430,9 +438,11 @@ def search_get(keywords, type, start):
 
     return search_data
 
+
 @bot.callback_query_handler(func=lambda call: call.data == 'None')
 def callback_None(call):
     bot.answer_callback_query(call.id)
+
 
 # 动画在看详情 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do')
@@ -462,6 +472,7 @@ def anime_do_callback(call):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
+
 # 评分 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'rating')
 def rating_callback(call):
@@ -485,6 +496,7 @@ def rating_callback(call):
         bot.answer_callback_query(call.id)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
 
 # 已看最新 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_eps')
@@ -517,6 +529,7 @@ def anime_eps_callback(call):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
+
 # 动画在看详情页 翻页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do_page')
 def anime_do_page_callback(call):
@@ -539,6 +552,7 @@ def anime_do_page_callback(call):
                          , parse_mode='Markdown', reply_markup=page['markup'])
     bot.answer_callback_query(call.id)
 
+
 # 搜索翻页
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'spage')
 def spage_callback(call):
@@ -546,12 +560,12 @@ def spage_callback(call):
     start = int(call.data.split('|')[2])
     subject_type = 2 # 条目类型 1 = book 2 = anime 3 = music 4 = game 6 = real
     search_results_n = search_get(anime_search_keywords, subject_type, start)['search_results_n'] # 搜索结果数量
+    markup = telebot.types.InlineKeyboardMarkup()
     if search_results_n == 0:
         text= '已经没有了'
     else:
         search_subject_id_li = search_get(anime_search_keywords, subject_type, start)['subject_id_li'] # 所有查询结果id列表
         search_name_li = search_get(anime_search_keywords, subject_type, start)['name_li'] # 所有查询结果名字列表
-        markup = telebot.types.InlineKeyboardMarkup()
         for item in list(zip(search_name_li,search_subject_id_li)):
             markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+str(start)+'|0'))
 
@@ -575,6 +589,7 @@ def spage_callback(call):
         bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
     bot.answer_callback_query(call.id)
 
+
 # 搜索动画详情页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'animesearch')
 def animesearch_callback(call):
@@ -597,6 +612,7 @@ def animesearch_callback(call):
         else:
             bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
     bot.answer_callback_query(call.id)
+
 
 # 收藏
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
@@ -661,6 +677,7 @@ def collection_callback(call):
         else:
             bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
+
 # week 返回
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
@@ -672,6 +689,7 @@ def back_week_callback(call):
     bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
     bot.answer_callback_query(call.id)
 
+
 # 开始启动
 if __name__ == '__main__':
-    bot.polling()
+    bot.infinity_polling()
