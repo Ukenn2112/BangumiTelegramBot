@@ -84,15 +84,19 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
             tag_not_click = []
     else:
         tag_not_click = subject_info['tags']
-    if not (user_rating and user_rating['tag']) or \
-            (user_rating and user_rating['tag'] and len(user_rating['tag']) < 10):
-        # 如果没有用户标签 或 用户标签数小于10
-        if tag_not_click and tag_not_click[0]:
-            for tag in tag_not_click[:10 - len(user_rating['tag'])]:
-                text += f"`{tag['name']}` "
-    if (user_rating and user_rating['tag']) or (subject_info['tags']):
-        text += "\n"
-
+    if tag_not_click and tag_not_click[0]:
+        # 如果有列表
+        if not (user_rating and user_rating['tag']):
+            # 如果没有用户标签
+            if tag_not_click and tag_not_click[0]:
+                for tag in tag_not_click[:10]:
+                    text += f"`{tag['name']}` "
+        if user_rating and user_rating['tag'] and len(user_rating['tag']) < 10:
+            # 有用户标签 但 用户标签数小于10
+                for tag in tag_not_click[:10 - len(user_rating['tag'])]:
+                    text += f"`{tag['name']}` "
+        if (user_rating and user_rating['tag']) or (subject_info['tags']):
+            text += "\n"
     text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
             f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
     markup = telebot.types.InlineKeyboardMarkup()
