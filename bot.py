@@ -439,10 +439,11 @@ def callback_None(call):
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do')
 def anime_do_callback(call):
     call_tg_id = call.from_user.id
-    tg_id = int(call.data.split('|')[1])
-    subject_id = call.data.split('|')[2]
-    back = int(call.data.split('|')[3])
-    back_page = call.data.split('|')[4]
+    call_data = call.data.split('|')
+    tg_id = int(call_data[1]) # 被请求用户 Telegram ID
+    subject_id = call_data[2] # 剧集ID
+    back = int(call_data[3])  # 是否是从其它功能页返回 是则为1 否则为2
+    back_page = call_data[4]  # 返回在看列表页数
     if call_tg_id == tg_id:
         img_url = utils.anime_img(subject_id)
         user_collection_data = user_collection_get(tg_id, subject_id)
@@ -468,11 +469,12 @@ def anime_do_callback(call):
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'rating')
 def rating_callback(call):
     call_tg_id = call.from_user.id
-    tg_id = int(call.data.split('|')[1])
+    call_data = call.data.split('|')
+    tg_id = int(call_data[1]) # 被请求更新用户 Telegram ID
     if call_tg_id == tg_id:
-        rating_data = int(call.data.split('|')[2])
-        subject_id = call.data.split('|')[3]
-        back_page = call.data.split('|')[4]
+        rating_data = int(call_data[2]) # 用户请求评分 初始进入评分页为0
+        subject_id = call_data[3] # 剧集ID
+        back_page = call_data[4] # 返回在看列表页数
         eps_data = eps_get(tg_id, subject_id)
         user_collection_data = user_collection_get(tg_id, subject_id)
         user_now_rating = user_collection_data['rating']
@@ -485,7 +487,7 @@ def rating_callback(call):
             bot.answer_callback_query(call.id, text="已成功更新评分,稍后更新当前页面...")
             user_collection_data = user_collection_get(tg_id, subject_id)
         rating_message = grnder_rating_message(tg_id, subject_id, eps_data, user_collection_data, back_page)
-        if rating_data == 0 or user_now_rating != user_collection_data['rating']:
+        if rating_data == 0 or user_now_rating != user_collection_data['rating']: # 当用户当前评分请求与之前评分不一致时
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=rating_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=rating_message['markup'])
             else:
@@ -499,20 +501,21 @@ def rating_callback(call):
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_eps')
 def anime_eps_callback(call):
     call_tg_id = call.from_user.id
-    tg_id = int(call.data.split('|')[1])
+    call_data = call.data.split('|')
+    tg_id = int(call_data[1]) # 被请求更新用户 Telegram ID
     if call_tg_id == tg_id:
-        eps_id = int(call.data.split('|')[2])
-        try:
-            remove = call.data.split('|')[5]
+        eps_id = int(call_data[2]) # 更新的剧集集数 ID
+        if len(call_data) >= 5:
+            remove = call_data[5] # 撤销
             if remove == 'remove':
                 eps_status_get(tg_id, eps_id, 'remove')  # 更新观看进度为撤销
                 bot.send_message(chat_id=call.message.chat.id, text='已撤销，最新已看集数', parse_mode='Markdown', timeout=20)
                 bot.answer_callback_query(call.id, text='撤销最新观看进度')
-        except IndexError:
-                eps_status_get(tg_id, eps_id, 'watched') # 更新观看进度为看过
-                bot.answer_callback_query(call.id, text='更新观看进度为看过')
-        subject_id = int(call.data.split('|')[3])
-        back_page = call.data.split('|')[4]
+        else:
+            eps_status_get(tg_id, eps_id, 'watched') # 更新观看进度为看过
+            bot.answer_callback_query(call.id, text='更新观看进度为看过')
+        subject_id = int(call_data[3]) # 剧集ID
+        back_page = call_data[4] # 返回在看列表页数
         user_collection_data = user_collection_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
         anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, user_rating=user_collection_data, eps_data=eps_data, eps_id=eps_id, back_page=back_page)
@@ -527,16 +530,17 @@ def anime_eps_callback(call):
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
 
-# 动画在看详情页 翻页 重写
+# 动画在看列表 翻页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do_page')
 def anime_do_page_callback(call):
     # call_tg_id = call.from_user.id
     msg = call.message
-    tg_id = int(call.data.split('|')[1])
+    call_data = call.data.split('|')
+    tg_id = int(call_data[1]) # 被查询用户 Telegram ID
     # if str(call_tg_id) != tg_id:
     #     bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     #     return
-    offset = int(call.data.split('|')[2])
+    offset = int(call_data[2]) # 当前用户所请求的页数
     user_data = user_data_get(tg_id)
 
     page = gender_anime_page_message(user_data,offset,tg_id)
@@ -553,8 +557,9 @@ def anime_do_page_callback(call):
 # 搜索翻页
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'spage')
 def spage_callback(call):
-    anime_search_keywords = call.data.split('|')[1]
-    start = int(call.data.split('|')[2])
+    call_data = call.data.split('|')
+    anime_search_keywords = call_data[1] # 用户搜索关键字
+    start = int(call_data[2]) # 当前用户所请求页数
     subject_type = 2 # 条目类型 1 = book 2 = anime 3 = music 4 = game 6 = real
     search_results_n = search_get(anime_search_keywords, subject_type, start)['search_results_n'] # 搜索结果数量
     markup = telebot.types.InlineKeyboardMarkup()
@@ -590,11 +595,12 @@ def spage_callback(call):
 # 搜索动画详情页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'animesearch')
 def animesearch_callback(call):
-    anime_search_keywords = call.data.split('|')[1]
-    subject_id = call.data.split('|')[2]
-    start = int(call.data.split('|')[3])
-    back = int(call.data.split('|')[4])
     call_tg_id = call.from_user.id
+    call_data = call.data.split('|')
+    anime_search_keywords = call_data[1] # 用户搜索关键字 如是从week请求则此参数为week
+    subject_id = call_data[2] # 剧集ID
+    start = int(call_data[3]) # 搜索时用户所在搜索页页数 如是从week请求则为week day
+    back = int(call_data[4])  # 是否是从收藏页返回 是则为1 否则为2
     img_url = utils.anime_img(subject_id)
     anime_do_message = gander_anime_message(call_tg_id, subject_id, start=start, anime_search_keywords=anime_search_keywords)
     if back == 1:
@@ -604,7 +610,7 @@ def animesearch_callback(call):
             bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
     else:
         bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
-        if img_url == 'None__' or img_url == None:
+        if img_url == 'None__' or not img_url:
             bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
         else:
             bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
@@ -614,12 +620,13 @@ def animesearch_callback(call):
 # 收藏
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
 def collection_callback(call):
-    tg_id = int(call.data.split('|')[1])
-    subject_id = call.data.split('|')[2]
-    anime_search_keywords = call.data.split('|')[3]
-    start = call.data.split('|')[4]
-    status = call.data.split('|')[5]
     call_tg_id = call.from_user.id
+    call_data = call.data.split('|')
+    tg_id = int(call_data[1]) # 被更新用户 Telegram ID
+    subject_id = call_data[2] # 剧集ID
+    anime_search_keywords = call_data[3] # 用户搜索关键字 如是从anime do请求则为anime_do
+    start = call_data[4] # 搜索时用户所在搜索页页数 如是从week请求则为week day
+    status = call_data[5] # 用户请求收藏状态 初始进入收藏页则为 null
     name = utils.get_subject_info(subject_id)['name']
     if status == 'null':
         if not data_seek_get(call_tg_id):
@@ -629,7 +636,7 @@ def collection_callback(call):
             markup = telebot.types.InlineKeyboardMarkup()
             button_list = []
             if anime_search_keywords == 'anime_do':
-                back_page = call.data.split('|')[6]
+                back_page = call_data[6] # 返回在看列表页数
                 button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
             else:
                 button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'animesearch|{anime_search_keywords}|{subject_id}|{start}|1'))
@@ -672,7 +679,7 @@ def collection_callback(call):
 # week 返回
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
-    day = int(call.data.split('|')[1])
+    day = int(call.data.split('|')[1]) # week day
     week_data = gender_week_message(day)
     bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
     bot.send_message(chat_id=call.message.chat.id, text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'], timeout=20)
