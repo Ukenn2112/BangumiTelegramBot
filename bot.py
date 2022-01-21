@@ -479,9 +479,8 @@ def rating_callback(call):
         user_collection_data = user_collection_get(tg_id, subject_id)
         user_now_rating = user_collection_data['rating']
         if rating_data != 0:
-            try:
-                user_startus = user_collection_data.get('status',{}).get('type')
-            except:
+            user_startus = user_collection_data.get('status',{}).get('type')
+            if user_startus is None:
                 user_startus = 'collect'
             collection_post(tg_id, subject_id, user_startus, str(rating_data))
             bot.answer_callback_query(call.id, text="已成功更新评分,稍后更新当前页面...")
@@ -505,15 +504,15 @@ def anime_eps_callback(call):
     tg_id = int(call_data[1]) # 被请求更新用户 Telegram ID
     if call_tg_id == tg_id:
         eps_id = int(call_data[2]) # 更新的剧集集数 ID
-        if len(call_data) >= 5:
+        if len(call_data) > 5:
             remove = call_data[5] # 撤销
             if remove == 'remove':
                 eps_status_get(tg_id, eps_id, 'remove')  # 更新观看进度为撤销
-                bot.send_message(chat_id=call.message.chat.id, text='已撤销，最新已看集数', parse_mode='Markdown', timeout=20)
-                bot.answer_callback_query(call.id, text='撤销最新观看进度')
+                bot.send_message(chat_id=call.message.chat.id, text='已撤销最新观看进度', parse_mode='Markdown', timeout=20)
+                bot.answer_callback_query(call.id, text='已撤销最新观看进度')
         else:
             eps_status_get(tg_id, eps_id, 'watched') # 更新观看进度为看过
-            bot.answer_callback_query(call.id, text='更新观看进度为看过')
+            bot.answer_callback_query(call.id, text='已更新观看进度为看过')
         subject_id = int(call_data[3]) # 剧集ID
         back_page = call_data[4] # 返回在看列表页数
         user_collection_data = user_collection_get(tg_id, subject_id)
@@ -542,15 +541,12 @@ def anime_do_page_callback(call):
     #     return
     offset = int(call_data[2]) # 当前用户所请求的页数
     user_data = user_data_get(tg_id)
-
     page = gender_anime_page_message(user_data,offset,tg_id)
     if call.message.content_type == 'text':
-        bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id
-                          , parse_mode='Markdown', reply_markup=page['markup'])
+        bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id, parse_mode='Markdown', reply_markup=page['markup'])
     else:
         bot.delete_message(chat_id=msg.chat.id, message_id=msg.message_id)
-        bot.send_message(text=page['text'], chat_id=msg.chat.id
-                         , parse_mode='Markdown', reply_markup=page['markup'])
+        bot.send_message(text=page['text'], chat_id=msg.chat.id, parse_mode='Markdown', reply_markup=page['markup'])
     bot.answer_callback_query(call.id)
 
 
