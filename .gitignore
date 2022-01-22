@@ -1,4 +1,5 @@
 config.py
 bgm_data.json
 test_data.json
+run.log
 /__pycache__/

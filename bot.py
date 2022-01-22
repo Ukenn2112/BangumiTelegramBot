@@ -16,8 +16,10 @@ from utils import requests_get
 from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, search_anime
 
 logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
-
+# telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
+logging.basicConfig(level=logging.INFO,
+                    filename='run.log',
+                    format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
