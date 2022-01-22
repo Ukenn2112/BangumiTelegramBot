@@ -1,6 +1,7 @@
 import json
 import random
 import threading
+import logging
 from typing import Optional
 
 import math
@@ -13,16 +14,33 @@ from config import REDIS_HOST, REDIS_PORT, REDIS_DATABASE
 # FIXME 似乎不应该在这里创建对象
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
+def requests_get(url, params: Optional[dict] = None, access_token: Optional[str] = None):
+    """requests_get 请求"""
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
+    if access_token is not None:
+        headers.update({'Authorization': 'Bearer '+ access_token})
+    for _ in range(3): # 如api请求错误 重试3次
+        try:
+            if params is not None:
+                r = requests.get(url=url, params=params, headers=headers)
+            else:
+                r = requests.get(url=url, headers=headers)
+            break
+        except requests.ConnectionError as err:
+            logging.warning(f'api请求错误，重试中...{str(err)}')
+    if r.status_code != 200:
+        return None
+    else:
+        try:
+            return json.loads(r.text)
+        except json.JSONDecodeError:
+            return None
 
 def gender_week_message(day):
     """每日放送查询页"""
-    try:
-        r = requests.get(url='https://api.bgm.tv/calendar')
-    except requests.ConnectionError:
-        r = requests.get(url='https://api.bgm.tv/calendar')
-    if r.status_code != 200:
+    week_data = requests_get(url='https://api.bgm.tv/calendar')
+    if week_data is None:
         return {'text': "出错了!", 'markup': None}
-    week_data = json.loads(r.text)
     for i in week_data:
         if i.get('weekday', {}).get('id') == int(day):
             items = i.get('items')
@@ -160,9 +178,8 @@ def gender_anime_page_message(user_data, offset, tg_id):
     bgm_id = user_data.get('user_id')
     access_token = user_data.get('access_token')
     # 查询用户名 TODO 将用户数据放入数据库
-    r2 = requests.get(url=f'https://api.bgm.tv/user/{bgm_id}')
-    user_data = json.loads(r2.text)
-    if r2.status_code != 200:
+    user_data = requests_get(url=f'https://api.bgm.tv/user/{bgm_id}')
+    if user_data is None:
         return {'text': '出错了', 'markup': None}
     if isinstance(user_data, dict) and user_data.get('code') == 404:
         return {'text': '出错了，没有查询到该用户', 'markup': None}
@@ -176,15 +193,10 @@ def gender_anime_page_message(user_data, offset, tg_id):
         'limit': limit,  # 每页条数
         'offset': offset  # 开始页
     }
-    headers = {'Authorization': 'Bearer ' + access_token}
     url = f'https://api.bgm.tv/v0/users/{username}/collections'
-    try:
-        r = requests.get(url=url, params=params, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, params=params, headers=headers)
-    if r.status_code != 200:
+    response = requests_get(url=url, params=params, access_token=access_token)
+    if response is None:
         return {'text': '出错了', 'markup': None}
-    response = json.loads(r.text)
     anime_count = response.get('total')  # 总在看数 int
     subject_list = response['data']
     if subject_list is None or len(subject_list) == 0:  # 是否有数据
@@ -269,13 +281,8 @@ def get_collection(subject_id: str, token: str = "", tg_id=""):
         token = user_data_get(tg_id).get('access_token')
     if subject_id is None or subject_id == "":
         raise ValueError("subject_id不能为空")
-    headers = {'Authorization': f'Bearer {token}'}
     url = f"https://api.bgm.tv/collection/{subject_id}"
-    try:
-        r = requests.get(url=url, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, headers=headers)
-    return json.loads(r.text)
+    return requests_get(url=url, access_token=token)
 
 
 def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=None, private=None):
@@ -316,14 +323,10 @@ def get_subject_info(subject_id, t_dict=None):
         raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
-        try:
-            r = requests.get(url=url)
-        except requests.ConnectionError:
-            r = requests.get(url=url)
-        if r.status_code != 200:
+        loads = requests_get(url=url)
+        if loads is None:
             redis_cli.set(f"subject:{subject_id}", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
             raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
-        loads = json.loads(r.text)
         loads['_air_weekday'] = None
         for info in loads['infobox']:
             if info['key'] == '放送星期':

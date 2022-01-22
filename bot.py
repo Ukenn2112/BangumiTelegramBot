@@ -12,6 +12,7 @@ import telebot
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
+from utils import requests_get
 from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, search_anime
 
 logger = telebot.logger
@@ -19,7 +20,6 @@ telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
 
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
-
 
 # 绑定 Bangumi
 @bot.message_handler(commands=['start'])
@@ -40,7 +40,6 @@ def send_start(message):
         else:
             pass
 
-
 # 查询 Bangumi 用户收藏统计
 @bot.message_handler(commands=['my'])
 def send_my(message):
@@ -54,7 +53,7 @@ def send_my(message):
         if user_data is None:
             # 如果未绑定 直接报错
             bot.send_message(message.chat.id,
-                             "未绑定Bangumi，请私聊使用[/start](https://t.me/" + BOT_USERNAME + "?start=none)进行绑定",
+                             f"未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定",
                              parse_mode='Markdown', timeout=20)
             return
         bgm_id = user_data.get('user_id')
@@ -64,40 +63,28 @@ def send_my(message):
         bgm_id = message_data[1]
         access_token = ''
     # 开始查询数据
-    msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id,
-                           parse_mode='Markdown', timeout=20)
+    msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
     params = {'app_id': APP_ID}
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-        'Authorization': 'Bearer ' + access_token}
     url = f'https://api.bgm.tv/user/{bgm_id}/collections/status'
-    r = None
     try:
-        r = requests.get(url=url, params=params, headers=headers)
-        startus_data = json.loads(r.text)
+        startus_data = requests_get(url=url, params=params, access_token=access_token)
         if startus_data is None:
             # Fixme 会有这种情况吗？
-            bot.send_message(message.chat.id, text='您没有观看记录，快去bgm上点几个格子吧~', parse_mode='Markdown', timeout=20)
-            return
-        if r.status_code != 200:
-            bot.edit_message_text(text="出错了", chat_id=message.chat.id, message_id=msg.message_id)
+            bot.send_message(message.chat.id, text='出错了,没有获取到您的统计信息', parse_mode='Markdown', timeout=20)
             return
         if isinstance(startus_data, dict) and startus_data.get('code') == 404:
             bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
             return
-        r.close()
         # 查询用户名
-        r2 = requests.get(url=f'https://api.bgm.tv/user/{bgm_id}')
-        user_data = json.loads(r2.text)
-        if r2.status_code != 200:
-            bot.edit_message_text(text="出错了", chat_id=message.chat.id, message_id=msg.message_id)
+        user_data = requests_get(url=f'https://api.bgm.tv/user/{bgm_id}')
+        if user_data is None:
+            bot.edit_message_text(text="出错了,无法获取到您的个人信息", chat_id=message.chat.id, message_id=msg.message_id)
             return
         if isinstance(user_data, dict) and user_data.get('code') == 404:
             bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
             return
         nickname = user_data.get('nickname')
         bgm_id = user_data.get('id')
-        r2.close()
         ##### 开始处理数据
         book_do, book_collect, anime_do, anime_collect \
             , music_do, music_collect, game_do, game_collect = 0, 0, 0, 0, 0, 0, 0, 0
@@ -139,7 +126,6 @@ def send_my(message):
     bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
     bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
 
-
 # 动画条目搜索/查询 Bangumi 用户在看动画 重写
 @bot.message_handler(commands=['anime'])
 def send_anime(message):
@@ -165,9 +151,7 @@ def send_anime(message):
     except:
         bot.edit_message_text(text="出错了!请看日志", chat_id=message.chat.id, message_id=msg.message_id)
         raise
-    bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id
-                          , parse_mode='Markdown', reply_markup=page['markup'])
-
+    bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id, parse_mode='Markdown', reply_markup=page['markup'])
 
 # 每日放送查询
 @bot.message_handler(commands=['week'])
@@ -189,9 +173,7 @@ def send_week(message):
     week_data = gender_week_message(day)
     text = week_data['text']
     markup = week_data['markup']
-    bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=text, parse_mode='Markdown',
-                          reply_markup=markup)
-
+    bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=text, parse_mode='Markdown', reply_markup=markup)
 
 def data_seek_get(test_id):
     """ 判断是否绑定Bangumi """
@@ -199,7 +181,6 @@ def data_seek_get(test_id):
         data_seek = json.loads(f.read())                    # 读取
     data_li = [i['tg_user_id'] for i in data_seek]          # 写入列表
     return int(test_id) in data_li                          # 判断列表内是否有被验证的UID
-
 
 def user_data_get(test_id):
     """ 返回用户数据,如果过期则更新 """
@@ -213,7 +194,6 @@ def user_data_get(test_id):
                 return expiry_data_get(test_id)
             else:
                 return i.get('data',{})
-
 
 # 更新过期用户数据
 def expiry_data_get(test_id):
@@ -263,179 +243,107 @@ def expiry_data_get(test_id):
             user_data = i.get('data',{})
     return user_data
 
-
 # 获取BGM用户信息 TODO 存入数据库
 def bgmuser_data(test_id):
-    access_token = user_data_get(test_id).get('access_token')
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-        'Authorization': 'Bearer ' + access_token}
-    url = 'https://api.bgm.tv/user/' + str(user_data_get(test_id).get('user_id'))
-    try:
-        r = requests.get(url=url, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, headers=headers)
-    user_data = json.loads(r.text)
-
-    nickname = user_data.get('nickname')
-    username = user_data.get('username')
-
+    user = user_data_get(test_id)
+    access_token = user['access_token']
+    url = f"https://api.bgm.tv/user/{user['user_id']}"
+    user_data = requests_get(url, access_token=access_token)
     user_data = {
-        'nickname': nickname, # 用户昵称 str
-        'username': username  # 用户username 没有设置则返回 uid str
+        'nickname': user_data.get('nickname'), # 用户昵称 str
+        'username': user_data.get('username')  # 用户username 没有设置则返回 uid str
     }
     return user_data
 
-
-# 获取用户观看eps
+# 获取用户观看eps数据
 def eps_get(test_id, subject_id):
-    access_token = user_data_get(test_id).get('access_token')
+    user_data = user_data_get(test_id)
+    access_token = user_data['access_token']
     params = {
         'subject_id': subject_id,
         'type': 0}
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-        'Authorization': 'Bearer ' + access_token}
     url = 'https://api.bgm.tv/v0/episodes'
+    data_eps = requests_get(url, params, access_token)
+    epsid_li = [i['id'] for i in data_eps['data']] # 所有eps_id
 
-    try:
-        r = requests.get(url=url, params=params, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, params=params, headers=headers)
-
-    data_eps = json.loads(r.text).get('data')
-    epsid_li = [i['id'] for i in data_eps] # 所有eps_id
-
-    params = {
-        'subject_id': subject_id}
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-        'Authorization': 'Bearer ' + access_token}
-    url = 'https://api.bgm.tv/user/' + str(user_data_get(test_id).get('user_id')) + '/progress'
-    try:
-        r = requests.get(url=url, params=params, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, params=params, headers=headers)
-
-    try:
-        data_watched = json.loads(r.text).get('eps')
-    except AttributeError:
-        watched_id_li = [0] # 无观看集数
+    params = {'subject_id': subject_id}
+    url = f"https://api.bgm.tv/user/{user_data['user_id']}/progress"
+    data_watched = requests_get(url, params, access_token)
+    if data_watched is not None:
+        watched_id_li = [i['id'] for i in data_watched['eps']] # 已观看 eps_id
     else:
-        watched_id_li = [i['id'] for i in data_watched] # 已观看 eps_id
-
+        watched_id_li = [0] # 无观看集数
     eps_n = len(set(epsid_li)) # 总集数
     watched_n = len(set(epsid_li) & set(watched_id_li)) # 已观看了集数
-
     unwatched_id = epsid_li # 去除已观看过集数的 eps_id
     try:
         for watched_li in watched_id_li:
             unwatched_id.remove(watched_li)
     except ValueError:
         pass
-
     # 输出
     eps_data = {'progress': str(watched_n) + '/' + str(eps_n),   # 已观看/总集数 进度 str
                 'watched': watched_n,                            # 已观看集数 int
                 'eps_n': str(eps_n),                             # 总集数 str
                 'unwatched_id': unwatched_id}                    # 未观看 eps_di list
-
     return eps_data
-
 
 # 更新收视进度状态
 def eps_status_get(test_id, eps_id, status):
+    """更新收视进度状态"""
     access_token = user_data_get(test_id).get('access_token')
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-        'Authorization': 'Bearer ' + access_token}
-
     url = f'https://api.bgm.tv/ep/{eps_id}/status/{status}'
-
-    r = requests.get(url=url, headers=headers)
-
-    return r
-
+    return requests_get(url, access_token=access_token)
 
 # 更新收藏状态
 def collection_post(test_id, subject_id, status, rating):
+    """更新收藏状态"""
     access_token = user_data_get(test_id).get('access_token')
     if rating == None or rating == 0:
         params = {"status": (None, status)}
     else:
         params = {"status": (None, status),"rating": (None, rating)}
-
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         'Authorization': 'Bearer ' + access_token}
-
     url = f'https://api.bgm.tv/collection/{subject_id}/update'
-
     r = requests.post(url=url, files=params, headers=headers)
-
     return r
 
 # 获取指定条目收藏信息
 def user_collection_get(test_id, subject_id):
+    """获取指定条目收藏信息"""
     access_token = user_data_get(test_id).get('access_token')
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-        'Authorization': 'Bearer ' + access_token}
-
-    url = f'https://api.bgm.tv/collection/{subject_id}'
-
-    r = requests.get(url=url, headers=headers)
-    user_collection_data = json.loads(r.text)
-
-    return user_collection_data
-
+    url = f'https://api.bgm.tv/collection/{subject_id}' 
+    return requests_get(url, access_token=access_token)
 
 # 条目搜索 不需Access Token
 def search_get(keywords, type, start):
-
-    max_results = 5 # 每页最大条数 5 个
+    """条目搜索 不需Access Token"""
     params = {
         'type': type,
         'start': start,
-        'max_results': max_results}
-
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
+        'max_results': 5} # 每页最大条数 5 个
     url = f'https://api.bgm.tv/search/subject/{keywords}'
-
-    try:
-        r = requests.get(url=url, params=params, headers=headers)
-    except requests.ConnectionError:
-        r = requests.get(url=url, params=params, headers=headers)
-
-    try:
-        data_search = json.loads(r.text)
-    except:
-        search_results_n = 0
-        subject_id_li = []
-        name_li = []
+    data_search = requests_get(url, params=params)
+    if data_search is not None:
+        search_results_n = data_search['results']
+        subject_id_li = [i['id'] for i in data_search['list']]
+        name_li = [i['name'] for i in data_search['list']]
     else:
-        search_results_n = data_search.get('results')
-
-        subject_id_data = data_search.get('list')
-        subject_id_li = [i['id'] for i in subject_id_data]
-        name_li = [i['name'] for i in subject_id_data]
-
+        search_results_n, subject_id_li, name_li = 0, 0, 0
     # 输出
     search_data = {'search_results_n': search_results_n, # 搜索结果数量 int
                    'subject_id_li': subject_id_li,       # 所有查询结果id列表 list
                    'name_li': name_li}                   # 所有查询结果名字列表 list
-
     return search_data
 
-
+# 空按钮回调处理
 @bot.callback_query_handler(func=lambda call: call.data == 'None')
 def callback_None(call):
     bot.answer_callback_query(call.id)
 
-
-# 动画在看详情 重写
+# 动画在看详情
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do')
 def anime_do_callback(call):
     call_tg_id = call.from_user.id
@@ -464,8 +372,7 @@ def anime_do_callback(call):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
-
-# 评分 重写
+# 评分
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'rating')
 def rating_callback(call):
     call_tg_id = call.from_user.id
@@ -495,8 +402,7 @@ def rating_callback(call):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
-
-# 已看最新 重写
+# 已看最新
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_eps')
 def anime_eps_callback(call):
     call_tg_id = call.from_user.id
@@ -528,8 +434,7 @@ def anime_eps_callback(call):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
-
-# 动画在看列表 翻页 重写
+# 动画在看列表 翻页
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do_page')
 def anime_do_page_callback(call):
     # call_tg_id = call.from_user.id
@@ -548,7 +453,6 @@ def anime_do_page_callback(call):
         bot.delete_message(chat_id=msg.chat.id, message_id=msg.message_id)
         bot.send_message(text=page['text'], chat_id=msg.chat.id, parse_mode='Markdown', reply_markup=page['markup'])
     bot.answer_callback_query(call.id)
-
 
 # 搜索翻页
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'spage')
@@ -587,7 +491,6 @@ def spage_callback(call):
         bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
     bot.answer_callback_query(call.id)
 
-
 # 搜索动画详情页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'animesearch')
 def animesearch_callback(call):
@@ -611,7 +514,6 @@ def animesearch_callback(call):
         else:
             bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
     bot.answer_callback_query(call.id)
-
 
 # 收藏
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
