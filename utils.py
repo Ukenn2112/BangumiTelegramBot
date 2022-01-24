@@ -14,20 +14,22 @@ from config import REDIS_HOST, REDIS_PORT, REDIS_DATABASE
 # FIXME 似乎不应该在这里创建对象
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
-def requests_get(url, params: Optional[dict] = None, access_token: Optional[str] = None):
+
+def requests_get(url, params: Optional[dict] = None, access_token: Optional[str] = None, max_retry_times: int = 3):
     """requests_get 请求"""
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
+    r = None
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
     if access_token is not None:
-        headers.update({'Authorization': 'Bearer '+ access_token})
-    for _ in range(3): # 如api请求错误 重试3次
+        headers.update({'Authorization': 'Bearer ' + access_token})
+    for num in range(max_retry_times):  # 如api请求错误 重试3次
         try:
-            if params is not None:
-                r = requests.get(url=url, params=params, headers=headers)
-            else:
-                r = requests.get(url=url, headers=headers)
-            break
+            r = requests.get(url=url, params=params, headers=headers)
         except requests.ConnectionError as err:
-            logging.warning(f'api请求错误，重试中...{str(err)}')
+            if num + 1 >= max_retry_times:
+                raise
+            else:
+                logging.warning(f'api请求错误，重试中...{str(err)}')
     if r.status_code != 200:
         return None
     else:
