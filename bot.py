@@ -12,8 +12,9 @@ import telebot
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
+from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, \
+    search_anime
 from utils import requests_get
-from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, search_anime
 
 logger = telebot.logger
 # telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
@@ -576,6 +577,7 @@ def collection_callback(call):
     else:
          bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
+
 # week 返回
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
@@ -584,6 +586,88 @@ def back_week_callback(call):
     bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
     bot.send_message(chat_id=call.message.chat.id, text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'], timeout=20)
     bot.answer_callback_query(call.id)
+
+
+@bot.chosen_inline_handler(func=lambda chosen_inline_result: True)
+def test_chosen(chosen_inline_result):
+    logger.info(chosen_inline_result)
+
+
+@bot.inline_handler(lambda query: query.query)
+def query_text(inline_query):
+    """inline 方式搜索"""
+    query_result_list = []
+    if not inline_query.offset:
+        offset = 0
+        if inline_query.query.isdecimal():
+            message = utils.gander_anime_message("", inline_query.query)
+            subject_info = message['subject_info']
+            if subject_info:
+                query_result_list.append(
+                    telebot.types.InlineQueryResultArticle(
+                        id=inline_query.query
+                        , title=utils.subject_type_to_emoji(subject_info['type'])
+                                + (subject_info["name_cn"] if subject_info["name_cn"]
+                                   else subject_info["name"])
+                        , input_message_content=telebot.types.InputTextMessageContent(
+                            message['text']
+                            # + f"\n||{utils.parse_markdown_v2(subject_info['summary'])}||" TODO 转成markdownV2
+                            , parse_mode="markdown"
+                            , disable_web_page_preview=True
+                        )
+                        , description=subject_info["name"] if subject_info["name_cn"] else None
+                        , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                    ))
+    else:
+        offset = int(inline_query.offset)
+    subject_list = utils.search_subject(inline_query.query, response_group="large", start=offset)
+    if 'list' in subject_list:
+        for subject in subject_list["list"]:
+            emoji = utils.subject_type_to_emoji(subject["type"])
+            text = f"搜索结果{emoji}:\n`{utils.parse_markdown_v2(subject['name'])}`\n"
+            if subject['name_cn']:
+                text += f"`{utils.parse_markdown_v2(subject['name_cn'])}`\n"
+            text += "\n"
+            if subject['air_date']:
+                text += f"放送日期:{utils.parse_markdown_v2(subject['air_date'])}\n"
+            if subject['air_weekday']:
+                text += f"放送星期:{utils.number_to_week(subject['air_weekday'])}\n"
+            if 'collection' in subject and subject['collection']:
+                if 'wish' in subject['collection']:
+                    text += f"想:{subject['collection']['wish']} "
+                if 'collect' in subject['collection']:
+                    text += f"完:{subject['collection']['collect']} "
+                if 'doing' in subject['collection']:
+                    text += f"在:{subject['collection']['doing']} "
+                if 'on_hold' in subject['collection']:
+                    text += f"搁:{subject['collection']['on_hold']} "
+                if 'dropped' in subject['collection']:
+                    text += f"抛:{subject['collection']['dropped']} "
+                text += "\n"
+            text += f"`@{BOT_USERNAME} {subject['id']}`"
+            # if subject['summary']:
+            #     text += f"||_{utils.parse_markdown_v2(subject['summary'])}_||\n"
+            qr = telebot.types.InlineQueryResultArticle(
+                id=subject['url']
+                , title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"])
+                , input_message_content=telebot.types.InputTextMessageContent(
+                    text
+                    , parse_mode="markdownV2"
+                    , disable_web_page_preview=True
+                )
+                , description=subject["name"] if subject["name_cn"] else None
+                , thumb_url=subject["images"]["medium"] if subject["images"] else None
+                # , reply_markup=telebot.types.InlineKeyboardMarkup().add(telebot.types.InlineKeyboardButton(
+                #     text="展示详情", callback_data=f"animesearch||{subject['id']}|0|0"))
+            )
+            query_result_list.append(qr)
+    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25)
+                            , switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
+
+
+@bot.inline_handler(lambda query: not query.query)
+def query_empty(inline_query):
+    bot.answer_inline_query(inline_query.id, [], switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
 
 
 # 开始启动

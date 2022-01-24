@@ -148,7 +148,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
         else:
             markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'spage|{anime_search_keywords}|{start}'),
                        telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
-    return {'text': text, 'markup': markup}
+    return {'text': text, 'markup': markup, 'subject_info': subject_info}
 
 
 def grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page):
@@ -383,3 +383,88 @@ def anime_img(subject_id):
     else:
         redis_cli.set(f"anime_img:{subject_id}", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
         return None
+
+
+def search_subject(keywords: str,
+                   type_: int = None,
+                   response_group: str = 'small',
+                   start: int = 0,
+                   max_results: int = 25) -> dict:
+    """搜索条目
+
+    :param keywords: 关键词
+    :param type_: 条目类型 1=book 2=anime 3=music 4=game 6=real
+    :param response_group: 返回数据大小 small medium
+    :param start: 开始条数
+    :param max_results: 每页条数 最多 25
+    """
+    params = {"type": type_, "responseGroup": response_group, "start": start, "max_results": max_results}
+    url = f'https://api.bgm.tv/search/subject/{keywords}'
+    try:
+        r = requests.get(url=url, params=params)
+    except requests.ConnectionError:
+        r = requests.get(url=url, params=params)
+    try:
+        j = json.loads(r.text)
+    except:
+        return {"results": 0, 'list': []}
+    return j
+
+
+def subject_type_to_emoji(type_: int) -> str:
+    if type_ == 1:
+        return "📚"
+    elif type_ == 2:
+        return "🌸"
+    elif type_ == 3:
+        return "🎵"
+    elif type_ == 4:
+        return "🎮"
+    elif type_ == 6:
+        return "📺"
+
+
+def number_to_week(num: int) -> str:
+    if num == 1:
+        return "星期一"
+    if num == 2:
+        return "星期二"
+    if num == 3:
+        return "星期三"
+    if num == 4:
+        return "星期四"
+    if num == 5:
+        return "星期五"
+    if num == 6:
+        return "星期六"
+    if num == 7:
+        return "星期日"
+    else:
+        return "未知"
+
+
+def parse_markdown_v2(text: str) -> str:
+    return text.translate(str.maketrans(
+        {'_': '\\_',
+         '*': '\\*',
+         '[': '\\[',
+         ']': '\\]',
+         '(': '\\(',
+         ')': '\\)',
+         '~': '\\~',
+         '`': '\\`',
+         '>': '\\>',
+         '#': '\\#',
+         '+': '\\+',
+         '-': '\\-',
+         '=': '\\=',
+         '|': '\\|',
+         '{': '\\{',
+         '}': '\\}',
+         '.': '\\.',
+         '!': '\\!'}))
+
+
+def remove_duplicate_newlines(text: str) -> str:
+    """删除重行 够用就行 懒的搞正则"""
+    return text.translate(str.maketrans({'\n\n': '\n', '\n\n\n': '\n'}))
