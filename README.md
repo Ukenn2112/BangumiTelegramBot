@@ -13,7 +13,7 @@
   - [ ] 批量更新收视进度
 - [x] 观看完成最后一集后自动更新收藏状态为看过
 - [x] 在看评分
-- [x] 条目搜索
+- [x] 通过 Telegram Inline 功能进行条目搜索
 - [x] 管理收藏
 - [x] 每日放送查询
 
@@ -51,6 +51,9 @@
   python3 bot.py
   ```
 
+- 通过 [@BotFather](https://t.me/botfather) 将inline功能开启
+  `/mybots` -> `选择 bot` -> `Bot Settings` -> `Inline Mode` -> 按下 `Turn on` (画面显示 Inline mode is currently enabled for xxxx 就表示启用了)
+
 # 命令列表
 
 您可以通过 [@BotFather](https://t.me/botfather) 来设置您的机器人的命令建议。
@@ -58,8 +61,9 @@
 ```
 start - 绑定Bangumi账号
 my - Bangumi收藏统计/空格加username或uid不绑定查询
-anime - Bangumi用户在看动画/空格加关键字查询
+anime - Bangumi用户在看动画
 week - 查询当日/空格加数字查询每日放送
+search - 搜索条目
 ```
 
 # 其它

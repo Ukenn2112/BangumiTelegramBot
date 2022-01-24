@@ -148,8 +148,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
             markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'back_week|{start}'),
                        telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'spage|{anime_search_keywords}|{start}'),
-                       telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
+            markup.add(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
     return {'text': text, 'markup': markup, 'subject_info': subject_info}
 
 
@@ -243,35 +242,6 @@ def gender_anime_page_message(user_data, offset, tg_id):
             button_list2.append(telebot.types.InlineKeyboardButton(text='这是末页', callback_data="None"))
         markup.add(*button_list2)
     return {'text': text, 'markup': markup}
-
-
-def search_anime(anime_search_keywords, message, bot):
-    """临时方法 TODO 修改"""
-    msg = bot.send_message(message.chat.id, "正在搜索请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
-                           timeout=20)
-    subject_type = 2  # 条目类型 1 = book 2 = anime 3 = music 4 = game 6 = real
-    start = 0
-    from bot import search_get
-    search_results_n = search_get(anime_search_keywords, subject_type, start)['search_results_n']  # 搜索结果数量
-    if search_results_n == 0:
-        bot.send_message(message.chat.id, text='抱歉，没能搜索到您想要的内容', parse_mode='Markdown', timeout=20)
-    else:
-        search_subject_id_li = search_get(anime_search_keywords, subject_type, start)['subject_id_li']  # 所有查询结果id列表
-        search_name_li = search_get(anime_search_keywords, subject_type, start)['name_li']  # 所有查询结果名字列表
-        markup = telebot.types.InlineKeyboardMarkup()
-        for item in list(zip(search_name_li, search_subject_id_li)):
-            markup.add(telebot.types.InlineKeyboardButton(text=item[0], callback_data='animesearch' + '|' + str(
-                anime_search_keywords) + '|' + str(item[1]) + '|' + '0' + '|0'))
-        if search_results_n > 5:
-            markup.add(telebot.types.InlineKeyboardButton(text='下一页', callback_data='spage' + '|' + str(
-                anime_search_keywords) + '|' + '5'))
-
-        text = {'*关于您的 “*`' + str(anime_search_keywords) + '`*” 搜索结果*\n\n' +
-
-                '🔍 共' + str(search_results_n) + '个结果'}
-
-        bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-        bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
 
 
 def get_collection(subject_id: str, token: str = "", tg_id=""):

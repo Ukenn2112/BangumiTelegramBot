@@ -12,15 +12,14 @@ import telebot
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
-from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, \
-    search_anime
+from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message
 from utils import requests_get
 
 logger = telebot.logger
-# telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
-logging.basicConfig(level=logging.INFO,
-                    filename='run.log',
-                    format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
+# logging.basicConfig(level=logging.INFO,
+#                     filename='run.log',
+#                     format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -132,19 +131,13 @@ def send_my(message):
 # 动画条目搜索/查询 Bangumi 用户在看动画 重写
 @bot.message_handler(commands=['anime'])
 def send_anime(message):
-    message_data = message.text.split(' ')
-    if len(message_data) != 1:
-        search_anime(message_data[1], message, bot)
-        return
-        pass  # TODO 条目搜索
-    # 未加参数 查询自己
     tg_id = message.from_user.id
     offset = 0
     user_data = user_data_get(tg_id)
     if user_data is None:
         # 如果未绑定 直接报错
         bot.send_message(message.chat.id,
-                         "未绑定Bangumi，请私聊使用[/start](https://t.me/" + BOT_USERNAME + "?start=none)进行绑定",
+                         f"未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定",
                          parse_mode='Markdown', timeout=20)
         return
     msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id,
@@ -177,6 +170,26 @@ def send_week(message):
     text = week_data['text']
     markup = week_data['markup']
     bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=text, parse_mode='Markdown', reply_markup=markup)
+
+# 搜索
+@bot.message_handler(commands=['search'])
+def send_animesearch(message):
+    tg_id = message.from_user.id
+    message_data = message.text.split(' ')
+    if len(message_data) == 1:
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton(text='开始搜索', switch_inline_query_current_chat=''))
+        bot.send_message(chat_id=message.chat.id, text='请点击下方按钮进行搜索', parse_mode='Markdown', reply_markup=markup, timeout=20)
+    if len(message_data) == 2:
+        anime_search_keywords = "search" # 前用户搜索关键字 如是从week请求则此参数为week Ukenn:此参数名称后续需更换
+        subject_id = message_data[1] # 剧集ID
+        start = 0 # 搜索时用户所在搜索页页数 如是从week请求则为week day
+        img_url = utils.anime_img(subject_id)
+        anime_do_message = gander_anime_message(tg_id, subject_id, start=start, anime_search_keywords=anime_search_keywords)
+        if img_url == 'None__' or not img_url:
+            bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
+        else:
+            bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
 
 def data_seek_get(test_id):
     """ 判断是否绑定Bangumi """
@@ -457,43 +470,6 @@ def anime_do_page_callback(call):
         bot.send_message(text=page['text'], chat_id=msg.chat.id, parse_mode='Markdown', reply_markup=page['markup'])
     bot.answer_callback_query(call.id)
 
-# 搜索翻页
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'spage')
-def spage_callback(call):
-    call_data = call.data.split('|')
-    anime_search_keywords = call_data[1] # 用户搜索关键字
-    start = int(call_data[2]) # 当前用户所请求页数
-    subject_type = 2 # 条目类型 1 = book 2 = anime 3 = music 4 = game 6 = real
-    search_results_n = search_get(anime_search_keywords, subject_type, start)['search_results_n'] # 搜索结果数量
-    markup = telebot.types.InlineKeyboardMarkup()
-    if search_results_n == 0:
-        text= '已经没有了'
-    else:
-        search_subject_id_li = search_get(anime_search_keywords, subject_type, start)['subject_id_li'] # 所有查询结果id列表
-        search_name_li = search_get(anime_search_keywords, subject_type, start)['name_li'] # 所有查询结果名字列表
-        for item in list(zip(search_name_li,search_subject_id_li)):
-            markup.add(telebot.types.InlineKeyboardButton(text=item[0],callback_data='animesearch'+'|'+str(anime_search_keywords)+'|'+str(item[1])+'|'+str(start)+'|0'))
-
-        if search_results_n <= 5:
-            markup.add()
-        elif start == 0:
-            markup.add(telebot.types.InlineKeyboardButton(text='下一页',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+str(start+5)))
-        elif start+5 >= search_results_n:
-            markup.add(telebot.types.InlineKeyboardButton(text='上一页',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+str(start-5)))
-        else:
-            markup.add(telebot.types.InlineKeyboardButton(text='上一页',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+str(start-5)),telebot.types.InlineKeyboardButton(text='下一页',callback_data='spage'+'|'+str(anime_search_keywords)+'|'+str(start+5)))
-
-        text = {'*关于您的 “*`'+ str(anime_search_keywords) +'`*” 搜索结果*\n\n'+
-
-                '🔍 共'+ str(search_results_n) +'个结果'}
-
-    if call.message.content_type == 'photo':
-        bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
-        bot.send_message(chat_id=call.message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
-    else:
-        bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
-    bot.answer_callback_query(call.id)
-
 # 搜索动画详情页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'animesearch')
 def animesearch_callback(call):
@@ -592,59 +568,109 @@ def back_week_callback(call):
 def test_chosen(chosen_inline_result):
     logger.info(chosen_inline_result)
 
-
-@bot.inline_handler(lambda query: query.query)
+# 当是私聊bot使用inline搜索
+@bot.inline_handler(lambda query: query.chat_type == 'sender')
 def query_text(inline_query):
-    """inline 方式搜索"""
+    """inline 方式私聊搜索"""
+    query_result_list = []
+    if not inline_query.offset:
+        offset = 0
+    else:
+        offset = int(inline_query.offset)
+    subject_list = utils.search_subject(inline_query.query, response_group="large", start=offset)
+    if 'list' in subject_list and subject_list["list"] is not None:
+        for subject in subject_list["list"]:
+            emoji = utils.subject_type_to_emoji(subject["type"])
+            qr = telebot.types.InlineQueryResultArticle(
+                id=subject['url']
+                , title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"])
+                , input_message_content=telebot.types.InputTextMessageContent(
+                    message_text=f"/search {subject['id']}"
+                    , parse_mode="markdown"
+                    , disable_web_page_preview=True
+                )
+                , description=subject["name"] if subject["name_cn"] else None
+                , thumb_url=subject["images"]["medium"] if subject["images"] else None
+            )
+            query_result_list.append(qr)
+    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25)
+                            , switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
+
+# 当不是私聊bot使用inline搜索
+@bot.inline_handler(lambda query: query.chat_type is not 'sender')
+def query_text(inline_query):
+    """inline 方式公共搜索"""
     query_result_list = []
     if not inline_query.offset:
         offset = 0
         if inline_query.query.isdecimal():
             message = utils.gander_anime_message("", inline_query.query)
+            img_url = utils.anime_img(inline_query.query)
             subject_info = message['subject_info']
             if subject_info:
-                query_result_list.append(
-                    telebot.types.InlineQueryResultArticle(
-                        id=inline_query.query
-                        , title=utils.subject_type_to_emoji(subject_info['type'])
-                                + (subject_info["name_cn"] if subject_info["name_cn"]
-                                   else subject_info["name"])
-                        , input_message_content=telebot.types.InputTextMessageContent(
-                            message['text']
-                            # + f"\n||{utils.parse_markdown_v2(subject_info['summary'])}||" TODO 转成markdownV2
+                if img_url == 'None__' or not img_url:
+                    query_result_list.append(
+                        telebot.types.InlineQueryResultArticle(
+                            id=inline_query.query
+                            , title=utils.subject_type_to_emoji(subject_info['type'])
+                                    + (subject_info["name_cn"] if subject_info["name_cn"]
+                                    else subject_info["name"])
+                            , input_message_content=telebot.types.InputTextMessageContent(
+                                message['text']
+                                # + f"\n||{utils.parse_markdown_v2(subject_info['summary'])}||" TODO 转成markdownV2
+                                , parse_mode="markdown"
+                                , disable_web_page_preview=True
+                            )
+                            , description=subject_info["name"] if subject_info["name_cn"] else None
+                            , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                        ))
+                else:
+                    query_result_list.append(
+                        telebot.types.InlineQueryResultPhoto(
+                            id=inline_query.query
+                            , photo_url=img_url
+                            , title=utils.subject_type_to_emoji(subject_info['type'])
+                                    + (subject_info["name_cn"] if subject_info["name_cn"]
+                                    else subject_info["name"])
+                            , caption=message['text']
                             , parse_mode="markdown"
-                            , disable_web_page_preview=True
-                        )
-                        , description=subject_info["name"] if subject_info["name_cn"] else None
-                        , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
-                    ))
+                            , description=subject_info["name"] if subject_info["name_cn"] else None
+                            , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                        ))
     else:
         offset = int(inline_query.offset)
     subject_list = utils.search_subject(inline_query.query, response_group="large", start=offset)
-    if 'list' in subject_list:
+    if 'list' in subject_list and subject_list["list"] is not None:
         for subject in subject_list["list"]:
             emoji = utils.subject_type_to_emoji(subject["type"])
-            text = f"搜索结果{emoji}:\n`{utils.parse_markdown_v2(subject['name'])}`\n"
+            text = f"搜索结果{emoji}:\n*{utils.parse_markdown_v2(subject['name'])}*\n"
             if subject['name_cn']:
-                text += f"`{utils.parse_markdown_v2(subject['name_cn'])}`\n"
+                text += f"{utils.parse_markdown_v2(subject['name_cn'])}\n"
             text += "\n"
+            text += f"BGM ID：`{subject['id']}`\n"
+            if 'rating' in subject and subject['rating']['score']:
+                text += f"➤ BGM 平均评分：`{subject['rating']['score']}`🌟\n"
+            if 'eps' in subject and subject['eps']:
+                text += f"➤ 集数：共`{subject['eps']}`集\n"
             if subject['air_date']:
-                text += f"放送日期:{utils.parse_markdown_v2(subject['air_date'])}\n"
+                text += f"➤ 放送日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
             if subject['air_weekday']:
-                text += f"放送星期:{utils.number_to_week(subject['air_weekday'])}\n"
-            if 'collection' in subject and subject['collection']:
-                if 'wish' in subject['collection']:
-                    text += f"想:{subject['collection']['wish']} "
-                if 'collect' in subject['collection']:
-                    text += f"完:{subject['collection']['collect']} "
-                if 'doing' in subject['collection']:
-                    text += f"在:{subject['collection']['doing']} "
-                if 'on_hold' in subject['collection']:
-                    text += f"搁:{subject['collection']['on_hold']} "
-                if 'dropped' in subject['collection']:
-                    text += f"抛:{subject['collection']['dropped']} "
-                text += "\n"
-            text += f"`@{BOT_USERNAME} {subject['id']}`"
+                text += f"➤ 放送星期：`{utils.number_to_week(subject['air_weekday'])}`\n"
+            text += f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
+                    f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
+            # if 'collection' in subject and subject['collection']:
+            #     text += f"➤ BGM 统计:\n"
+            #     if 'wish' in subject['collection']:
+            #         text += f"想:{subject['collection']['wish']} "
+            #     if 'collect' in subject['collection']:
+            #         text += f"完:{subject['collection']['collect']} "
+            #     if 'doing' in subject['collection']:
+            #         text += f"在:{subject['collection']['doing']} "
+            #     if 'on_hold' in subject['collection']:
+            #         text += f"搁:{subject['collection']['on_hold']} "
+            #     if 'dropped' in subject['collection']:
+            #         text += f"抛:{subject['collection']['dropped']} "
+            #   text += "\n"
             # if subject['summary']:
             #     text += f"||_{utils.parse_markdown_v2(subject['summary'])}_||\n"
             qr = telebot.types.InlineQueryResultArticle(
@@ -657,8 +683,8 @@ def query_text(inline_query):
                 )
                 , description=subject["name"] if subject["name_cn"] else None
                 , thumb_url=subject["images"]["medium"] if subject["images"] else None
-                # , reply_markup=telebot.types.InlineKeyboardMarkup().add(telebot.types.InlineKeyboardButton(
-                #     text="展示详情", callback_data=f"animesearch||{subject['id']}|0|0"))
+                , reply_markup=telebot.types.InlineKeyboardMarkup().add(telebot.types.InlineKeyboardButton(
+                    text="展示详情", switch_inline_query_current_chat=subject['id']))
             )
             query_result_list.append(qr)
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25)
