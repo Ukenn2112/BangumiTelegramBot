@@ -179,15 +179,18 @@ def send_animesearch(message):
         markup.add(telebot.types.InlineKeyboardButton(text='开始搜索', switch_inline_query_current_chat=''))
         bot.send_message(chat_id=message.chat.id, text='请点击下方按钮进行搜索', parse_mode='Markdown', reply_markup=markup, timeout=20)
     if len(message_data) == 2:
-        back_type = "search" # 返回类型
-        subject_id = message_data[1] # 剧集ID
-        img_url = utils.anime_img(subject_id)
-        anime_do_message = gander_anime_message(tg_id, subject_id, back_type=back_type)
-        if img_url == 'None__' or not img_url:
-            bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
+        if message_data[1].isdecimal():
+            back_type = "search" # 返回类型:
+            subject_id = message_data[1] # 剧集ID
+            img_url = utils.anime_img(subject_id)
+            anime_do_message = gander_anime_message(tg_id, subject_id, back_type=back_type)
+            if img_url == 'None__' or not img_url:
+                bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
+            else:
+                bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
         else:
-            bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
-
+            bot.send_message(message.chat.id, "错误使用 `/search BGM_Subject_ID`", parse_mode='Markdown', timeout=20)
+    
 def data_seek_get(test_id):
     """ 判断是否绑定Bangumi """
     with open('bgm_data.json') as f:                        # 打开文件
