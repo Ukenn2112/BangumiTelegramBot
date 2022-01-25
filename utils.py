@@ -113,8 +113,8 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
                     text += f"`{tag['name']}` "
         if user_rating and user_rating['tag'] and len(user_rating['tag']) < 10:
             # 有用户标签 但 用户标签数小于10
-                for tag in tag_not_click[:10 - len(user_rating['tag'])]:
-                    text += f"`{tag['name']}` "
+            for tag in tag_not_click[:10 - len(user_rating['tag'])]:
+                text += f"`{tag['name']}` "
         if (user_rating and user_rating['tag']) or (subject_info['tags']):
             text += "\n"
     text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \

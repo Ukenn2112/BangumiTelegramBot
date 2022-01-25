@@ -169,34 +169,46 @@ def send_week(message):
     week_data = gender_week_message(day)
     bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'])
 
-# 搜索
+
 @bot.message_handler(commands=['search'])
 def send_animesearch(message):
+    """搜索引导指令"""
+    message_data = message.text.split(' ')
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(telebot.types.InlineKeyboardButton(
+        text='开始搜索', switch_inline_query_current_chat=message.text[len(message_data[0]) + 1:]))
+    bot.send_message(chat_id=message.chat.id, text='请点击下方按钮进行搜索', parse_mode='Markdown', reply_markup=markup,
+                     timeout=20)
+
+
+@bot.message_handler(commands=['info'])
+def send_subject_info(message):
+    """根据subjectId 返回对应条目信息"""
     tg_id = message.from_user.id
     message_data = message.text.split(' ')
-    if len(message_data) == 1:
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(telebot.types.InlineKeyboardButton(text='开始搜索', switch_inline_query_current_chat=''))
-        bot.send_message(chat_id=message.chat.id, text='请点击下方按钮进行搜索', parse_mode='Markdown', reply_markup=markup, timeout=20)
-    if len(message_data) == 2:
-        if message_data[1].isdecimal():
-            back_type = "search" # 返回类型:
-            subject_id = message_data[1] # 剧集ID
-            img_url = utils.anime_img(subject_id)
-            anime_do_message = gander_anime_message(tg_id, subject_id, back_type=back_type)
-            if img_url == 'None__' or not img_url:
-                bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
-            else:
-                bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+    if len(message_data) == 2 and message_data[1].isdecimal():
+        back_type = "search"  # 返回类型:
+        subject_id = message_data[1]  # 剧集ID
+        img_url = utils.anime_img(subject_id)
+        anime_do_message = gander_anime_message(tg_id, subject_id, back_type=back_type)
+        if img_url == 'None__' or not img_url:
+            bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown'
+                             , reply_markup=anime_do_message['markup'], timeout=20)
         else:
-            bot.send_message(message.chat.id, "错误使用 `/search BGM_Subject_ID`", parse_mode='Markdown', timeout=20)
-    
+            bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text']
+                           , parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+    else:
+        bot.send_message(chat_id=message.chat.id, text="错误使用 `/info BGM_Subject_ID`"
+                         , parse_mode='Markdown', timeout=20)
+
+
 def data_seek_get(test_id):
     """ 判断是否绑定Bangumi """
     with open('bgm_data.json') as f:                        # 打开文件
         data_seek = json.loads(f.read())                    # 读取
     data_li = [i['tg_user_id'] for i in data_seek]          # 写入列表
     return int(test_id) in data_li                          # 判断列表内是否有被验证的UID
+
 
 def user_data_get(test_id):
     """ 返回用户数据,如果过期则更新 """
@@ -210,6 +222,7 @@ def user_data_get(test_id):
                 return expiry_data_get(test_id)
             else:
                 return i.get('data',{})
+
 
 # 更新过期用户数据
 def expiry_data_get(test_id):
@@ -585,8 +598,7 @@ def sender_query_text(inline_query):
                 id=subject['url']
                 , title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"])
                 , input_message_content=telebot.types.InputTextMessageContent(
-                    message_text=f"/search {subject['id']}"
-                    , parse_mode="markdown"
+                    message_text=f"/info@{BOT_USERNAME} {subject['id']}"
                     , disable_web_page_preview=True
                 )
                 , description=subject["name"] if subject["name_cn"] else None
