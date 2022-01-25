@@ -441,8 +441,8 @@ def anime_eps_callback(call):
         eps_data = eps_get(tg_id, subject_id)
         anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, user_rating=user_collection_data, eps_data=eps_data, eps_id=eps_id, back_page=back_page)
         if eps_data['unwatched_id'] == []:
-            status = 'collect'
-            collection_post(tg_id, subject_id, status, str(user_collection_data['rating'])) # 看完最后一集自动更新收藏状态为看过
+            collection_type = 'collect'
+            collection_post(tg_id, subject_id, collection_type, str(user_collection_data['rating'])) # 看完最后一集自动更新收藏状态为看过
         if call.message.content_type == 'photo':
             bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
         else:
@@ -503,9 +503,9 @@ def collection_callback(call):
     subject_id = call_data[2] # 剧集ID
     back_type = call_data[3] # 返回类型
     start = call_data[4] # 搜索时用户所在搜索页页数 如是从week请求则为week day
-    status = call_data[5] # 用户请求收藏状态 初始进入收藏页则为 null
+    collection_type = call_data[5] # 用户请求收藏状态 初始进入收藏页则为 null
     name = utils.get_subject_info(subject_id)['name']
-    if status == 'null':
+    if collection_type == 'null':
         if not data_seek_get(call_tg_id):
             bot.send_message(chat_id=call.message.chat.id, text=f'您未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定', parse_mode='Markdown', timeout=20)
         else:
@@ -530,24 +530,24 @@ def collection_callback(call):
             bot.answer_callback_query(call.id)
     if call_tg_id == tg_id:
         rating = str(user_collection_get(tg_id, subject_id).get('rating'))
-        if status == 'wish':    # 想看
-            collection_post(tg_id, subject_id, status, rating)
+        if collection_type == 'wish':    # 想看
+            collection_post(tg_id, subject_id, collection_type, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为想看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为想看')
-        if status == 'collect': # 看过
-            collection_post(tg_id, subject_id, status, rating)
+        if collection_type == 'collect': # 看过
+            collection_post(tg_id, subject_id, collection_type, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为看过', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为看过')
-        if status == 'do':      # 在看
-            collection_post(tg_id, subject_id, status, rating)
+        if collection_type == 'do':      # 在看
+            collection_post(tg_id, subject_id, collection_type, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为在看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为在看')
-        if status == 'on_hold': # 搁置
-            collection_post(tg_id, subject_id, status, rating)
+        if collection_type == 'on_hold': # 搁置
+            collection_post(tg_id, subject_id, collection_type, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为搁置', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为搁置')
-        if status == 'dropped': # 抛弃
-            collection_post(tg_id, subject_id, status, rating)
+        if collection_type == 'dropped': # 抛弃
+            collection_post(tg_id, subject_id, collection_type, rating)
             bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为抛弃')
     else:
