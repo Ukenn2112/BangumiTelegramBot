@@ -76,7 +76,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
     """动画详情页"""
     subject_info = get_subject_info(subject_id)
     subject_type = subject_info['type']
-    text = f"*{subject_info['name_cn']}*\n" \
+    text = f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n" \
            f"{subject_info['name']}\n\n" \
            f"BGM ID：`{subject_id}`\n"
     if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
