@@ -167,9 +167,7 @@ def send_week(message):
     msg = bot.send_message(message.chat.id, "正在搜索请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
                            timeout=20)
     week_data = gender_week_message(day)
-    text = week_data['text']
-    markup = week_data['markup']
-    bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=text, parse_mode='Markdown', reply_markup=markup)
+    bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'])
 
 # 搜索
 @bot.message_handler(commands=['search'])
@@ -183,9 +181,8 @@ def send_animesearch(message):
     if len(message_data) == 2:
         back_type = "search" # 返回类型
         subject_id = message_data[1] # 剧集ID
-        start = 0 # 搜索时用户所在搜索页页数 如是从week请求则为week day
         img_url = utils.anime_img(subject_id)
-        anime_do_message = gander_anime_message(tg_id, subject_id, start=start, back_type=back_type)
+        anime_do_message = gander_anime_message(tg_id, subject_id, back_type=back_type)
         if img_url == 'None__' or not img_url:
             bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
         else:
@@ -477,10 +474,10 @@ def animesearch_callback(call):
     call_data = call.data.split('|')
     back_type = call_data[1] # 返回类型
     subject_id = call_data[2] # 剧集ID
-    start = int(call_data[3]) # 搜索时用户所在搜索页页数 如是从week请求则为week day
+    back_week_day = int(call_data[3]) # 如是从week请求则为week day
     back = int(call_data[4])  # 是否是从收藏页返回 是则为1 否则为2
     img_url = utils.anime_img(subject_id)
-    anime_do_message = gander_anime_message(call_tg_id, subject_id, start=start, back_type=back_type)
+    anime_do_message = gander_anime_message(call_tg_id, subject_id, back_week_day=back_week_day, back_type=back_type)
     if back == 1:
         if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
@@ -502,7 +499,7 @@ def collection_callback(call):
     tg_id = int(call_data[1]) # 被更新用户 Telegram ID
     subject_id = call_data[2] # 剧集ID
     back_type = call_data[3] # 返回类型
-    start = call_data[4] # 搜索时用户所在搜索页页数 如是从week请求则为week day
+    back_week_day = call_data[4] # 如是从week请求则为week day 不是则为0
     collection_type = call_data[5] # 用户请求收藏状态 初始进入收藏页则为 null
     name = utils.get_subject_info(subject_id)['name']
     if collection_type == 'null':
@@ -516,12 +513,12 @@ def collection_callback(call):
                 back_page = call_data[6] # 返回在看列表页数
                 button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
             else:
-                button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'animesearch|{back_type}|{subject_id}|{start}|1'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='想看',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{start}|wish'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='看过',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{start}|collect'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='在看',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{start}|do'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='搁置',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{start}|on_hold'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='抛弃',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{start}|dropped'))
+                button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'animesearch|{back_type}|{subject_id}|{back_week_day}|1'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='想看',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|wish'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='看过',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|collect'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='在看',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|do'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='搁置',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|on_hold'))
+            button_list.append(telebot.types.InlineKeyboardButton(text='抛弃',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|dropped'))
             markup.add(*button_list, row_width=3)
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
