@@ -172,13 +172,16 @@ def send_week(message):
 # 搜索
 @bot.message_handler(commands=['search'])
 def send_animesearch(message):
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(telebot.types.InlineKeyboardButton(text='开始搜索', switch_inline_query_current_chat=''))
+    bot.send_message(chat_id=message.chat.id, text='请点击下方按钮进行搜索', parse_mode='Markdown', reply_markup=markup, timeout=20)
+
+# 请求获取条目详情
+@bot.message_handler(commands=['info'])
+def send_info(message):
     tg_id = message.from_user.id
     message_data = message.text.split(' ')
-    if len(message_data) == 1:
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(telebot.types.InlineKeyboardButton(text='开始搜索', switch_inline_query_current_chat=''))
-        bot.send_message(chat_id=message.chat.id, text='请点击下方按钮进行搜索', parse_mode='Markdown', reply_markup=markup, timeout=20)
-    if len(message_data) == 2:
+    if len(message_data) != 2:
         if message_data[1].isdecimal():
             back_type = "search" # 返回类型:
             subject_id = message_data[1] # 剧集ID
@@ -190,6 +193,8 @@ def send_animesearch(message):
                 bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
         else:
             bot.send_message(message.chat.id, "错误使用 `/search BGM_Subject_ID`", parse_mode='Markdown', timeout=20)
+    else:
+        bot.send_message(message.chat.id, "错误使用 `/search BGM_Subject_ID`", parse_mode='Markdown', timeout=20)
     
 def data_seek_get(test_id):
     """ 判断是否绑定Bangumi """
@@ -585,7 +590,7 @@ def sender_query_text(inline_query):
                 id=subject['url']
                 , title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"])
                 , input_message_content=telebot.types.InputTextMessageContent(
-                    message_text=f"/search {subject['id']}"
+                    message_text=f"/info {subject['id']}"
                     , parse_mode="markdown"
                     , disable_web_page_preview=True
                 )
