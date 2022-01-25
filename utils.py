@@ -1,7 +1,7 @@
 import json
+import logging
 import random
 import threading
-import logging
 from typing import Optional
 
 import math
@@ -90,9 +90,9 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
             else:
                 text += f"➤ 您的评分：`{user_rating['rating']}`🌟\n"
     else:
-        if subject_type == 2 or subject_type == 6: # 当类型为anime或real时
+        if subject_type == 2 or subject_type == 6:  # 当类型为anime或real时
             text += f"➤ 集数：共`{subject_info['eps']}`集\n"
-    if subject_type == 2 or subject_type == 6: # 当类型为anime或real时
+    if subject_type == 2 or subject_type == 6:  # 当类型为anime或real时
         if subject_type == 6:
             text += f"➤ 剧集类型：`{subject_info['platform']}`\n"
         else:
@@ -102,7 +102,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
             text += f"➤ 放送星期：`{subject_info['_air_weekday']}`\n"
         if eps_data is not None:
             text += f"➤ 观看进度：`{eps_data['progress']}`\n"
-    if subject_type == 1: # 当类型为book时
+    if subject_type == 1:  # 当类型为book时
         text += f"➤ 书籍类型：`{subject_info['platform']}`\n"
         for box in subject_info['infobox']:
             if box.get('key') == '页数':
@@ -112,7 +112,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
             if box.get('key') == '出版社':
                 text += f"➤ 出版社：`{box['value']}`\n"
         text += f"➤ 发售日期：`{subject_info['date']}`\n"
-    if subject_type == 3: # 当类型为Music时
+    if subject_type == 3:  # 当类型为Music时
         for box in subject_info['infobox']:
             if box.get('key') == '艺术家':
                 text += f"➤ 艺术家：`{box['value']}`\n"
@@ -131,7 +131,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
             if box.get('key') == '价格':
                 text += f"➤ 价格：`{box['value']}`\n"
         text += f"➤ 发售日期：`{subject_info['date']}`\n"
-    if subject_type == 4: # 当类型为Game时
+    if subject_type == 4:  # 当类型为Game时
         for box in subject_info['infobox']:
             if box.get('key') == '游戏类型':
                 text += f"➤ 游戏类型：`{box['value']}`\n"
@@ -195,27 +195,38 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
                 telebot.types.InlineKeyboardButton(
                     text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
             if eps_id is not None:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
-                           telebot.types.InlineKeyboardButton(text='撤销最新观看', callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
+                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
+                           telebot.types.InlineKeyboardButton(text='撤销最新观看',
+                                                              callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
             else:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
+                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}'),
-                       telebot.types.InlineKeyboardButton(text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
-                       telebot.types.InlineKeyboardButton(text='已看最新', callback_data=f'anime_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
+            markup.add(
+                telebot.types.InlineKeyboardButton(text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+                telebot.types.InlineKeyboardButton(text='评分',
+                                                   callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
+                telebot.types.InlineKeyboardButton(text='已看最新',
+                                                   callback_data=f'anime_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
             if eps_id is not None and eps_data['watched'] != 1:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
-                           telebot.types.InlineKeyboardButton(text='撤销最新观看', callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
+                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
+                           telebot.types.InlineKeyboardButton(text='撤销最新观看',
+                                                              callback_data=f'anime_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
             else:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
+                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
+                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
         if eps_id is not None:
             text += f"\n📝 [第{eps_data['watched']}话评论](https://bgm.tv/ep/{eps_id})\n"
     elif back_type is not None:
         if back_type == 'week':
             markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'back_week|{back_week_day}'),
-                       telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|null'))
+                       telebot.types.InlineKeyboardButton(text='收藏',
+                                                          callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|null'))
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|0|null'))
+            markup.add(telebot.types.InlineKeyboardButton(text='收藏',
+                                                          callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|0|null'))
     return {'text': text, 'markup': markup, 'subject_info': subject_info}
 
 
@@ -358,7 +369,7 @@ def get_calendar() -> dict:
         return json.loads(data)
     else:
         calendar = requests_get(url='https://api.bgm.tv/calendar')
-        redis_cli.set("calendar",json.dumps(calendar), ex=3600)
+        redis_cli.set("calendar", json.dumps(calendar), ex=3600)
         return calendar
 
 

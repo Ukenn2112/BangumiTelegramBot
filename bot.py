@@ -1,7 +1,7 @@
 #!/usr/bin/python
-'''
+"""
 https://bangumi.github.io/api/
-'''
+"""
 
 import datetime
 import json
@@ -23,31 +23,31 @@ telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
+
 # 绑定 Bangumi
 @bot.message_handler(commands=['start'])
 def send_start(message):
-    if message.chat.type == "private": # 当私人聊天
+    if message.chat.type == "private":  # 当私人聊天
         test_id = message.from_user.id
         if data_seek_get(test_id):
             bot.send_message(message.chat.id, "已绑定", timeout=20)
         else:
             text = '请绑定您的Bangumi'
-            url= f'{WEBSITE_BASE}oauth_index?tg_id={test_id}'
+            url = f'{WEBSITE_BASE}oauth_index?tg_id={test_id}'
             markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(text='绑定Bangumi',url=url))
-            bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup ,timeout=20)
+            markup.add(telebot.types.InlineKeyboardButton(text='绑定Bangumi', url=url))
+            bot.send_message(message.chat.id, text=text, parse_mode='Markdown', reply_markup=markup, timeout=20)
     else:
         if message.text == f'/start@{BOT_USERNAME}':
-            bot.send_message(message.chat.id, '请私聊我进行Bangumi绑定', parse_mode='Markdown' ,timeout=20)
+            bot.send_message(message.chat.id, '请私聊我进行Bangumi绑定', parse_mode='Markdown', timeout=20)
         else:
             pass
+
 
 # 查询 Bangumi 用户收藏统计
 @bot.message_handler(commands=['my'])
 def send_my(message):
     message_data = message.text.split(' ')
-    bgm_id = None
-    access_token = None
     if len(message_data) == 1:
         # 未加参数 查询自己
         tg_id = message.from_user.id
@@ -65,7 +65,8 @@ def send_my(message):
         bgm_id = message_data[1]
         access_token = ''
     # 开始查询数据
-    msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown', timeout=20)
+    msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
+                           timeout=20)
     params = {'app_id': APP_ID}
     url = f'https://api.bgm.tv/user/{bgm_id}/collections/status'
     try:
@@ -87,9 +88,9 @@ def send_my(message):
             return
         nickname = user_data.get('nickname')
         bgm_id = user_data.get('id')
-        ##### 开始处理数据
-        book_do, book_collect, anime_do, anime_collect \
-            , music_do, music_collect, game_do, game_collect = 0, 0, 0, 0, 0, 0, 0, 0
+        # 开始处理数据
+        book_do, book_collect, anime_do, anime_collect, music_do, music_collect, game_do, game_collect \
+            = 0, 0, 0, 0, 0, 0, 0, 0
         for i in startus_data:
             if i.get('name') == 'book':
                 for book in i.get('collects'):
@@ -128,6 +129,7 @@ def send_my(message):
     bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
     bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
 
+
 # 动画条目搜索/查询 Bangumi 用户在看动画 重写
 @bot.message_handler(commands=['anime'])
 def send_anime(message):
@@ -147,13 +149,14 @@ def send_anime(message):
     except:
         bot.edit_message_text(text="出错了!请看日志", chat_id=message.chat.id, message_id=msg.message_id)
         raise
-    bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id, parse_mode='Markdown', reply_markup=page['markup'])
+    bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id, parse_mode='Markdown',
+                          reply_markup=page['markup'])
+
 
 # 每日放送查询
 @bot.message_handler(commands=['week'])
 def send_week(message):
     data = message.text.split(' ')
-    day = None
     if len(data) == 1:
         # 如果未传参数
         now_week = int(datetime.datetime.now().strftime("%w"))
@@ -167,7 +170,8 @@ def send_week(message):
     msg = bot.send_message(message.chat.id, "正在搜索请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
                            timeout=20)
     week_data = gender_week_message(day)
-    bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'])
+    bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=week_data['text'], parse_mode='Markdown',
+                          reply_markup=week_data['markup'])
 
 
 @bot.message_handler(commands=['search'])
@@ -192,22 +196,22 @@ def send_subject_info(message):
         img_url = utils.anime_img(subject_id)
         anime_do_message = gander_anime_message(tg_id, subject_id, back_type=back_type)
         if img_url == 'None__' or not img_url:
-            bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown'
-                             , reply_markup=anime_do_message['markup'], timeout=20)
+            bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown',
+                             reply_markup=anime_do_message['markup'], timeout=20)
         else:
-            bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text']
-                           , parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+            bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text'],
+                           parse_mode='Markdown', reply_markup=anime_do_message['markup'])
     else:
-        bot.send_message(chat_id=message.chat.id, text="错误使用 `/info BGM_Subject_ID`"
-                         , parse_mode='Markdown', timeout=20)
+        bot.send_message(chat_id=message.chat.id, text="错误使用 `/info BGM_Subject_ID`",
+                         parse_mode='Markdown', timeout=20)
 
 
 def data_seek_get(test_id):
     """ 判断是否绑定Bangumi """
-    with open('bgm_data.json') as f:                        # 打开文件
-        data_seek = json.loads(f.read())                    # 读取
-    data_li = [i['tg_user_id'] for i in data_seek]          # 写入列表
-    return int(test_id) in data_li                          # 判断列表内是否有被验证的UID
+    with open('bgm_data.json') as f:  # 打开文件
+        data_seek = json.loads(f.read())  # 读取
+    data_li = [i['tg_user_id'] for i in data_seek]  # 写入列表
+    return int(test_id) in data_li  # 判断列表内是否有被验证的UID
 
 
 def user_data_get(test_id):
@@ -218,10 +222,10 @@ def user_data_get(test_id):
         if i.get('tg_user_id') == test_id:
             expiry_time = i.get('expiry_time')
             now_time = datetime.datetime.now().strftime("%Y%m%d")
-            if now_time >= expiry_time:   # 判断密钥是否过期
+            if now_time >= expiry_time:  # 判断密钥是否过期
                 return expiry_data_get(test_id)
             else:
-                return i.get('data',{})
+                return i.get('data', {})
 
 
 # 更新过期用户数据
@@ -231,8 +235,8 @@ def expiry_data_get(test_id):
     refresh_token = None
     for i in data_seek:
         if i.get('tg_user_id') == test_id:
-            refresh_token = i.get('data',{}).get('refresh_token')
-    CALLBACK_URL = f'{WEBSITE_BASE}oauth_callback'
+            refresh_token = i.get('data', {}).get('refresh_token')
+    callback_url = f'{WEBSITE_BASE}oauth_callback'
     resp = requests.post(
         'https://bgm.tv/oauth/access_token',
         data={
@@ -240,18 +244,18 @@ def expiry_data_get(test_id):
             'client_id': APP_ID,
             'client_secret': APP_SECRET,
             'refresh_token': refresh_token,
-            'redirect_uri': CALLBACK_URL,
+            'redirect_uri': callback_url,
         },
-        headers = {
-        "User-Agent": "",
+        headers={
+            "User-Agent": "",
         }
     )
-    access_token = json.loads(resp.text).get('access_token')    #更新access_token
-    refresh_token = json.loads(resp.text).get('refresh_token')  #更新refresh_token
-    expiry_time = (datetime.datetime.now()+datetime.timedelta(days=7)).strftime("%Y%m%d")#更新过期时间
+    access_token = json.loads(resp.text).get('access_token')  # 更新access_token
+    refresh_token = json.loads(resp.text).get('refresh_token')  # 更新refresh_token
+    expiry_time = (datetime.datetime.now() + datetime.timedelta(days=7)).strftime("%Y%m%d")  # 更新过期时间
 
     # 替换数据
-    if access_token or refresh_token != None:
+    if access_token or refresh_token is not None:
         with open("bgm_data.json", 'r+', encoding='utf-8') as f:
             data = json.load(f)
             for i in data:
@@ -269,8 +273,9 @@ def expiry_data_get(test_id):
     user_data = None
     for i in data_seek:
         if i.get('tg_user_id') == test_id:
-            user_data = i.get('data',{})
+            user_data = i.get('data', {})
     return user_data
+
 
 # 获取BGM用户信息 TODO 存入数据库
 def bgmuser_data(test_id):
@@ -278,11 +283,8 @@ def bgmuser_data(test_id):
     access_token = user['access_token']
     url = f"https://api.bgm.tv/user/{user['user_id']}"
     user_data = requests_get(url, access_token=access_token)
-    user_data = {
-        'nickname': user_data.get('nickname'), # 用户昵称 str
-        'username': user_data.get('username')  # 用户username 没有设置则返回 uid str
-    }
     return user_data
+
 
 # 获取用户观看eps数据
 def eps_get(test_id, subject_id):
@@ -293,29 +295,30 @@ def eps_get(test_id, subject_id):
         'type': 0}
     url = 'https://api.bgm.tv/v0/episodes'
     data_eps = requests_get(url, params, access_token)
-    epsid_li = [i['id'] for i in data_eps['data']] # 所有eps_id
+    epsid_li = [i['id'] for i in data_eps['data']]  # 所有eps_id
 
     params = {'subject_id': subject_id}
     url = f"https://api.bgm.tv/user/{user_data['user_id']}/progress"
     data_watched = requests_get(url, params, access_token)
     if data_watched is not None:
-        watched_id_li = [i['id'] for i in data_watched['eps']] # 已观看 eps_id
+        watched_id_li = [i['id'] for i in data_watched['eps']]  # 已观看 eps_id
     else:
-        watched_id_li = [0] # 无观看集数
-    eps_n = len(set(epsid_li)) # 总集数
-    watched_n = len(set(epsid_li) & set(watched_id_li)) # 已观看了集数
-    unwatched_id = epsid_li # 去除已观看过集数的 eps_id
+        watched_id_li = [0]  # 无观看集数
+    eps_n = len(set(epsid_li))  # 总集数
+    watched_n = len(set(epsid_li) & set(watched_id_li))  # 已观看了集数
+    unwatched_id = epsid_li  # 去除已观看过集数的 eps_id
     try:
         for watched_li in watched_id_li:
             unwatched_id.remove(watched_li)
     except ValueError:
         pass
     # 输出
-    eps_data = {'progress': str(watched_n) + '/' + str(eps_n),   # 已观看/总集数 进度 str
-                'watched': watched_n,                            # 已观看集数 int
-                'eps_n': str(eps_n),                             # 总集数 str
-                'unwatched_id': unwatched_id}                    # 未观看 eps_di list
+    eps_data = {'progress': str(watched_n) + '/' + str(eps_n),  # 已观看/总集数 进度 str
+                'watched': watched_n,  # 已观看集数 int
+                'eps_n': str(eps_n),  # 总集数 str
+                'unwatched_id': unwatched_id}  # 未观看 eps_di list
     return eps_data
+
 
 # 更新收视进度状态
 def eps_status_get(test_id, eps_id, status):
@@ -324,14 +327,15 @@ def eps_status_get(test_id, eps_id, status):
     url = f'https://api.bgm.tv/ep/{eps_id}/status/{status}'
     return requests_get(url, access_token=access_token)
 
+
 # 更新收藏状态
 def collection_post(test_id, subject_id, status, rating):
     """更新收藏状态"""
     access_token = user_data_get(test_id).get('access_token')
-    if rating == None or rating == 0:
+    if not rating:
         params = {"status": (None, status)}
     else:
-        params = {"status": (None, status),"rating": (None, rating)}
+        params = {"status": (None, status), "rating": (None, rating)}
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         'Authorization': 'Bearer ' + access_token}
@@ -339,129 +343,161 @@ def collection_post(test_id, subject_id, status, rating):
     r = requests.post(url=url, files=params, headers=headers)
     return r
 
+
 # 获取指定条目收藏信息
 def user_collection_get(test_id, subject_id):
     """获取指定条目收藏信息"""
     access_token = user_data_get(test_id).get('access_token')
-    url = f'https://api.bgm.tv/collection/{subject_id}' 
+    url = f'https://api.bgm.tv/collection/{subject_id}'
     return requests_get(url, access_token=access_token)
 
-# 条目搜索 不需Access Token
-def search_get(keywords, type, start):
-    """条目搜索 不需Access Token"""
-    params = {
-        'type': type,
-        'start': start,
-        'max_results': 5} # 每页最大条数 5 个
-    url = f'https://api.bgm.tv/search/subject/{keywords}'
-    data_search = requests_get(url, params=params)
-    if data_search is not None:
-        search_results_n = data_search['results']
-        subject_id_li = [i['id'] for i in data_search['list']]
-        name_li = [i['name'] for i in data_search['list']]
-    else:
-        search_results_n, subject_id_li, name_li = 0, 0, 0
-    # 输出
-    search_data = {'search_results_n': search_results_n, # 搜索结果数量 int
-                   'subject_id_li': subject_id_li,       # 所有查询结果id列表 list
-                   'name_li': name_li}                   # 所有查询结果名字列表 list
-    return search_data
 
 # 空按钮回调处理
 @bot.callback_query_handler(func=lambda call: call.data == 'None')
-def callback_None(call):
+def callback_none(call):
     bot.answer_callback_query(call.id)
+
 
 # 动画在看详情
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do')
 def anime_do_callback(call):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
-    tg_id = int(call_data[1]) # 被请求用户 Telegram ID
-    subject_id = call_data[2] # 剧集ID
+    tg_id = int(call_data[1])  # 被请求用户 Telegram ID
+    subject_id = call_data[2]  # 剧集ID
     back = int(call_data[3])  # 是否是从其它功能页返回 是则为1 否则为2
     back_page = call_data[4]  # 返回在看列表页数
     if call_tg_id == tg_id:
         img_url = utils.anime_img(subject_id)
         user_collection_data = user_collection_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
-        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, back_page=back_page, user_rating=user_collection_data, eps_data=eps_data)
+        anime_do_message = gander_anime_message(
+            call_tg_id, subject_id, tg_id=tg_id, back_page=back_page,
+            user_rating=user_collection_data, eps_data=eps_data)
         if back == 1:
             if call.message.content_type == 'photo':
-                bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+                bot.edit_message_caption(
+                    caption=anime_do_message['text'],
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    parse_mode='Markdown',
+                    reply_markup=anime_do_message['markup'])
             else:
-                bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
+                bot.edit_message_text(
+                    text=anime_do_message['text'],
+                    parse_mode='Markdown',
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    reply_markup=anime_do_message['markup'])
         else:
-            bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20) # 删除用户在看动画列表消息
-            if img_url == 'None__' or not img_url: # 是否有动画简介图片
-                bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
+            bot.delete_message(
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                timeout=20)  # 删除用户在看动画列表消息
+            if img_url == 'None__' or not img_url:  # 是否有动画简介图片
+                bot.send_message(
+                    chat_id=call.message.chat.id,
+                    text=anime_do_message['text'],
+                    parse_mode='Markdown',
+                    reply_markup=anime_do_message['markup'],
+                    timeout=20)
             else:
-                bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+                bot.send_photo(
+                    chat_id=call.message.chat.id,
+                    photo=img_url,
+                    caption=anime_do_message['text'],
+                    parse_mode='Markdown',
+                    reply_markup=anime_do_message['markup'])
         bot.answer_callback_query(call.id)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
 
 # 评分
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'rating')
 def rating_callback(call):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
-    tg_id = int(call_data[1]) # 被请求更新用户 Telegram ID
+    tg_id = int(call_data[1])  # 被请求更新用户 Telegram ID
     if call_tg_id == tg_id:
-        rating_data = int(call_data[2]) # 用户请求评分 初始进入评分页为0
-        subject_id = call_data[3] # 剧集ID
-        back_page = call_data[4] # 返回在看列表页数
+        rating_data = int(call_data[2])  # 用户请求评分 初始进入评分页为0
+        subject_id = call_data[3]  # 剧集ID
+        back_page = call_data[4]  # 返回在看列表页数
         eps_data = eps_get(tg_id, subject_id)
         user_collection_data = user_collection_get(tg_id, subject_id)
         user_now_rating = user_collection_data['rating']
         if rating_data != 0:
-            user_startus = user_collection_data.get('status',{}).get('type')
+            user_startus = user_collection_data.get('status', {}).get('type')
             if user_startus is None:
                 user_startus = 'collect'
             collection_post(tg_id, subject_id, user_startus, str(rating_data))
             bot.answer_callback_query(call.id, text="已成功更新评分,稍后更新当前页面...")
             user_collection_data = user_collection_get(tg_id, subject_id)
         rating_message = grnder_rating_message(tg_id, subject_id, eps_data, user_collection_data, back_page)
-        if rating_data == 0 or user_now_rating != user_collection_data['rating']: # 当用户当前评分请求与之前评分不一致时
+        if rating_data == 0 or user_now_rating != user_collection_data['rating']:  # 当用户当前评分请求与之前评分不一致时
             if call.message.content_type == 'photo':
-                bot.edit_message_caption(caption=rating_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=rating_message['markup'])
+                bot.edit_message_caption(caption=rating_message['text'],
+                                         chat_id=call.message.chat.id,
+                                         message_id=call.message.message_id,
+                                         parse_mode='Markdown',
+                                         reply_markup=rating_message['markup'])
             else:
-                bot.edit_message_text(text=rating_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=rating_message['markup'])
+                bot.edit_message_text(text=rating_message['text'],
+                                      parse_mode='Markdown',
+                                      chat_id=call.message.chat.id,
+                                      message_id=call.message.message_id,
+                                      reply_markup=rating_message['markup'])
         bot.answer_callback_query(call.id)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
 
 # 已看最新
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_eps')
 def anime_eps_callback(call):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
-    tg_id = int(call_data[1]) # 被请求更新用户 Telegram ID
+    tg_id = int(call_data[1])  # 被请求更新用户 Telegram ID
     if call_tg_id == tg_id:
-        eps_id = int(call_data[2]) # 更新的剧集集数 ID
+        eps_id = int(call_data[2])  # 更新的剧集集数 ID
         if len(call_data) > 5:
-            remove = call_data[5] # 撤销
+            remove = call_data[5]  # 撤销
             if remove == 'remove':
                 eps_status_get(tg_id, eps_id, 'remove')  # 更新观看进度为撤销
                 bot.send_message(chat_id=call.message.chat.id, text='已撤销最新观看进度', parse_mode='Markdown', timeout=20)
                 bot.answer_callback_query(call.id, text='已撤销最新观看进度')
         else:
-            eps_status_get(tg_id, eps_id, 'watched') # 更新观看进度为看过
+            eps_status_get(tg_id, eps_id, 'watched')  # 更新观看进度为看过
             bot.answer_callback_query(call.id, text='已更新观看进度为看过')
-        subject_id = int(call_data[3]) # 剧集ID
-        back_page = call_data[4] # 返回在看列表页数
+        subject_id = int(call_data[3])  # 剧集ID
+        back_page = call_data[4]  # 返回在看列表页数
         user_collection_data = user_collection_get(tg_id, subject_id)
         eps_data = eps_get(tg_id, subject_id)
-        anime_do_message = gander_anime_message(call_tg_id, subject_id, tg_id=tg_id, user_rating=user_collection_data, eps_data=eps_data, eps_id=eps_id, back_page=back_page)
-        if eps_data['unwatched_id'] == []:
+        anime_do_message = gander_anime_message(call_tg_id, subject_id,
+                                                tg_id=tg_id,
+                                                user_rating=user_collection_data,
+                                                eps_data=eps_data,
+                                                eps_id=eps_id,
+                                                back_page=back_page)
+        if not eps_data['unwatched_id']:
             collection_type = 'collect'
-            collection_post(tg_id, subject_id, collection_type, str(user_collection_data['rating'])) # 看完最后一集自动更新收藏状态为看过
+            collection_post(tg_id, subject_id, collection_type,
+                            str(user_collection_data['rating']))  # 看完最后一集自动更新收藏状态为看过
         if call.message.content_type == 'photo':
-            bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+            bot.edit_message_caption(caption=anime_do_message['text'],
+                                     chat_id=call.message.chat.id,
+                                     message_id=call.message.message_id,
+                                     parse_mode='Markdown',
+                                     reply_markup=anime_do_message['markup'])
         else:
-            bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
+            bot.edit_message_text(text=anime_do_message['text'],
+                                  parse_mode='Markdown',
+                                  chat_id=call.message.chat.id,
+                                  message_id=call.message.message_id,
+                                  reply_markup=anime_do_message['markup'])
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
 
 # 动画在看列表 翻页
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'anime_do_page')
@@ -469,112 +505,160 @@ def anime_do_page_callback(call):
     # call_tg_id = call.from_user.id
     msg = call.message
     call_data = call.data.split('|')
-    tg_id = int(call_data[1]) # 被查询用户 Telegram ID
+    tg_id = int(call_data[1])  # 被查询用户 Telegram ID
     # if str(call_tg_id) != tg_id:
     #     bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     #     return
-    offset = int(call_data[2]) # 当前用户所请求的页数
+    offset = int(call_data[2])  # 当前用户所请求的页数
     user_data = user_data_get(tg_id)
-    page = gender_anime_page_message(user_data,offset,tg_id)
+    page = gender_anime_page_message(user_data, offset, tg_id)
     if call.message.content_type == 'text':
-        bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id, parse_mode='Markdown', reply_markup=page['markup'])
+        bot.edit_message_text(text=page['text'],
+                              chat_id=msg.chat.id,
+                              message_id=msg.message_id,
+                              parse_mode='Markdown',
+                              reply_markup=page['markup'])
     else:
         bot.delete_message(chat_id=msg.chat.id, message_id=msg.message_id)
         bot.send_message(text=page['text'], chat_id=msg.chat.id, parse_mode='Markdown', reply_markup=page['markup'])
     bot.answer_callback_query(call.id)
+
 
 # 搜索动画详情页 重写
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'animesearch')
 def animesearch_callback(call):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
-    back_type = call_data[1] # 返回类型
-    subject_id = call_data[2] # 剧集ID
-    back_week_day = int(call_data[3]) # 如是从week请求则为week day
+    back_type = call_data[1]  # 返回类型
+    subject_id = call_data[2]  # 剧集ID
+    back_week_day = int(call_data[3])  # 如是从week请求则为week day
     back = int(call_data[4])  # 是否是从收藏页返回 是则为1 否则为2
     img_url = utils.anime_img(subject_id)
     anime_do_message = gander_anime_message(call_tg_id, subject_id, back_week_day=back_week_day, back_type=back_type)
     if back == 1:
         if call.message.content_type == 'photo':
-                bot.edit_message_caption(caption=anime_do_message['text'], chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+            bot.edit_message_caption(caption=anime_do_message['text'],
+                                     chat_id=call.message.chat.id,
+                                     message_id=call.message.message_id,
+                                     parse_mode='Markdown',
+                                     reply_markup=anime_do_message['markup'])
         else:
-            bot.edit_message_text(text=anime_do_message['text'], parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=anime_do_message['markup'])
+            bot.edit_message_text(text=anime_do_message['text'],
+                                  parse_mode='Markdown',
+                                  chat_id=call.message.chat.id,
+                                  message_id=call.message.message_id,
+                                  reply_markup=anime_do_message['markup'])
     else:
-        bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
+        bot.delete_message(chat_id=call.message.chat.id,
+                           message_id=call.message.message_id, timeout=20)
         if img_url == 'None__' or not img_url:
-            bot.send_message(chat_id=call.message.chat.id, text=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'], timeout=20)
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=anime_do_message['text'],
+                             parse_mode='Markdown',
+                             reply_markup=anime_do_message['markup'],
+                             timeout=20)
         else:
-            bot.send_photo(chat_id=call.message.chat.id, photo=img_url, caption=anime_do_message['text'], parse_mode='Markdown', reply_markup=anime_do_message['markup'])
+            bot.send_photo(chat_id=call.message.chat.id,
+                           photo=img_url,
+                           caption=anime_do_message['text'],
+                           parse_mode='Markdown',
+                           reply_markup=anime_do_message['markup'])
     bot.answer_callback_query(call.id)
+
 
 # 收藏
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
 def collection_callback(call):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
-    tg_id = int(call_data[1]) # 被更新用户 Telegram ID
-    subject_id = call_data[2] # 剧集ID
-    back_type = call_data[3] # 返回类型
-    back_week_day = call_data[4] # 如是从week请求则为week day 不是则为0
-    collection_type = call_data[5] # 用户请求收藏状态 初始进入收藏页则为 null
+    tg_id = int(call_data[1])  # 被更新用户 Telegram ID
+    subject_id = call_data[2]  # 剧集ID
+    back_type = call_data[3]  # 返回类型
+    back_week_day = call_data[4]  # 如是从week请求则为week day 不是则为0
+    collection_type = call_data[5]  # 用户请求收藏状态 初始进入收藏页则为 null
     name = utils.get_subject_info(subject_id)['name']
     if collection_type == 'null':
         if not data_seek_get(call_tg_id):
-            bot.send_message(chat_id=call.message.chat.id, text=f'您未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f'您未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定',
+                             parse_mode='Markdown', timeout=20)
         else:
             text = f'*您想将 “*`{name}`*” 收藏为*\n\n'
             markup = telebot.types.InlineKeyboardMarkup()
             button_list = []
             if back_type == 'anime_do':
-                back_page = call_data[6] # 返回在看列表页数
-                button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
+                back_page = call_data[6]  # 返回在看列表页数
+                button_list.append(telebot.types.InlineKeyboardButton(
+                    text='返回', callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
             else:
-                button_list.append(telebot.types.InlineKeyboardButton(text='返回',callback_data=f'animesearch|{back_type}|{subject_id}|{back_week_day}|1'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='想看',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|wish'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='看过',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|collect'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='在看',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|do'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='搁置',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|on_hold'))
-            button_list.append(telebot.types.InlineKeyboardButton(text='抛弃',callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|dropped'))
+                button_list.append(telebot.types.InlineKeyboardButton(
+                    text='返回', callback_data=f'animesearch|{back_type}|{subject_id}|{back_week_day}|1'))
+            button_list.append(telebot.types.InlineKeyboardButton(
+                text='想看', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|wish'))
+            button_list.append(telebot.types.InlineKeyboardButton(
+                text='看过', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|collect'))
+            button_list.append(telebot.types.InlineKeyboardButton(
+                text='在看', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|do'))
+            button_list.append(telebot.types.InlineKeyboardButton(
+                text='搁置', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|on_hold'))
+            button_list.append(telebot.types.InlineKeyboardButton(
+                text='抛弃', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|dropped'))
             markup.add(*button_list, row_width=3)
             if call.message.content_type == 'photo':
-                bot.edit_message_caption(caption=text, chat_id=call.message.chat.id , message_id=call.message.message_id, parse_mode='Markdown', reply_markup=markup)
+                bot.edit_message_caption(caption=text, chat_id=call.message.chat.id,
+                                         message_id=call.message.message_id,
+                                         parse_mode='Markdown',
+                                         reply_markup=markup)
             else:
-                bot.edit_message_text(text=text, parse_mode='Markdown', chat_id=call.message.chat.id , message_id=call.message.message_id, reply_markup=markup)
+                bot.edit_message_text(text=text,
+                                      parse_mode='Markdown',
+                                      chat_id=call.message.chat.id,
+                                      message_id=call.message.message_id,
+                                      reply_markup=markup)
             bot.answer_callback_query(call.id)
     if call_tg_id == tg_id:
         rating = str(user_collection_get(tg_id, subject_id).get('rating'))
-        if collection_type == 'wish':    # 想看
+        if collection_type == 'wish':  # 想看
             collection_post(tg_id, subject_id, collection_type, rating)
-            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为想看', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f'已将 “`{name}`” 收藏更改为想看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为想看')
-        if collection_type == 'collect': # 看过
+        if collection_type == 'collect':  # 看过
             collection_post(tg_id, subject_id, collection_type, rating)
-            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为看过', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f'已将 “`{name}`” 收藏更改为看过', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为看过')
-        if collection_type == 'do':      # 在看
+        if collection_type == 'do':  # 在看
             collection_post(tg_id, subject_id, collection_type, rating)
-            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为在看', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f'已将 “`{name}`” 收藏更改为在看', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为在看')
-        if collection_type == 'on_hold': # 搁置
+        if collection_type == 'on_hold':  # 搁置
             collection_post(tg_id, subject_id, collection_type, rating)
-            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为搁置', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f'已将 “`{name}`” 收藏更改为搁置', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为搁置')
-        if collection_type == 'dropped': # 抛弃
+        if collection_type == 'dropped':  # 抛弃
             collection_post(tg_id, subject_id, collection_type, rating)
-            bot.send_message(chat_id=call.message.chat.id, text=f'已将 “`{name}`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f'已将 “`{name}`” 收藏更改为抛弃', parse_mode='Markdown', timeout=20)
             bot.answer_callback_query(call.id, text='已将收藏更改为抛弃')
     else:
-         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+        bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
 
 # week 返回
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
 def back_week_callback(call):
-    day = int(call.data.split('|')[1]) # week day
+    day = int(call.data.split('|')[1])  # week day
     week_data = gender_week_message(day)
     if call.message.content_type != 'text':
-        bot.delete_message(chat_id=call.message.chat.id , message_id=call.message.message_id, timeout=20)
-        bot.send_message(chat_id=call.message.chat.id, text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'], timeout=20)
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id, timeout=20)
+        bot.send_message(chat_id=call.message.chat.id,
+                         text=week_data['text'],
+                         parse_mode='Markdown',
+                         reply_markup=week_data['markup'],
+                         timeout=20)
     else:
         bot.edit_message_text(text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'],
                               chat_id=call.message.chat.id, message_id=call.message.message_id)
@@ -597,18 +681,15 @@ def sender_query_text(inline_query):
             message = utils.gander_anime_message("", inline_query.query)
             subject_info = message['subject_info']
             qr = telebot.types.InlineQueryResultArticle(
-                    id=inline_query.query
-                    , title=utils.subject_type_to_emoji(subject_info['type'])
-                            + (subject_info["name_cn"] if subject_info["name_cn"]
-                            else subject_info["name"])
-                    , input_message_content=telebot.types.InputTextMessageContent(
-                        message_text=f"/info@{BOT_USERNAME} {inline_query.query}"
-                        # + f"\n||{utils.parse_markdown_v2(subject_info['summary'])}||" TODO 转成markdownV2
-                        , parse_mode="markdown"
-                        , disable_web_page_preview=True
-                    )
-                    , description=subject_info["name"] if subject_info["name_cn"] else None
-                    , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                id=inline_query.query, title=utils.subject_type_to_emoji(subject_info['type']) + (
+                    subject_info["name_cn"] if subject_info["name_cn"]
+                    else subject_info["name"]
+                ), input_message_content=telebot.types.InputTextMessageContent(
+                    message_text=f"/info@{BOT_USERNAME} {inline_query.query}",
+                    parse_mode="markdown",
+                    disable_web_page_preview=True
+                ), description=subject_info["name"] if subject_info["name_cn"] else None,
+                thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
             )
             query_result_list.append(qr)
     else:
@@ -621,18 +702,17 @@ def sender_query_text(inline_query):
         for subject in subject_list["list"]:
             emoji = utils.subject_type_to_emoji(subject["type"])
             qr = telebot.types.InlineQueryResultArticle(
-                id=subject['url']
-                , title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"])
-                , input_message_content=telebot.types.InputTextMessageContent(
-                    message_text=f"/info@{BOT_USERNAME} {subject['id']}"
-                    , disable_web_page_preview=True
-                )
-                , description=subject["name"] if subject["name_cn"] else None
-                , thumb_url=subject["images"]["medium"] if subject["images"] else None
+                id=subject['url'], title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                input_message_content=telebot.types.InputTextMessageContent(
+                    message_text=f"/info@{BOT_USERNAME} {subject['id']}",
+                    disable_web_page_preview=True
+                ),
+                description=subject["name"] if subject["name_cn"] else None,
+                thumb_url=subject["images"]["medium"] if subject["images"] else None
             )
             query_result_list.append(qr)
-    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25)
-                            , switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
+    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
+                            switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
 
 
 # inline 方式公共搜索
@@ -649,31 +729,30 @@ def query_text(inline_query):
             if subject_info:
                 if img_url == 'None__' or not img_url:
                     qr = telebot.types.InlineQueryResultArticle(
-                            id=inline_query.query
-                            , title=utils.subject_type_to_emoji(subject_info['type'])
-                                    + (subject_info["name_cn"] if subject_info["name_cn"]
-                                    else subject_info["name"])
-                            , input_message_content=telebot.types.InputTextMessageContent(
-                                message['text']
-                                # + f"\n||{utils.parse_markdown_v2(subject_info['summary'])}||" TODO 转成markdownV2
-                                , parse_mode="markdown"
-                                , disable_web_page_preview=True
-                            )
-                            , description=subject_info["name"] if subject_info["name_cn"] else None
-                            , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
-                        )
+                        id=inline_query.query,
+                        title=utils.subject_type_to_emoji(subject_info['type']) + (
+                            subject_info["name_cn"] if subject_info["name_cn"]
+                            else subject_info["name"]),
+                        input_message_content=telebot.types.InputTextMessageContent(
+                            message['text'],
+                            parse_mode="markdown",
+                            disable_web_page_preview=True
+                        ),
+                        description=subject_info["name"] if subject_info["name_cn"] else None,
+                        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                    )
                 else:
                     qr = telebot.types.InlineQueryResultPhoto(
-                            id=inline_query.query
-                            , photo_url=img_url
-                            , title=utils.subject_type_to_emoji(subject_info['type'])
-                                    + (subject_info["name_cn"] if subject_info["name_cn"]
-                                    else subject_info["name"])
-                            , caption=message['text']
-                            , parse_mode="markdown"
-                            , description=subject_info["name"] if subject_info["name_cn"] else None
-                            , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
-                        )
+                        id=inline_query.query,
+                        photo_url=img_url,
+                        title=utils.subject_type_to_emoji(subject_info['type']) + (
+                            subject_info["name_cn"] if subject_info["name_cn"]
+                            else subject_info["name"]),
+                        caption=message['text'],
+                        parse_mode="markdown",
+                        description=subject_info["name"] if subject_info["name_cn"] else None,
+                        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                    )
                 query_result_list.append(qr)
     else:
         offset = int(inline_query.offset)
@@ -688,22 +767,22 @@ def query_text(inline_query):
             text += f"BGM ID：`{subject['id']}`\n"
             if 'rating' in subject and subject['rating']['score']:
                 text += f"➤ BGM 平均评分：`{subject['rating']['score']}`🌟\n"
-            if subject["type"] == 2 or subject["type"] == 6: # 当类型为anime或real时
+            if subject["type"] == 2 or subject["type"] == 6:  # 当类型为anime或real时
                 if 'eps' in subject and subject['eps']:
                     text += f"➤ 集数：共`{subject['eps']}`集\n"
                 if subject['air_date']:
                     text += f"➤ 放送日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
                 if subject['air_weekday']:
                     text += f"➤ 放送星期：`{utils.number_to_week(subject['air_weekday'])}`\n"
-            if subject["type"] == 1: # 当类型为book时
+            if subject["type"] == 1:  # 当类型为book时
                 if 'eps' in subject and subject['eps']:
                     text += f"➤ 话数：共`{subject['eps']}`话\n"
                 if subject['air_date']:
                     text += f"➤ 发售日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
-            if subject["type"] == 3: # 当类型为music时
+            if subject["type"] == 3:  # 当类型为music时
                 if subject['air_date']:
                     text += f"➤ 发售日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
-            if subject["type"] == 4: # 当类型为game时
+            if subject["type"] == 4:  # 当类型为game时
                 if subject['air_date']:
                     text += f"➤ 发行日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
             text += f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
@@ -724,21 +803,23 @@ def query_text(inline_query):
             # if subject['summary']:
             #     text += f"||_{utils.parse_markdown_v2(subject['summary'])}_||\n"
             qr = telebot.types.InlineQueryResultArticle(
-                id=subject['url']
-                , title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"])
-                , input_message_content=telebot.types.InputTextMessageContent(
-                    text
-                    , parse_mode="markdownV2"
-                    , disable_web_page_preview=True
-                )
-                , description=subject["name"] if subject["name_cn"] else None
-                , thumb_url=subject["images"]["medium"] if subject["images"] else None
-                , reply_markup=telebot.types.InlineKeyboardMarkup().add(telebot.types.InlineKeyboardButton(
-                    text="展示详情", switch_inline_query_current_chat=subject['id']))
+                id=subject['url'],
+                title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                input_message_content=telebot.types.InputTextMessageContent(
+                    text,
+                    parse_mode="markdownV2",
+                    disable_web_page_preview=True
+                ),
+                description=subject["name"] if subject["name_cn"] else None,
+                thumb_url=subject["images"]["medium"] if subject["images"] else None,
+                reply_markup=telebot.types.InlineKeyboardMarkup().add(telebot.types.InlineKeyboardButton(
+                    text="展示详情",
+                    switch_inline_query_current_chat=subject['id']
+                ))
             )
             query_result_list.append(qr)
-    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25)
-                            , switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
+    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
+                            switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
 
 
 @bot.inline_handler(lambda query: not query.query)
