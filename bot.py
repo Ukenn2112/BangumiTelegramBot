@@ -583,7 +583,7 @@ def test_chosen(chosen_inline_result):
 
 
 # 当是私聊bot使用inline搜索
-@bot.inline_handler(lambda query: query.query and query.chat_type == 'sender')
+@bot.inline_handler(lambda query: query.query and (query.chat_type == 'sender' or str.startswith(query.query, '@')))
 def sender_query_text(inline_query):
     """inline 方式私聊搜索"""
     query_result_list = []
@@ -591,7 +591,10 @@ def sender_query_text(inline_query):
         offset = 0
     else:
         offset = int(inline_query.offset)
-    subject_list = utils.search_subject(inline_query.query, response_group="large", start=offset)
+    query_keyword = inline_query.query
+    if str.startswith(query_keyword, '@') and len(query_keyword) > 1:
+        query_keyword = query_keyword[1:]
+    subject_list = utils.search_subject(query_keyword, response_group="large", start=offset)
     if 'list' in subject_list and subject_list["list"] is not None:
         for subject in subject_list["list"]:
             emoji = utils.subject_type_to_emoji(subject["type"])
@@ -611,7 +614,7 @@ def sender_query_text(inline_query):
 
 
 # 当不是私聊bot使用inline搜索
-@bot.inline_handler(lambda query: query.query and query.chat_type is not 'sender')
+@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not str.startswith(query.query, '@'))
 def query_text(inline_query):
     """inline 方式公共搜索"""
     query_result_list = []
