@@ -581,8 +581,9 @@ def back_week_callback(call):
 def test_chosen(chosen_inline_result):
     logger.info(chosen_inline_result)
 
+
 # 当是私聊bot使用inline搜索
-@bot.inline_handler(lambda query: query.chat_type == 'sender')
+@bot.inline_handler(lambda query: query.query and query.chat_type == 'sender')
 def sender_query_text(inline_query):
     """inline 方式私聊搜索"""
     query_result_list = []
@@ -608,8 +609,9 @@ def sender_query_text(inline_query):
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25)
                             , switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
 
+
 # 当不是私聊bot使用inline搜索
-@bot.inline_handler(lambda query: query.chat_type is not 'sender')
+@bot.inline_handler(lambda query: query.query and query.chat_type is not 'sender')
 def query_text(inline_query):
     """inline 方式公共搜索"""
     query_result_list = []
