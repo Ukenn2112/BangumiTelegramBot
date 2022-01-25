@@ -38,9 +38,10 @@ def requests_get(url, params: Optional[dict] = None, access_token: Optional[str]
         except json.JSONDecodeError:
             return None
 
+
 def gender_week_message(day):
     """每日放送查询页"""
-    week_data = requests_get(url='https://api.bgm.tv/calendar')
+    week_data = get_calendar()
     if week_data is None:
         return {'text': "出错了!", 'markup': None}
     for i in week_data:
@@ -59,6 +60,12 @@ def gender_week_message(day):
             text = f'*在{air_weekday}放送的节目*\n\n{week_text_data}' \
                    f'共{anime_count}部'
             markup.add(*button_list, row_width=5)
+            week_button_list = []
+            for week_day in range(1, 8):
+                week_button_list.append(telebot.types.InlineKeyboardButton(
+                    text=number_to_week(week_day)[-1:],
+                    callback_data=f"back_week|{week_day}" if str(week_day) != str(day) else "None"))
+            markup.add(*week_button_list, row_width=7)
             return {'text': text, 'markup': markup}
 
 
@@ -284,6 +291,15 @@ def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=N
     url = f'https://api.bgm.tv/collection/{subject_id}/update'
     return requests.post(url=url, data=params, headers=headers)
 
+
+def get_calendar() -> dict:
+    data = redis_cli.get("calendar")
+    if data:
+        return json.loads(data)
+    else:
+        calendar = requests_get(url='https://api.bgm.tv/calendar')
+        redis_cli.set("calendar",json.dumps(calendar), ex=3600)
+        return calendar
 
 
 def get_subject_info(subject_id, t_dict=None):
