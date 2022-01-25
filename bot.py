@@ -688,12 +688,24 @@ def query_text(inline_query):
             text += f"BGM ID：`{subject['id']}`\n"
             if 'rating' in subject and subject['rating']['score']:
                 text += f"➤ BGM 平均评分：`{subject['rating']['score']}`🌟\n"
-            if 'eps' in subject and subject['eps']:
-                text += f"➤ 集数：共`{subject['eps']}`集\n"
-            if subject['air_date']:
-                text += f"➤ 放送日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
-            if subject['air_weekday']:
-                text += f"➤ 放送星期：`{utils.number_to_week(subject['air_weekday'])}`\n"
+            if subject["type"] == 2 or subject["type"] == 6: # 当类型为anime或real时
+                if 'eps' in subject and subject['eps']:
+                    text += f"➤ 集数：共`{subject['eps']}`集\n"
+                if subject['air_date']:
+                    text += f"➤ 放送日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
+                if subject['air_weekday']:
+                    text += f"➤ 放送星期：`{utils.number_to_week(subject['air_weekday'])}`\n"
+            if subject["type"] == 1: # 当类型为book时
+                if 'eps' in subject and subject['eps']:
+                    text += f"➤ 话数：共`{subject['eps']}`话\n"
+                if subject['air_date']:
+                    text += f"➤ 发售日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
+            if subject["type"] == 3: # 当类型为music时
+                if subject['air_date']:
+                    text += f"➤ 发售日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
+            if subject["type"] == 4: # 当类型为game时
+                if subject['air_date']:
+                    text += f"➤ 发行日期：`{utils.parse_markdown_v2(subject['air_date'])}`\n"
             text += f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
                     f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
             # if 'collection' in subject and subject['collection']:
