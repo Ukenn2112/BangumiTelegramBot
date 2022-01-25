@@ -17,10 +17,10 @@ from utils import gender_week_message, gander_anime_message, grnder_rating_messa
 from utils import requests_get
 
 logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
-# logging.basicConfig(level=logging.INFO,
-#                     filename='run.log',
-#                     format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+telebot.logger.setLevel(logging.INFO)  # Outputs debug messages to console.
+logging.basicConfig(level=logging.INFO,
+                    filename='run.log',
+                    format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -837,7 +837,10 @@ def set_bot_command():
     {"command": "week", "description": "查询当日/空格加数字查询每日放送"},
     {"command": "search", "description": "搜索条目"},
     ]
-    make_request(BOT_TOKEN, r'setMyCommands', params={'commands': json.dumps(commands_list)}, method='post')
+    try:
+        make_request(BOT_TOKEN, r'setMyCommands', params={'commands': json.dumps(commands_list)}, method='post')
+    except:
+        return
 
 # 开始启动
 if __name__ == '__main__':
