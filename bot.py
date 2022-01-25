@@ -586,13 +586,31 @@ def test_chosen(chosen_inline_result):
     logger.info(chosen_inline_result)
 
 
-# 当是私聊bot使用inline搜索
+# inline 方式私聊搜索或者在任何位置搜索前使用@
 @bot.inline_handler(lambda query: query.query and (query.chat_type == 'sender' or str.startswith(query.query, '@')))
 def sender_query_text(inline_query):
-    """inline 方式私聊搜索"""
+    """inline 方式私聊搜索或者在任何位置搜索前使用@"""
     query_result_list = []
     if not inline_query.offset:
         offset = 0
+        if inline_query.query.isdecimal():
+            message = utils.gander_anime_message("", inline_query.query)
+            subject_info = message['subject_info']
+            qr = telebot.types.InlineQueryResultArticle(
+                    id=inline_query.query
+                    , title=utils.subject_type_to_emoji(subject_info['type'])
+                            + (subject_info["name_cn"] if subject_info["name_cn"]
+                            else subject_info["name"])
+                    , input_message_content=telebot.types.InputTextMessageContent(
+                        message_text=f"/info@{BOT_USERNAME} {inline_query.query}"
+                        # + f"\n||{utils.parse_markdown_v2(subject_info['summary'])}||" TODO 转成markdownV2
+                        , parse_mode="markdown"
+                        , disable_web_page_preview=True
+                    )
+                    , description=subject_info["name"] if subject_info["name_cn"] else None
+                    , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+            )
+            query_result_list.append(qr)
     else:
         offset = int(inline_query.offset)
     query_keyword = inline_query.query
@@ -617,7 +635,7 @@ def sender_query_text(inline_query):
                             , switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
 
 
-# 当不是私聊bot使用inline搜索
+# inline 方式公共搜索
 @bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not str.startswith(query.query, '@'))
 def query_text(inline_query):
     """inline 方式公共搜索"""
@@ -630,8 +648,7 @@ def query_text(inline_query):
             subject_info = message['subject_info']
             if subject_info:
                 if img_url == 'None__' or not img_url:
-                    query_result_list.append(
-                        telebot.types.InlineQueryResultArticle(
+                    qr = telebot.types.InlineQueryResultArticle(
                             id=inline_query.query
                             , title=utils.subject_type_to_emoji(subject_info['type'])
                                     + (subject_info["name_cn"] if subject_info["name_cn"]
@@ -644,10 +661,9 @@ def query_text(inline_query):
                             )
                             , description=subject_info["name"] if subject_info["name_cn"] else None
                             , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
-                        ))
+                        )
                 else:
-                    query_result_list.append(
-                        telebot.types.InlineQueryResultPhoto(
+                    qr = telebot.types.InlineQueryResultPhoto(
                             id=inline_query.query
                             , photo_url=img_url
                             , title=utils.subject_type_to_emoji(subject_info['type'])
@@ -657,7 +673,8 @@ def query_text(inline_query):
                             , parse_mode="markdown"
                             , description=subject_info["name"] if subject_info["name_cn"] else None
                             , thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
-                        ))
+                        )
+                query_result_list.append(qr)
     else:
         offset = int(inline_query.offset)
     subject_list = utils.search_subject(inline_query.query, response_group="large", start=offset)
