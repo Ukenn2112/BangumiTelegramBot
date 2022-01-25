@@ -57,8 +57,6 @@
 
 # 命令列表
 
-您可以通过 [@BotFather](https://t.me/botfather) 来设置您的机器人的命令建议。
-
 ```
 start - 绑定Bangumi账号
 my - Bangumi收藏统计/空格加username或uid不绑定查询

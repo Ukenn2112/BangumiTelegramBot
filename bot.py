@@ -12,6 +12,7 @@ import telebot
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
+from telebot.apihelper import _make_request as make_request
 from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message
 from utils import requests_get
 
@@ -712,7 +713,7 @@ def sender_query_text(inline_query):
             )
             query_result_list.append(qr)
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
-                            switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
+                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None")
 
 
 # inline 方式公共搜索
@@ -819,14 +820,26 @@ def query_text(inline_query):
             )
             query_result_list.append(qr)
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
-                            switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
+                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None")
 
 
 @bot.inline_handler(lambda query: not query.query)
 def query_empty(inline_query):
-    bot.answer_inline_query(inline_query.id, [], switch_pm_text="条目id获取信息或关键字搜索", switch_pm_parameter="None")
+    bot.answer_inline_query(inline_query.id, [], switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None")
 
+
+# 设置Bot命令
+def set_bot_command():
+    commands_list = [
+    {"command": "start", "description": "绑定Bangumi账号"},
+    {"command": "my", "description": "Bangumi收藏统计/空格加username或uid不绑定查询"},
+    {"command": "anime", "description": "Bangumi用户在看动画"},
+    {"command": "week", "description": "查询当日/空格加数字查询每日放送"},
+    {"command": "search", "description": "搜索条目"},
+    ]
+    make_request(BOT_TOKEN, r'setMyCommands', params={'commands': json.dumps(commands_list)}, method='post')
 
 # 开始启动
 if __name__ == '__main__':
+    set_bot_command()
     bot.infinity_polling()
