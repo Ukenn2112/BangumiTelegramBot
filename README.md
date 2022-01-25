@@ -52,6 +52,7 @@
   ```
 
 - 通过 [@BotFather](https://t.me/botfather) 将inline功能开启
+
   `/mybots` -> `选择 bot` -> `Bot Settings` -> `Inline Mode` -> 按下 `Turn on` (画面显示 Inline mode is currently enabled for xxxx 就表示启用了)
 
 # 命令列表

@@ -65,7 +65,7 @@ def gender_week_message(day):
 def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, user_rating: Optional[dict] = None,
                          eps_data: Optional[dict] = None, back_page: Optional[str] = None,
                          eps_id: Optional[int] = None, start: Optional[int] = None,
-                         anime_search_keywords: Optional[str] = None):
+                         back_type: Optional[str] = None):
     """动画详情页"""
     subject_info = get_subject_info(subject_id)
     text = f"*{subject_info['name_cn']}*\n" \
@@ -143,12 +143,12 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
                 markup.add(telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
         if eps_id is not None:
             text += f"\n📝 [第{eps_data['watched']}话评论](https://bgm.tv/ep/{eps_id})\n"
-    elif anime_search_keywords is not None:
-        if anime_search_keywords == 'week':
+    elif back_type is not None:
+        if back_type == 'week':
             markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'back_week|{start}'),
-                       telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
+                       telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{start}|null'))
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{anime_search_keywords}|{start}|null'))
+            markup.add(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{start}|null'))
     return {'text': text, 'markup': markup, 'subject_info': subject_info}
 
 
