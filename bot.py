@@ -586,9 +586,7 @@ def collection_callback(call):
     name = utils.get_subject_info(subject_id)['name']
     if collection_type == 'null':
         if not data_seek_get(call_tg_id):
-            bot.send_message(chat_id=call.message.chat.id,
-                             text=f'您未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定',
-                             parse_mode='Markdown', timeout=20)
+            bot.answer_callback_query(call.id, text='您未绑定Bangumi，请私聊我使用/start进行绑定', show_alert=True)
         else:
             text = f'*您想将 “*`{name}`*” 收藏为*\n\n'
             markup = telebot.types.InlineKeyboardMarkup()
