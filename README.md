@@ -9,7 +9,7 @@
 - [x] 查询个人收藏统计
 - [ ] 收视进度更新
   - [x] 更新动画的收视进度
-  - [ ] 更新其他类型的收视进度
+  - [x] 更新其他类型的收视进度
   - [ ] 批量更新收视进度
 - [x] 观看完成最后一集后自动更新收藏状态为看过
 - [x] 在看评分
@@ -60,7 +60,11 @@
 ```
 start - 绑定Bangumi账号
 my - Bangumi收藏统计/空格加username或uid不绑定查询
+book - Bangumi用户在读书籍
 anime - Bangumi用户在看动画
+game - Bangumi用户在玩动画
+real - Bangumi用户在看剧集
+week - 空格加数字查询每日放送
 week - 查询当日/空格加数字查询每日放送
 search - 搜索条目
 ```
