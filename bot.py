@@ -130,10 +130,16 @@ def send_my(message):
     bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
 
 
-# 动画条目搜索/查询 Bangumi 用户在看动画 重写
-@bot.message_handler(commands=['anime'])
+# 查询 Bangumi 用户在看 重写
+@bot.message_handler(commands=['book', 'anime', 'game', 'real'])
 def send_anime(message):
     tg_id = message.from_user.id
+    message_data = message.text.split(' ')
+    if len(message_data) == 1:
+        in_commands_type = message.text.strip('/')
+        subject_type = utils.subject_type_to_number(in_commands_type)
+    else:
+        return
     offset = 0
     user_data = user_data_get(tg_id)
     if user_data is None:
@@ -145,7 +151,7 @@ def send_anime(message):
     msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id,
                            parse_mode='Markdown', timeout=20)
     try:
-        page = gender_anime_page_message(user_data, offset, tg_id)
+        page = gender_anime_page_message(user_data, offset, tg_id, subject_type)
     except:
         bot.edit_message_text(text="出错了!请看日志", chat_id=message.chat.id, message_id=msg.message_id)
         raise
@@ -510,8 +516,9 @@ def anime_do_page_callback(call):
     #     bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
     #     return
     offset = int(call_data[2])  # 当前用户所请求的页数
+    subject_type = int(call_data[3]) # 返回再看列表类型
     user_data = user_data_get(tg_id)
-    page = gender_anime_page_message(user_data, offset, tg_id)
+    page = gender_anime_page_message(user_data, offset, tg_id, subject_type)
     if call.message.content_type == 'text':
         bot.edit_message_text(text=page['text'],
                               chat_id=msg.chat.id,
@@ -831,7 +838,10 @@ def set_bot_command(bot):
     """设置Bot命令"""
     commands_list = [
         telebot.types.BotCommand("my", "Bangumi收藏统计/空格加username或uid不绑定查询"),
+        telebot.types.BotCommand("book", "Bangumi用户在读书籍"),
         telebot.types.BotCommand("anime", "Bangumi用户在看动画"),
+        telebot.types.BotCommand("game", "Bangumi用户在玩动画"),
+        telebot.types.BotCommand("real", "Bangumi用户在看剧集"),
         telebot.types.BotCommand("week", "空格加数字查询每日放送"),
         telebot.types.BotCommand("search", "搜索条目"),
         telebot.types.BotCommand("start", "绑定Bangumi账号"),
