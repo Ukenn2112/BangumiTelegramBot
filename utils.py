@@ -191,9 +191,9 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
         unwatched_id = eps_data['unwatched_id']
         if not unwatched_id:
             markup.add(telebot.types.InlineKeyboardButton(
-                text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+                text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}|{subject_type}'),
                 telebot.types.InlineKeyboardButton(
-                    text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
+                text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
             if eps_id is not None:
                 markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'),
@@ -204,7 +204,7 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|anime_do|0|null|{back_page}'))
         else:
             markup.add(
-                telebot.types.InlineKeyboardButton(text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}'),
+                telebot.types.InlineKeyboardButton(text='返回', callback_data=f'anime_do_page|{tg_id}|{back_page}|{subject_type}'),
                 telebot.types.InlineKeyboardButton(text='评分',
                                                    callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
                 telebot.types.InlineKeyboardButton(text='已看最新',
@@ -253,7 +253,7 @@ def grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page):
     return {'text': text, 'markup': markup}
 
 
-def gender_anime_page_message(user_data, offset, tg_id):
+def gender_anime_page_message(user_data, offset, tg_id, subject_type: int):
     bgm_id = user_data.get('user_id')
     access_token = user_data.get('access_token')
     # 查询用户名 TODO 将用户数据放入数据库
@@ -267,7 +267,7 @@ def gender_anime_page_message(user_data, offset, tg_id):
     limit = 10
 
     params = {
-        'subject_type': 2,
+        'subject_type': subject_type,
         'type': 3,
         'limit': limit,  # 每页条数
         'offset': offset  # 开始页
@@ -275,11 +275,11 @@ def gender_anime_page_message(user_data, offset, tg_id):
     url = f'https://api.bgm.tv/v0/users/{username}/collections'
     response = requests_get(url=url, params=params, access_token=access_token)
     if response is None:
-        return {'text': '出错了', 'markup': None}
+        return {'text': '出错啦，您貌似没有此状态类型的收藏', 'markup': None}
     anime_count = response.get('total')  # 总在看数 int
     subject_list = response['data']
     if subject_list is None or len(subject_list) == 0:  # 是否有数据
-        return {'text': '出错啦，您貌似没有收藏的在看', 'markup': None}
+        return {'text': '出错啦，您貌似没有此状态类型的收藏', 'markup': None}
     # 循环查询 将条目信息数据存进去 多线程获取
     thread_list = []
     for info in subject_list:
@@ -300,22 +300,35 @@ def gender_anime_page_message(user_data, offset, tg_id):
                            f' `[{info["ep_status"]}/{info["subject_info"]["total_episodes"]}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
             text=num, callback_data=f"anime_do|{tg_id}|{info['subject_id']}|0|{offset}"))
-    text = f'*{nickname} 在看的动画*\n\n{anime_text_data}' \
-           f'共{anime_count}部'
+    if subject_type == 1:
+        text = f'*{nickname} 在读的书籍*\n\n{anime_text_data}' \
+               f'共{anime_count}本'
+    if subject_type == 2:
+        text = f'*{nickname} 在看的动画*\n\n{anime_text_data}' \
+               f'共{anime_count}部'
+    if subject_type == 3:
+        text = f'*{nickname} 在听的音乐*\n\n{anime_text_data}' \
+               f'共{anime_count}张'
+    if subject_type == 4:
+        text = f'*{nickname} 在玩的游戏*\n\n{anime_text_data}' \
+               f'共{anime_count}部'
+    if subject_type == 6:
+        text = f'*{nickname} 在看的剧集*\n\n{anime_text_data}' \
+               f'共{anime_count}部'
     markup.add(*button_list, row_width=5)
     # 只有数量大于分页时 开启分页
     if anime_count > limit:
         button_list2 = []
         if offset - limit >= 0:
             button_list2.append(
-                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'anime_do_page|{tg_id}|{offset - limit}'))
+                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'anime_do_page|{tg_id}|{offset - limit}|{subject_type}'))
         else:
             button_list2.append(telebot.types.InlineKeyboardButton(text='这是首页', callback_data="None"))
         button_list2.append(telebot.types.InlineKeyboardButton(
             text=f'{int(offset / limit) + 1}/{math.ceil(anime_count / limit)}', callback_data="None"))
         if offset + limit < anime_count:
             button_list2.append(
-                telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'anime_do_page|{tg_id}|{offset + limit}'))
+                telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'anime_do_page|{tg_id}|{offset + limit}|{subject_type}'))
         else:
             button_list2.append(telebot.types.InlineKeyboardButton(text='这是末页', callback_data="None"))
         markup.add(*button_list2)
@@ -460,6 +473,18 @@ def search_subject(keywords: str,
         return {"results": 0, 'list': []}
     return j
 
+
+def subject_type_to_number(subject_type: str) -> int:
+    if subject_type == 'book':
+        return 1
+    elif subject_type == 'anime':
+        return 2
+    elif subject_type == 'music':
+        return 3
+    elif subject_type == 'game':
+        return 4
+    elif subject_type == 'real':
+        return 6
 
 def subject_type_to_emoji(type_: int) -> str:
     if type_ == 1:
