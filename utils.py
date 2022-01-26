@@ -364,6 +364,7 @@ def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=N
 
 
 def get_calendar() -> dict:
+    """获取每日放送动漫"""
     data = redis_cli.get("calendar")
     if data:
         return json.loads(data)

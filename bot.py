@@ -12,7 +12,6 @@ import telebot
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
-from telebot.apihelper import _make_request as make_request
 from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message
 from utils import requests_get
 
@@ -828,21 +827,22 @@ def query_empty(inline_query):
     bot.answer_inline_query(inline_query.id, [], switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None")
 
 
-# 设置Bot命令
-def set_bot_command():
+def set_bot_command(bot):
+    """设置Bot命令"""
     commands_list = [
-    {"command": "start", "description": "绑定Bangumi账号"},
-    {"command": "my", "description": "Bangumi收藏统计/空格加username或uid不绑定查询"},
-    {"command": "anime", "description": "Bangumi用户在看动画"},
-    {"command": "week", "description": "查询当日/空格加数字查询每日放送"},
-    {"command": "search", "description": "搜索条目"},
+        telebot.types.BotCommand("my", "Bangumi收藏统计/空格加username或uid不绑定查询"),
+        telebot.types.BotCommand("anime", "Bangumi用户在看动画"),
+        telebot.types.BotCommand("week", "空格加数字查询每日放送"),
+        telebot.types.BotCommand("search", "搜索条目"),
+        telebot.types.BotCommand("start", "绑定Bangumi账号"),
     ]
     try:
-        make_request(BOT_TOKEN, r'setMyCommands', params={'commands': json.dumps(commands_list)}, method='post')
+        bot.set_my_commands(commands_list)
     except:
-        return
+        pass
+
 
 # 开始启动
 if __name__ == '__main__':
-    set_bot_command()
+    set_bot_command(bot)
     bot.infinity_polling()
