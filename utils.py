@@ -295,7 +295,10 @@ def gender_anime_page_message(user_data, offset, tg_id, subject_type: int):
         'offset': offset  # 开始页
     }
     url = f'https://api.bgm.tv/v0/users/{username}/collections'
-    response = requests_get(url=url, params=params, access_token=access_token)
+    try:
+        response = requests_get(url=url, params=params, access_token=access_token)
+    except requests.exceptions.BaseHTTPError:
+        return {'text': '出错啦，您貌似没有此状态类型的收藏', 'markup': None}
     if response is None:
         return {'text': '出错啦，您貌似没有此状态类型的收藏', 'markup': None}
     anime_count = response.get('total')  # 总在看数 int
