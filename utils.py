@@ -31,12 +31,12 @@ def requests_get(url, params: Optional[dict] = None, access_token: Optional[str]
             else:
                 logging.warning(f'api请求错误，重试中...{str(err)}')
     if r.status_code != 200:
-        return None
+        raise requests.exceptions.BaseHTTPError(r.status_code)
     else:
         try:
             return json.loads(r.text)
         except json.JSONDecodeError:
-            return None
+            raise
 
 
 def gender_week_message(day):
@@ -257,11 +257,12 @@ def gender_anime_page_message(user_data, offset, tg_id):
     bgm_id = user_data.get('user_id')
     access_token = user_data.get('access_token')
     # 查询用户名 TODO 将用户数据放入数据库
-    user_data = requests_get(url=f'https://api.bgm.tv/user/{bgm_id}')
-    if user_data is None:
-        return {'text': '出错了', 'markup': None}
-    if isinstance(user_data, dict) and user_data.get('code') == 404:
-        return {'text': '出错了，没有查询到该用户', 'markup': None}
+    try:
+        user_data = get_user(bgm_id)
+    except FileNotFoundError:
+        return {'text': "出错了，没有查询到该用户", 'markup': None}
+    except json.JSONDecodeError:
+        return {'text': "出错了，无法获取到您的个人信息", 'markup': None}
     nickname = user_data.get('nickname')
     username = user_data.get('username')
     limit = 10
@@ -459,6 +460,22 @@ def search_subject(keywords: str,
     except:
         return {"results": 0, 'list': []}
     return j
+
+
+def get_user(bgm_id: str) -> dict:
+    data = redis_cli.get(f"bgm_user:{bgm_id}")
+    if data:
+        if data != "None__":
+            return json.loads(data)
+        else:
+            raise FileNotFoundError
+    user_data = requests_get(f'https://api.bgm.tv/user/{bgm_id}')
+    if isinstance(user_data, dict) and user_data.get('code') == 404:
+        redis_cli.set(f"bgm_user:{bgm_id}", "None__", ex=3600)
+        raise FileNotFoundError
+    else:
+        redis_cli.set(f"bgm_user:{bgm_id}", json.dumps(user_data), ex=3600 * 24 * 7)
+        return user_data
 
 
 def subject_type_to_emoji(type_: int) -> str:

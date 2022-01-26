@@ -63,7 +63,7 @@ def send_my(message):
     else:
         # 加了参数 查参数中的人
         bgm_id = message_data[1]
-        access_token = ''
+        access_token = None
     # 开始查询数据
     msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
                            timeout=20)
@@ -79,12 +79,13 @@ def send_my(message):
             bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
             return
         # 查询用户名
-        user_data = requests_get(url=f'https://api.bgm.tv/user/{bgm_id}')
-        if user_data is None:
-            bot.edit_message_text(text="出错了,无法获取到您的个人信息", chat_id=message.chat.id, message_id=msg.message_id)
-            return
-        if isinstance(user_data, dict) and user_data.get('code') == 404:
+        try:
+            user_data = utils.get_user(bgm_id)
+        except FileNotFoundError:
             bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
+            return
+        except json.JSONDecodeError:
+            bot.edit_message_text(text="出错了,无法获取到您的个人信息", chat_id=message.chat.id, message_id=msg.message_id)
             return
         nickname = user_data.get('nickname')
         bgm_id = user_data.get('id')
@@ -837,7 +838,7 @@ def set_bot_command(bot):
         telebot.types.BotCommand("start", "绑定Bangumi账号"),
     ]
     try:
-        bot.set_my_commands(commands_list)
+        return bot.set_my_commands(commands_list)
     except:
         pass
 
