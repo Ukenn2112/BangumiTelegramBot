@@ -6,13 +6,17 @@ https://bangumi.github.io/api/
 import datetime
 import json
 import logging
+import threading
 
 import requests
+import schedule
 import telebot
+import time
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
-from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, grnder_summary_message
+from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, \
+    grnder_summary_message
 from utils import requests_get
 
 logger = telebot.logger
@@ -291,6 +295,45 @@ def bgmuser_data(test_id):
     url = f"https://api.bgm.tv/user/{user['user_id']}"
     user_data = requests_get(url, access_token=access_token)
     return user_data
+
+
+@schedule.repeat(schedule.every().day)
+def check_expiry_user():
+    """检查是否有过期用户"""
+    data_seek = []
+    with open('bgm_data.json') as f:
+        data_seek = json.loads(f.read())
+    for i in data_seek:
+        expiry_time = i.get('expiry_time')
+        now_time = datetime.datetime.now().strftime("%Y%m%d")
+        if now_time >= expiry_time:  # 判断密钥是否过期
+            expiry_data_get(i.get('tg_user_id'))
+
+
+def run_continuously(interval=1):
+    """Continuously run, while executing pending jobs at each
+    elapsed time interval.
+    @return cease_continuous_run: threading. Event which can
+    be set to cease continuous run. Please note that it is
+    *intended behavior that run_continuously() does not run
+    missed jobs*. For example, if you've registered a job that
+    should run every minute and you set a continuous run
+    interval of one hour then your job won't be run 60 times
+    at each interval but only once.
+    https://schedule.readthedocs.io/en/stable/background-execution.html
+    """
+    cease_continuous_run = threading.Event()
+
+    class ScheduleThread(threading.Thread):
+        @classmethod
+        def run(cls):
+            while not cease_continuous_run.is_set():
+                schedule.run_pending()
+                time.sleep(interval)
+
+    continuous_thread = ScheduleThread()
+    continuous_thread.start()
+    return cease_continuous_run
 
 
 # 获取用户观看eps数据
@@ -877,4 +920,5 @@ def set_bot_command(bot):
 # 开始启动
 if __name__ == '__main__':
     set_bot_command(bot)
+    stop_run_continuously = run_continuously()
     bot.infinity_polling()
