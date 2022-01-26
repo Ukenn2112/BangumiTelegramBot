@@ -4,6 +4,7 @@ https://bangumi.github.io/api/
 """
 
 import datetime
+from email import message
 import json
 import logging
 
@@ -12,7 +13,7 @@ import telebot
 
 import utils
 from config import BOT_TOKEN, APP_ID, APP_SECRET, WEBSITE_BASE, BOT_USERNAME
-from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message
+from utils import gender_week_message, gander_anime_message, grnder_rating_message, gender_anime_page_message, grnder_summary_message
 from utils import requests_get
 
 logger = telebot.logger
@@ -539,7 +540,7 @@ def animesearch_callback(call):
     back_type = call_data[1]  # 返回类型
     subject_id = call_data[2]  # 剧集ID
     back_week_day = int(call_data[3])  # 如是从week请求则为week day
-    back = int(call_data[4])  # 是否是从收藏页返回 是则为1 否则为2
+    back = int(call_data[4])  # 是否是从收藏/简介页返回 是则为1 否则为2
     img_url = utils.anime_img(subject_id)
     anime_do_message = gander_anime_message(call_tg_id, subject_id, back_week_day=back_week_day, back_type=back_type)
     if back == 1:
@@ -667,6 +668,29 @@ def back_week_callback(call):
     else:
         bot.edit_message_text(text=week_data['text'], parse_mode='Markdown', reply_markup=week_data['markup'],
                               chat_id=call.message.chat.id, message_id=call.message.message_id)
+    bot.answer_callback_query(call.id)
+
+# summary 简介查询
+@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'summary')
+def back_summary_callback(call):
+    call_data = call.data.split('|')
+    subject_id = call_data[1]  # subject_id
+    if len(call_data) > 2:
+        week_day = call_data[2]
+    else:
+        week_day = 0
+    summary_data = grnder_summary_message(subject_id, week_day)
+    if call.message.content_type == 'photo':
+        bot.edit_message_caption(caption=summary_data['text'], chat_id=call.message.chat.id,
+                                    message_id=call.message.message_id,
+                                    parse_mode='Markdown',
+                                    reply_markup=summary_data['markup'])
+    else:
+        bot.edit_message_text(text=summary_data['text'],
+                                parse_mode='Markdown',
+                                chat_id=call.message.chat.id,
+                                message_id=call.message.message_id,
+                                reply_markup=summary_data['markup'])
     bot.answer_callback_query(call.id)
 
 

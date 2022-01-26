@@ -222,11 +222,13 @@ def gander_anime_message(call_tg_id, subject_id, tg_id: Optional[int] = None, us
     elif back_type is not None:
         if back_type == 'week':
             markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'back_week|{back_week_day}'),
+                       telebot.types.InlineKeyboardButton(text='简介', callback_data=f'summary|{subject_id}|{back_week_day}'),
                        telebot.types.InlineKeyboardButton(text='收藏',
                                                           callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|null'))
         else:
             markup.add(telebot.types.InlineKeyboardButton(text='收藏',
-                                                          callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|0|null'))
+                                                          callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|0|null'),
+                       telebot.types.InlineKeyboardButton(text='简介', callback_data=f'summary|{subject_id}'))
     return {'text': text, 'markup': markup, 'subject_info': subject_info}
 
 
@@ -250,6 +252,25 @@ def grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page):
     markup.add(*button_list, row_width=5)
     markup.add(telebot.types.InlineKeyboardButton(
         text='返回', callback_data=f'anime_do|{tg_id}|{subject_id}|1|{back_page}'))
+    return {'text': text, 'markup': markup}
+
+
+def grnder_summary_message(subject_id, week_day: Optional[str] = None):
+    """简介页"""
+    subject_info = get_subject_info(subject_id)
+    text = {f"{subject_type_to_emoji(subject_info['type'])} *{subject_info['name_cn']}*\n"
+            f"{subject_info['name']}\n\n"
+            f"*➤ 简介：*\n"
+            f"{subject_info['summary']}\n"
+            f"\n📖 [详情](https://bgm.tv/subject/{subject_id})"
+            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"}
+    markup = telebot.types.InlineKeyboardMarkup()
+    if week_day != 0:
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='返回', callback_data=f'animesearch|week|{subject_id}|{week_day}|1'))
+    else:
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='返回', callback_data=f'animesearch|search|{subject_id}|0|1'))
     return {'text': text, 'markup': markup}
 
 
