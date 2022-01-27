@@ -1,6 +1,7 @@
 """搜索引导指令"""
 import telebot
 
+
 def send(message, bot):
     message_data = message.text.split(' ')
     markup = telebot.types.InlineKeyboardMarkup()

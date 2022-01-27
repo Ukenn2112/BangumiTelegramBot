@@ -2,6 +2,7 @@
 import telebot
 from utils.api import collection_post, user_collection_get, eps_get, get_subject_info
 
+
 def callback(call, bot):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
@@ -20,8 +21,10 @@ def callback(call, bot):
             collection_post(tg_id, subject_id, user_startus, str(rating_data))
             bot.answer_callback_query(call.id, text="已成功更新评分,稍后更新当前页面...")
             user_collection_data = user_collection_get(tg_id, subject_id)
-        rating_message = grnder_rating_message(tg_id, subject_id, eps_data, user_collection_data, back_page)
-        if rating_data == 0 or user_now_rating != user_collection_data['rating']:  # 当用户当前评分请求与之前评分不一致时
+        rating_message = grnder_rating_message(
+            tg_id, subject_id, eps_data, user_collection_data, back_page)
+        # 当用户当前评分请求与之前评分不一致时
+        if rating_data == 0 or user_now_rating != user_collection_data['rating']:
             if call.message.content_type == 'photo':
                 bot.edit_message_caption(caption=rating_message['text'],
                                          chat_id=call.message.chat.id,
@@ -37,6 +40,7 @@ def callback(call, bot):
         bot.answer_callback_query(call.id)
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
 
 def grnder_rating_message(tg_id, subject_id, eps_data, user_rating, back_page):
     subject_info = get_subject_info(subject_id)

@@ -4,6 +4,7 @@ import datetime
 from utils.api import get_calendar
 from utils.converts import number_to_week
 
+
 def send(message, bot):
     data = message.text.split(' ')
     if len(data) == 1:
@@ -14,13 +15,15 @@ def send(message, bot):
         if data[1].isdecimal() and 1 <= int(data[1]) <= 7:
             day = data[1]
         else:
-            bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`", parse_mode='Markdown', timeout=20)
+            bot.send_message(message.chat.id, "输入错误 请输入：`/week 1~7`",
+                             parse_mode='Markdown', timeout=20)
             return
     msg = bot.send_message(message.chat.id, "正在搜索请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
                            timeout=20)
     week_data = gender_week_message(day)
     bot.edit_message_text(chat_id=message.chat.id, message_id=msg.id, text=week_data['text'], parse_mode='Markdown',
                           reply_markup=week_data['markup'])
+
 
 def gender_week_message(day):
     """每日放送查询页"""

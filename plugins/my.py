@@ -3,6 +3,7 @@ import json
 from config import APP_ID, BOT_USERNAME
 from utils.api import requests_get, get_user, user_data_get
 
+
 def send(message, bot):
     message_data = message.text.split(' ')
     if len(message_data) == 1:
@@ -27,22 +28,27 @@ def send(message, bot):
     params = {'app_id': APP_ID}
     url = f'https://api.bgm.tv/user/{bgm_id}/collections/status'
     try:
-        startus_data = requests_get(url=url, params=params, access_token=access_token)
+        startus_data = requests_get(
+            url=url, params=params, access_token=access_token)
         if startus_data is None:
             # Fixme 会有这种情况吗？
-            bot.send_message(message.chat.id, text='出错了,没有获取到您的统计信息', parse_mode='Markdown', timeout=20)
+            bot.send_message(message.chat.id, text='出错了,没有获取到您的统计信息',
+                             parse_mode='Markdown', timeout=20)
             return
         if isinstance(startus_data, dict) and startus_data.get('code') == 404:
-            bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
+            bot.edit_message_text(
+                text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
             return
         # 查询用户名
         try:
             user_data = get_user(bgm_id)
         except FileNotFoundError:
-            bot.edit_message_text(text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
+            bot.edit_message_text(
+                text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
             return
         except json.JSONDecodeError:
-            bot.edit_message_text(text="出错了,无法获取到您的个人信息", chat_id=message.chat.id, message_id=msg.message_id)
+            bot.edit_message_text(
+                text="出错了,无法获取到您的个人信息", chat_id=message.chat.id, message_id=msg.message_id)
             return
         nickname = user_data.get('nickname')
         bgm_id = user_data.get('id')
@@ -82,7 +88,9 @@ def send(message, bot):
                f'[🏠 个人主页](https://bgm.tv/user/{bgm_id})\n'
         img_url = f'https://bgm.tv/chart/img/{bgm_id}'
     except:
-        bot.edit_message_text(text="系统错误，请查看日志", chat_id=message.chat.id, message_id=msg.message_id)
+        bot.edit_message_text(
+            text="系统错误，请查看日志", chat_id=message.chat.id, message_id=msg.message_id)
         raise
     bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-    bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=text, parse_mode='Markdown')
+    bot.send_photo(chat_id=message.chat.id, photo=img_url,
+                   caption=text, parse_mode='Markdown')

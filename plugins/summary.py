@@ -4,6 +4,7 @@ from typing import Optional
 from utils.api import get_subject_info
 from utils.converts import subject_type_to_emoji
 
+
 def grnder_summary_message(subject_id, week_day: Optional[str] = None):
     """简介页"""
     subject_info = get_subject_info(subject_id)

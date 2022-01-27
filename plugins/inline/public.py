@@ -43,7 +43,8 @@ def query_public_text(inline_query, bot):
                 query_result_list.append(qr)
     else:
         offset = int(inline_query.offset)
-    subject_list = search_subject(inline_query.query, response_group="large", start=offset)
+    subject_list = search_subject(
+        inline_query.query, response_group="large", start=offset)
     if 'list' in subject_list and subject_list["list"] is not None:
         for subject in subject_list["list"]:
             emoji = subject_type_to_emoji(subject["type"])
@@ -91,7 +92,9 @@ def query_public_text(inline_query, bot):
             #     text += f"||_{utils.parse_markdown_v2(subject['summary'])}_||\n"
             qr = telebot.types.InlineQueryResultArticle(
                 id=subject['url'],
-                title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                title=emoji +
+                (subject["name_cn"] if subject["name_cn"]
+                 else subject["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
                     text,
                     parse_mode="markdownV2",

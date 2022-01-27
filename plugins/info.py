@@ -6,6 +6,7 @@ from typing import Optional
 from utils.api import get_subject_info, anime_img
 from utils.converts import subject_type_to_emoji
 
+
 def send(message, bot):
     tg_id = message.from_user.id
     message_data = message.text.split(' ')
@@ -13,7 +14,8 @@ def send(message, bot):
         back_type = "search"  # 返回类型:
         subject_id = message_data[1]  # 剧集ID
         img_url = anime_img(subject_id)
-        anime_do_message = gander_info_message(tg_id, subject_id, back_type=back_type)
+        anime_do_message = gander_info_message(
+            tg_id, subject_id, back_type=back_type)
         if img_url == 'None__' or not img_url:
             bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown',
                              reply_markup=anime_do_message['markup'], timeout=20)
@@ -26,9 +28,9 @@ def send(message, bot):
 
 
 def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, user_rating: Optional[dict] = None,
-                         eps_data: Optional[dict] = None, back_page: Optional[str] = None,
-                         eps_id: Optional[int] = None, back_week_day: Optional[int] = None,
-                         back_type: Optional[str] = None):
+                        eps_data: Optional[dict] = None, back_page: Optional[str] = None,
+                        eps_id: Optional[int] = None, back_week_day: Optional[int] = None,
+                        back_type: Optional[str] = None):
     """详情页"""
     subject_info = get_subject_info(subject_id)
     subject_type = subject_info['type']
@@ -122,7 +124,8 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
         for tag in user_rating['tag'][:10]:
             text += f"#{'x' if tag.isdecimal() else ''}{tag} "
         if subject_info['tags']:
-            tag_not_click = [i for i in subject_info['tags'] if i['name'] not in user_rating['tag']]
+            tag_not_click = [i for i in subject_info['tags']
+                             if i['name'] not in user_rating['tag']]
         else:
             tag_not_click = []
     else:
@@ -160,7 +163,8 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'))
         else:
             markup.add(
-                telebot.types.InlineKeyboardButton(text='返回', callback_data=f'do_page|{tg_id}|{back_page}|{subject_type}'),
+                telebot.types.InlineKeyboardButton(
+                    text='返回', callback_data=f'do_page|{tg_id}|{back_page}|{subject_type}'),
                 telebot.types.InlineKeyboardButton(text='评分',
                                                    callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
                 telebot.types.InlineKeyboardButton(text='已看最新',
@@ -178,7 +182,8 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
     elif back_type is not None:
         if back_type == 'week':
             markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'back_week|{back_week_day}'),
-                       telebot.types.InlineKeyboardButton(text='简介', callback_data=f'summary|{subject_id}|{back_week_day}'),
+                       telebot.types.InlineKeyboardButton(
+                           text='简介', callback_data=f'summary|{subject_id}|{back_week_day}'),
                        telebot.types.InlineKeyboardButton(text='收藏',
                                                           callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|null'))
         else:

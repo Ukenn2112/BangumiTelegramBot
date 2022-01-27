@@ -62,8 +62,10 @@ def expiry_data_get(test_id):
         }
     )
     access_token = json.loads(resp.text).get('access_token')  # 更新access_token
-    refresh_token = json.loads(resp.text).get('refresh_token')  # 更新refresh_token
-    expiry_time = (datetime.datetime.now() + datetime.timedelta(days=7)).strftime("%Y%m%d")  # 更新过期时间
+    refresh_token = json.loads(resp.text).get(
+        'refresh_token')  # 更新refresh_token
+    expiry_time = (datetime.datetime.now() +
+                   datetime.timedelta(days=7)).strftime("%Y%m%d")  # 更新过期时间
 
     # 替换数据
     if access_token or refresh_token is not None:
@@ -134,6 +136,7 @@ def run_continuously(interval=1):
     continuous_thread = ScheduleThread()
     continuous_thread.start()
     return cease_continuous_run
+
 
 def requests_get(url, params: Optional[dict] = None, access_token: Optional[str] = None, max_retry_times: int = 3):
     """requests_get 请求"""
@@ -275,14 +278,16 @@ def get_subject_info(subject_id, t_dict=None):
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
         loads = requests_get(url=url)
         if loads is None:
-            redis_cli.set(f"subject:{subject_id}", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            redis_cli.set(f"subject:{subject_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
             raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
         loads['_air_weekday'] = None
         for info in loads['infobox']:
             if info['key'] == '放送星期':
                 loads['_air_weekday'] = info['value']  # 加一个下划线 用于区别
                 break
-        redis_cli.set(f"subject:{subject_id}", json.dumps(loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+        redis_cli.set(f"subject:{subject_id}", json.dumps(
+            loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
     if t_dict:
         t_dict["subject_info"] = loads
     return loads
@@ -318,10 +323,12 @@ def anime_img(subject_id):
     anilist_data = json.loads(r.text).get('data').get('Page').get('media')
     if len(anilist_data) > 0:
         img_url = f'https://img.anili.st/media/{anilist_data[0]["id"]}'
-        redis_cli.set(f"anime_img:{subject_id}", img_url, ex=60 * 60 * 24 + random.randint(-3600, 3600))
+        redis_cli.set(f"anime_img:{subject_id}", img_url,
+                      ex=60 * 60 * 24 + random.randint(-3600, 3600))
         return img_url
     else:
-        redis_cli.set(f"anime_img:{subject_id}", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+        redis_cli.set(f"anime_img:{subject_id}",
+                      "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
         return None
 
 
@@ -338,7 +345,8 @@ def search_subject(keywords: str,
     :param start: 开始条数
     :param max_results: 每页条数 最多 25
     """
-    params = {"type": type_, "responseGroup": response_group, "start": start, "max_results": max_results}
+    params = {"type": type_, "responseGroup": response_group,
+              "start": start, "max_results": max_results}
     url = f'https://api.bgm.tv/search/subject/{keywords}'
     try:
         r = requests.get(url=url, params=params)
@@ -349,6 +357,7 @@ def search_subject(keywords: str,
     except:
         return {"results": 0, 'list': []}
     return j
+
 
 def get_collection(subject_id: str, token: str = "", tg_id=""):
     """获取用户指吧定条目收藏信息 token 和tg_id须传一个"""
@@ -376,5 +385,6 @@ def get_user(bgm_id: str) -> dict:
         redis_cli.set(f"bgm_user:{bgm_id}", "None__", ex=3600)
         raise FileNotFoundError
     else:
-        redis_cli.set(f"bgm_user:{bgm_id}", json.dumps(user_data), ex=3600 * 24 * 7)
+        redis_cli.set(f"bgm_user:{bgm_id}", json.dumps(
+            user_data), ex=3600 * 24 * 7)
         return user_data

@@ -5,6 +5,7 @@ from utils.api import search_subject
 from plugins.info import gander_info_message
 from config import BOT_USERNAME
 
+
 def query_sender_text(inline_query, bot):
     query_result_list = []
     if not inline_query.offset:
@@ -29,12 +30,15 @@ def query_sender_text(inline_query, bot):
     query_keyword = inline_query.query
     if str.startswith(query_keyword, '@') and len(query_keyword) > 1:
         query_keyword = query_keyword[1:]
-    subject_list = search_subject(query_keyword, response_group="large", start=offset)
+    subject_list = search_subject(
+        query_keyword, response_group="large", start=offset)
     if 'list' in subject_list and subject_list["list"] is not None:
         for subject in subject_list["list"]:
             emoji = subject_type_to_emoji(subject["type"])
             qr = telebot.types.InlineQueryResultArticle(
-                id=subject['url'], title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                id=subject['url'], title=emoji +
+                (subject["name_cn"] if subject["name_cn"]
+                 else subject["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
                     message_text=f"/info@{BOT_USERNAME} {subject['id']}",
                     disable_web_page_preview=True

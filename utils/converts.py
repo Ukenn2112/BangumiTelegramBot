@@ -1,5 +1,6 @@
 """类型转换"""
 
+
 def subject_type_to_emoji(type_: int) -> str:
     """将subject_type转emoji"""
     if type_ == 1:

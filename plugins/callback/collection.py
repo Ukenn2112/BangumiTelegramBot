@@ -2,6 +2,7 @@
 import telebot
 from utils.api import get_subject_info, data_seek_get, user_collection_get, collection_post
 
+
 def callback(call, bot):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
@@ -13,7 +14,8 @@ def callback(call, bot):
     name = get_subject_info(subject_id)['name']
     if collection_type == 'null':
         if not data_seek_get(call_tg_id):
-            bot.answer_callback_query(call.id, text='您未绑定Bangumi，请私聊我使用/start进行绑定', show_alert=True)
+            bot.answer_callback_query(
+                call.id, text='您未绑定Bangumi，请私聊我使用/start进行绑定', show_alert=True)
         else:
             text = f'*您想将 “*`{name}`*” 收藏为*\n\n'
             markup = telebot.types.InlineKeyboardMarkup()

@@ -8,6 +8,7 @@ import threading
 from config import BOT_USERNAME
 from utils.api import get_user, user_data_get, requests_get, get_subject_info
 
+
 def send(message, bot, subject_type):
     tg_id = message.from_user.id
     offset = 0
@@ -23,10 +24,12 @@ def send(message, bot, subject_type):
     try:
         page = gender_page_message(user_data, offset, tg_id, subject_type)
     except:
-        bot.edit_message_text(text="出错了!请看日志", chat_id=message.chat.id, message_id=msg.message_id)
+        bot.edit_message_text(
+            text="出错了!请看日志", chat_id=message.chat.id, message_id=msg.message_id)
         raise
     bot.edit_message_text(text=page['text'], chat_id=msg.chat.id, message_id=msg.message_id, parse_mode='Markdown',
                           reply_markup=page['markup'])
+
 
 def gender_page_message(user_data, offset, tg_id, subject_type: int):
     bgm_id = user_data.get('user_id')
@@ -50,7 +53,8 @@ def gender_page_message(user_data, offset, tg_id, subject_type: int):
     }
     url = f'https://api.bgm.tv/v0/users/{username}/collections'
     try:
-        response = requests_get(url=url, params=params, access_token=access_token)
+        response = requests_get(url=url, params=params,
+                                access_token=access_token)
     except requests.exceptions.BaseHTTPError:
         return {'text': '出错啦，您貌似没有此状态类型的收藏', 'markup': None}
     if response is None:
@@ -62,7 +66,8 @@ def gender_page_message(user_data, offset, tg_id, subject_type: int):
     # 循环查询 将条目信息数据存进去 多线程获取
     thread_list = []
     for info in subject_list:
-        th = threading.Thread(target=get_subject_info, args=[info['subject_id'], info])
+        th = threading.Thread(target=get_subject_info, args=[
+                              info['subject_id'], info])
         th.start()
         thread_list.append(th)
     for th in thread_list:
@@ -76,7 +81,7 @@ def gender_page_message(user_data, offset, tg_id, subject_type: int):
     button_list = []
     for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
         text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
-                           f' `[{info["ep_status"]}/{info["subject_info"]["total_episodes"]}]`\n\n'
+            f' `[{info["ep_status"]}/{info["subject_info"]["total_episodes"]}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
             text=num, callback_data=f"now_do|{tg_id}|{info['subject_id']}|0|{offset}"))
     if subject_type == 1:
@@ -104,13 +109,15 @@ def gender_page_message(user_data, offset, tg_id, subject_type: int):
             button_list2.append(
                 telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'do_page|{tg_id}|{offset - limit}|{subject_type}'))
         else:
-            button_list2.append(telebot.types.InlineKeyboardButton(text='这是首页', callback_data="None"))
+            button_list2.append(telebot.types.InlineKeyboardButton(
+                text='这是首页', callback_data="None"))
         button_list2.append(telebot.types.InlineKeyboardButton(
             text=f'{int(offset / limit) + 1}/{math.ceil(count / limit)}', callback_data="None"))
         if offset + limit < count:
             button_list2.append(
                 telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'do_page|{tg_id}|{offset + limit}|{subject_type}'))
         else:
-            button_list2.append(telebot.types.InlineKeyboardButton(text='这是末页', callback_data="None"))
+            button_list2.append(telebot.types.InlineKeyboardButton(
+                text='这是末页', callback_data="None"))
         markup.add(*button_list2)
     return {'text': text, 'markup': markup}

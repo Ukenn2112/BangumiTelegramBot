@@ -2,6 +2,7 @@
 from utils.api import anime_img
 from plugins.info import gander_info_message
 
+
 def callback(call, bot):
     call_tg_id = call.from_user.id
     call_data = call.data.split('|')
@@ -10,7 +11,8 @@ def callback(call, bot):
     back_week_day = int(call_data[3])  # 如是从week请求则为week day
     back = int(call_data[4])  # 是否是从收藏/简介页返回 是则为1 否则为2
     img_url = anime_img(subject_id)
-    search_message = gander_info_message(call_tg_id, subject_id, back_week_day=back_week_day, back_type=back_type)
+    search_message = gander_info_message(
+        call_tg_id, subject_id, back_week_day=back_week_day, back_type=back_type)
     if back == 1:
         if call.message.content_type == 'photo':
             bot.edit_message_caption(caption=search_message['text'],
