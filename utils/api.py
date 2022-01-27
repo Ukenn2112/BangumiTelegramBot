@@ -240,7 +240,6 @@ def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=N
     :param private: 收藏隐私 0 = 公开 1 = 私密 不填默认为0
     :return 请求结果
     """
-    from bot import user_data_get
     access_token = user_data_get(tg_id).get('access_token')
     params = {"status": status}  #
     if comment is not None:
