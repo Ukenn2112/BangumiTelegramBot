@@ -2,15 +2,17 @@
 """
 https://bangumi.github.io/api/
 """
-
 import logging
+import pickle
+
 import telebot
 
 from config import BOT_TOKEN
-from utils.api import run_continuously
+from model.page_model import RequestStack, WeekPage
 from plugins import start, my, week, info, doing_page, search
-from plugins.callback import now_do, rating_call, add_new_eps, search_details, collection, week_back, summary_call
+from plugins.callback import now_do, rating_call, add_new_eps, search_details, collection, summary_call, week_back
 from plugins.inline import sender, public
+from utils.api import run_continuously, redis_cli
 
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
@@ -43,6 +45,7 @@ def send_book(message):
 @bot.message_handler(commands=['anime'])
 def send_anime(message):
     doing_page.send(message, bot, 2)
+
 
 # 查询 Bangumi 用户在玩 game ./plugins/doing_page
 
@@ -118,10 +121,10 @@ def collection_callback(call):
     collection.callback(call, bot)
 
 
-# week 返回 ./plugins/callback/week_back
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
-def back_week_callback(call):
-    week_back.callback(call, bot)
+# # week 返回 ./plugins/callback/week_back
+# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
+# def back_week_callback(call):
+#     week_back.callback(call, bot)
 
 
 # 简介 ./plugins/callback/summary_call
@@ -169,6 +172,76 @@ def set_bot_command(bot):
         return bot.set_my_commands(commands_list)
     except:
         pass
+
+
+def consumption_page(stack: RequestStack):
+    top = stack.stack[-1]
+    if isinstance(top, WeekPage):
+        week_back.generate_page(top, stack.uuid)
+    if top.page_image:
+        if stack.bot_message.content_type == 'text':
+            bot.delete_message(
+                message_id=stack.bot_message.message_id,
+                chat_id=stack.request_message.chat.id)
+            stack.bot_message = bot.send_message(
+                text=top.page_text,
+                parse_mode='markdown',
+                reply_markup=top.page_markup,
+                chat_id=stack.request_message.chat.id)
+        else:
+            stack.bot_message = bot.edit_message_caption(
+                caption=top.page_text,
+                parse_mode='markdown',
+                reply_markup=top.page_markup,
+                message_id=stack.bot_message.message_id,
+                chat_id=stack.request_message.chat.id,
+            )
+            stack.bot_message = bot.edit_message_media(
+                media=top.page_image,
+                message_id=stack.bot_message.message_id,
+                chat_id=stack.request_message.chat.id
+            )
+    else:
+        if stack.bot_message.content_type == 'text':
+            stack.bot_message = bot.edit_message_text(
+                text=top.page_text,
+                reply_markup=top.page_markup,
+                parse_mode='markdown',
+                message_id=stack.bot_message.message_id,
+                chat_id=stack.request_message.chat.id
+            )
+        else:
+            bot.delete_message(
+                message_id=stack.bot_message.message_id,
+                chat_id=stack.request_message.chat.id
+            )
+            stack.bot_message = bot.send_message(
+                text=top.page_text,
+                reply_markup=top.page_markup,
+                parse_mode='markdown',
+                chat_id=stack.request_message.chat.id
+            )
+    redis_cli.set(stack.uuid, pickle.dumps(stack), ex=3600)
+
+
+@bot.callback_query_handler(lambda call: True)
+def global_callback_handler(call):
+    data = call.data.split("|")
+    redis_key = data[0]
+    request_key = data[1]
+    call_data = redis_cli.get(redis_key)
+    if not call_data:
+        bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=3600)
+        return
+    redis_cli.delete(redis_key)  # TODO 没事务 多线程下可能出问题
+    stack: RequestStack = pickle.loads(call_data)
+    next_page = stack.stack[-1].possible_request.get(request_key, None)
+    if not next_page:
+        bot.answer_callback_query(call.id, "您的请求出错了", cache_time=3600)
+        return
+    stack.stack.append(next_page)
+    consumption_page(stack)
+    bot.answer_callback_query(call.id)
 
 
 # 开始启动
