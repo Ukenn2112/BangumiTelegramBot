@@ -9,7 +9,7 @@ import telebot
 from config import BOT_TOKEN
 from utils.api import run_continuously
 from plugins import start, my, week, info, doing_page, search
-from plugins.callback import now_do, rating_call, add_new_eps, search_details, collection, week_back, summary_call
+from plugins.callback import now_do, rating_call, letest_eps, search_details, collection, week_back, summary_call
 from plugins.inline import sender, public
 
 logger = telebot.logger
@@ -44,9 +44,8 @@ def send_book(message):
 def send_anime(message):
     doing_page.send(message, bot, 2)
 
+
 # 查询 Bangumi 用户在玩 game ./plugins/doing_page
-
-
 @bot.message_handler(commands=['game'])
 def send_game(message):
     doing_page.send(message, bot, 4)
@@ -94,10 +93,16 @@ def rating_callback(call):
     rating_call.callback(call, bot)
 
 
-# 已看最新 ./plugins/callback/add_new_eps
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'add_new_eps')
-def add_new_eps_callback(call):
-    add_new_eps.callback(call, bot)
+# 已看最新 ./plugins/callback/letest_eps
+@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'letest_eps')
+def letest_eps_callback(call):
+    letest_eps.callback(call, bot)
+
+
+# 批量更新 ./plugins/callback/bulk_eps 搁置
+# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'bulk_eps')
+# def bulk_eps_callback(call):
+#     bulk_eps.callback(call, bot)
 
 
 # 在看列表 翻页 ./plugins/callback/now_do

@@ -157,8 +157,10 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
                 markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'),
                            telebot.types.InlineKeyboardButton(text='撤销最新观看',
-                                                              callback_data=f'add_new_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                                                              callback_data=f'letest_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
             else:
+                # markup.add(telebot.types.InlineKeyboardButton(text='批量更新收视进度',
+                #                                               callback_data=f'bulk_eps|{subject_id}|'))
                 markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'))
         else:
@@ -168,13 +170,15 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
                 telebot.types.InlineKeyboardButton(text='评分',
                                                    callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
                 telebot.types.InlineKeyboardButton(text='已看最新',
-                                                   callback_data=f'add_new_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
+                                                   callback_data=f'letest_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
             if eps_id is not None and eps_data['watched'] != 1:
                 markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'),
                            telebot.types.InlineKeyboardButton(text='撤销最新观看',
-                                                              callback_data=f'add_new_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                                                              callback_data=f'letest_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
             else:
+                # markup.add(telebot.types.InlineKeyboardButton(text='批量更新收视进度',
+                #                                               callback_data=f'bulk_eps|{subject_id}'))
                 markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'))
         if eps_id is not None:
