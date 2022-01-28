@@ -3,6 +3,8 @@
 
 # 功能
 
+<img src="https://cdn.jsdelivr.net/gh/Ukenn2112/image/IMG_4622.gif" alt="输入框查询发送" width="200" align='right'>
+
 - [x] OAuth授权
   - [x] 授权登录
   - [x] 授权有效期刷新
@@ -18,6 +20,7 @@
 - [x] 每日放送查询
 
 ......
+
 # 使用方法
 
 - 安装 [Redis](https://redis.io/)
@@ -62,7 +65,7 @@ start - 绑定Bangumi账号
 my - Bangumi收藏统计/空格加username或uid不绑定查询
 book - Bangumi用户在读书籍
 anime - Bangumi用户在看动画
-game - Bangumi用户在玩动画
+game - Bangumi用户在玩游戏
 real - Bangumi用户在看剧集
 week - 空格加数字查询每日放送
 week - 查询当日/空格加数字查询每日放送
@@ -75,10 +78,10 @@ search - 搜索条目
 BangumiTelegramBot   # 主目录
 │
 │  bgm_data.json     # Bangumi 用户密钥
-│  bot.py            # BangumiBot 主模块
+│  bot.py            # Bangumi Bot 模块
 │  config.py         # 配置文件
 │  oauth.py          # Bangumi Oauth 绑定验证模块
-│  requirements.txt  # Python 所需依赖
+│  requirements.txt  # Python 依赖
 │  
 ├─plugins  # 功能
 │  │  doing_page.py  # 查询 Bangumi 用户在看
