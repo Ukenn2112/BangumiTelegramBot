@@ -1,9 +1,7 @@
 [![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/BangumiTelegramBot.png)](https://github.com/Ukenn2112/BangumiTelegramBot/)
 
 
-# 功能
-
-<img src="https://cdn.jsdelivr.net/gh/Ukenn2112/image/IMG_4622.gif" alt="输入框查询发送" width="200" align='right'>
+# 功能 <img src="https://cdn.jsdelivr.net/gh/Ukenn2112/image/IMG_4622.gif" alt="输入框查询发送" width="200" align='right'><img src="https://cdn.jsdelivr.net/gh/Ukenn2112/image/IMG_4643.gif" alt="动画再看更新" width="200" align='right'>
 
 - [x] OAuth授权
   - [x] 授权登录
