@@ -13,7 +13,7 @@ from plugins.callback import now_do, rating_call, letest_eps, search_details, co
 from plugins.inline import sender, public, mybgm
 
 logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
+telebot.logger.setLevel(logging.INFO)  # Outputs debug messages to console.
 logging.basicConfig(level=logging.INFO,
                     filename='run.log',
                     format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')

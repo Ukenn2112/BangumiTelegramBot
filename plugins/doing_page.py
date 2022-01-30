@@ -80,10 +80,11 @@ def gender_page_message(user_data, offset, tg_id, subject_type: int):
     nums_unicode = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
     button_list = []
     for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
-        text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
-            f' `[{info["ep_status"]}/{info["subject_info"]["total_episodes"]}]`\n\n'
-        button_list.append(telebot.types.InlineKeyboardButton(
-            text=num, callback_data=f"now_do|{tg_id}|{info['subject_id']}|0|{offset}"))
+        if info.get('subject_info') is not None:
+            text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
+                f' `[{info["ep_status"]}/{info["subject_info"]["total_episodes"]}]`\n\n'
+            button_list.append(telebot.types.InlineKeyboardButton(
+                text=num, callback_data=f"now_do|{tg_id}|{info['subject_id']}|0|{offset}"))
     if subject_type == 1:
         text = f'*{nickname} 在读的书籍*\n\n{text_data}' \
                f'共{count}本'
