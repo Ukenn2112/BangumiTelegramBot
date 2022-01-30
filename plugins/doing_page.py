@@ -67,7 +67,7 @@ def gender_page_message(user_data, offset, tg_id, subject_type: int):
     thread_list = []
     for info in subject_list:
         th = threading.Thread(target=get_subject_info, args=[
-                              info['subject_id'], info])
+                              info['subject_id'], info, access_token])
         th.start()
         thread_list.append(th)
     for th in thread_list:
