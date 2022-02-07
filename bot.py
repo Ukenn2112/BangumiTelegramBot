@@ -8,9 +8,10 @@ import pickle
 import telebot
 
 from config import BOT_TOKEN
-from model.page_model import RequestStack, WeekPage
+from model.page_model import RequestStack, WeekRequest, SubjectRequest, BackRequest, SummaryRequest
 from plugins import start, my, week, info, doing_page, search
-from plugins.callback import now_do, rating_call, add_new_eps, search_details, collection, summary_call, week_back
+from plugins.callback import now_do, rating_call, add_new_eps, search_details, collection, summary_page, week_page, \
+    subject_page
 from plugins.inline import sender, public
 from utils.api import run_continuously, redis_cli
 
@@ -126,11 +127,11 @@ def collection_callback(call):
 # def back_week_callback(call):
 #     week_back.callback(call, bot)
 
-
-# 简介 ./plugins/callback/summary_call
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'summary')
-def back_summary_callback(call):
-    summary_call.callback(call, bot)
+#
+# # 简介 ./plugins/callback/summary_call
+# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'summary')
+# def back_summary_callback(call):
+#     summary_call.callback(call, bot)
 
 
 @bot.chosen_inline_handler(func=lambda chosen_inline_result: True)
@@ -174,30 +175,34 @@ def set_bot_command(bot):
         pass
 
 
-def consumption_page(stack: RequestStack):
+def consumption_request(stack: RequestStack):
     top = stack.stack[-1]
-    if isinstance(top, WeekPage):
-        week_back.generate_page(top, stack.uuid)
+    if isinstance(top, WeekRequest):
+        week_page.generate_page(top, stack.uuid)
+    elif isinstance(top, SubjectRequest):
+        subject_page.generate_page(top, stack.uuid)
+    elif isinstance(top, SummaryRequest):
+        summary_page.generate_page(top, stack.uuid)
+    elif isinstance(top, BackRequest):
+        stack.stack = stack.stack[:-2]
+        top = stack.stack[-1]
+
     if top.page_image:
         if stack.bot_message.content_type == 'text':
             bot.delete_message(
                 message_id=stack.bot_message.message_id,
                 chat_id=stack.request_message.chat.id)
-            stack.bot_message = bot.send_message(
-                text=top.page_text,
+            stack.bot_message = bot.send_photo(
+                photo=top.page_image,
+                caption=top.page_text,
                 parse_mode='markdown',
                 reply_markup=top.page_markup,
                 chat_id=stack.request_message.chat.id)
         else:
-            stack.bot_message = bot.edit_message_caption(
-                caption=top.page_text,
-                parse_mode='markdown',
-                reply_markup=top.page_markup,
-                message_id=stack.bot_message.message_id,
-                chat_id=stack.request_message.chat.id,
-            )
             stack.bot_message = bot.edit_message_media(
-                media=top.page_image,
+                media=telebot.types.InputMedia(type='photo', media=top.page_image,
+                                               caption=top.page_text, parse_mode="markdown"),
+                reply_markup=top.page_markup,
                 message_id=stack.bot_message.message_id,
                 chat_id=stack.request_message.chat.id
             )
@@ -231,7 +236,7 @@ def global_callback_handler(call):
     request_key = data[1]
     call_data = redis_cli.get(redis_key)
     if not call_data:
-        bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=3600)
+        bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=1)
         return
     redis_cli.delete(redis_key)  # TODO 没事务 多线程下可能出问题
     stack: RequestStack = pickle.loads(call_data)
@@ -240,7 +245,7 @@ def global_callback_handler(call):
         bot.answer_callback_query(call.id, "您的请求出错了", cache_time=3600)
         return
     stack.stack.append(next_page)
-    consumption_page(stack)
+    consumption_request(stack)
     bot.answer_callback_query(call.id)
 
 
