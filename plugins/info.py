@@ -1,30 +1,32 @@
-
 """根据subjectId 返回对应条目信息"""
+import uuid
+from typing import Optional
+
 import telebot
 
-from typing import Optional
-from utils.api import get_subject_info, anime_img
+from model.page_model import SubjectRequest, RequestStack
+from utils.api import get_subject_info
 from utils.converts import subject_type_to_emoji
 
 
 def send(message, bot):
-    tg_id = message.from_user.id
     message_data = message.text.split(' ')
-    if len(message_data) == 2 and message_data[1].isdecimal():
-        back_type = "search"  # 返回类型:
-        subject_id = message_data[1]  # 剧集ID
-        img_url = anime_img(subject_id)
-        anime_do_message = gander_info_message(
-            tg_id, subject_id, back_type=back_type)
-        if img_url == 'None__' or not img_url:
-            bot.send_message(chat_id=message.chat.id, text=anime_do_message['text'], parse_mode='Markdown',
-                             reply_markup=anime_do_message['markup'], timeout=20)
-        else:
-            bot.send_photo(chat_id=message.chat.id, photo=img_url, caption=anime_do_message['text'],
-                           parse_mode='Markdown', reply_markup=anime_do_message['markup'])
-    else:
+    if len(message_data) != 2 or not message_data[1].isdecimal():
         bot.send_message(chat_id=message.chat.id, text="错误使用 `/info BGM_Subject_ID`",
                          parse_mode='Markdown', timeout=20)
+        return
+    msg = bot.send_message(message.chat.id, "正在搜索请稍候...",
+                           reply_to_message_id=message.message_id,
+                           parse_mode='Markdown',
+                           timeout=20)
+    subject_id = message_data[1]  # 剧集ID
+    subject_request = SubjectRequest(subject_id)
+    subject_request.is_root = True
+    stack = RequestStack(subject_request, uuid.uuid4().hex)
+    stack.request_message = message
+    stack.bot_message = msg
+    from bot import consumption_request
+    consumption_request(stack)
 
 
 def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, user_rating: Optional[dict] = None,
@@ -152,7 +154,7 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
             markup.add(telebot.types.InlineKeyboardButton(
                 text='返回', callback_data=f'do_page|{tg_id}|{back_page}|{subject_type}'),
                 telebot.types.InlineKeyboardButton(
-                text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
+                    text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
             if eps_id is not None:
                 markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
                                                               callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'),

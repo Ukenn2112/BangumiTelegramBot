@@ -2,7 +2,6 @@
 import datetime
 import uuid
 
-from bot import consumption_request
 from model.page_model import WeekRequest, RequestStack
 
 
@@ -21,8 +20,9 @@ def send(message, bot):
             return
     msg = bot.send_message(message.chat.id, "正在搜索请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
                            timeout=20)
-    page = WeekRequest(day)
-    stack = RequestStack(page, uuid.uuid4().hex)
+    request = WeekRequest(day)
+    stack = RequestStack(request, uuid.uuid4().hex)
     stack.request_message = message
     stack.bot_message = msg
+    from bot import consumption_request
     consumption_request(stack)

@@ -8,10 +8,10 @@ import pickle
 import telebot
 
 from config import BOT_TOKEN
-from model.page_model import RequestStack, WeekRequest, SubjectRequest, BackRequest, SummaryRequest
-from plugins import start, my, week, info, doing_page, search
-from plugins.callback import now_do, rating_call, add_new_eps, search_details, collection, summary_page, week_page, \
-    subject_page
+from model.page_model import RequestStack, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, BackRequest
+from plugins import start, my, week, info, collection, search
+from plugins.callback import now_do, rating_call, add_new_eps, search_details, collection, week_page, subject_page, \
+    collections_page, summary_page
 from plugins.inline import sender, public
 from utils.api import run_continuously, redis_cli
 
@@ -39,13 +39,13 @@ def send_my(message):
 # 查询 Bangumi 用户在看book ./plugins/doing_page
 @bot.message_handler(commands=['book'])
 def send_book(message):
-    doing_page.send(message, bot, 1)
+    collection.send(message, bot, 1)
 
 
 # 查询 Bangumi 用户在看anime ./plugins/doing_page
 @bot.message_handler(commands=['anime'])
 def send_anime(message):
-    doing_page.send(message, bot, 2)
+    collection.send(message, bot, 2)
 
 
 # 查询 Bangumi 用户在玩 game ./plugins/doing_page
@@ -53,13 +53,13 @@ def send_anime(message):
 
 @bot.message_handler(commands=['game'])
 def send_game(message):
-    doing_page.send(message, bot, 4)
+    collection.send(message, bot, 4)
 
 
 # 查询 Bangumi 用户在看 real ./plugins/doing_page
 @bot.message_handler(commands=['real'])
 def send_real(message):
-    doing_page.send(message, bot, 6)
+    collection.send(message, bot, 6)
 
 
 # 每日放送查询 ./plugins/week
@@ -104,10 +104,10 @@ def add_new_eps_callback(call):
     add_new_eps.callback(call, bot)
 
 
-# 在看列表 翻页 ./plugins/callback/now_do
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'do_page')
-def do_page_callback(call):
-    now_do.callback_page(call, bot)
+# # 在看列表 翻页 ./plugins/callback/now_do
+# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'do_page')
+# def do_page_callback(call):
+#     now_do.callback_page(call, bot)
 
 
 # 搜索详情页 ./plugins/callback/search_details
@@ -175,12 +175,34 @@ def set_bot_command(bot):
         pass
 
 
+@bot.callback_query_handler(lambda call: True)
+def global_callback_handler(call):
+    data = call.data.split("|")
+    redis_key = data[0]
+    request_key = data[1]
+    call_data = redis_cli.get(redis_key)
+    if not call_data:
+        bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=1)
+        return
+    redis_cli.delete(redis_key)  # TODO 没事务 多线程下可能出问题
+    stack: RequestStack = pickle.loads(call_data)
+    next_page = stack.stack[-1].possible_request.get(request_key, None)
+    if not next_page:
+        bot.answer_callback_query(call.id, "您的请求出错了", cache_time=3600)
+        return
+    stack.stack.append(next_page)
+    consumption_request(stack)
+    bot.answer_callback_query(call.id)
+
+
 def consumption_request(stack: RequestStack):
     top = stack.stack[-1]
     if isinstance(top, WeekRequest):
         week_page.generate_page(top, stack.uuid)
     elif isinstance(top, SubjectRequest):
         subject_page.generate_page(top, stack.uuid)
+    elif isinstance(top, CollectionsRequest):
+        collections_page.generate_page(top, stack.uuid)
     elif isinstance(top, SummaryRequest):
         summary_page.generate_page(top, stack.uuid)
     elif isinstance(top, BackRequest):
@@ -227,26 +249,6 @@ def consumption_request(stack: RequestStack):
                 chat_id=stack.request_message.chat.id
             )
     redis_cli.set(stack.uuid, pickle.dumps(stack), ex=3600)
-
-
-@bot.callback_query_handler(lambda call: True)
-def global_callback_handler(call):
-    data = call.data.split("|")
-    redis_key = data[0]
-    request_key = data[1]
-    call_data = redis_cli.get(redis_key)
-    if not call_data:
-        bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=1)
-        return
-    redis_cli.delete(redis_key)  # TODO 没事务 多线程下可能出问题
-    stack: RequestStack = pickle.loads(call_data)
-    next_page = stack.stack[-1].possible_request.get(request_key, None)
-    if not next_page:
-        bot.answer_callback_query(call.id, "您的请求出错了", cache_time=3600)
-        return
-    stack.stack.append(next_page)
-    consumption_request(stack)
-    bot.answer_callback_query(call.id)
 
 
 # 开始启动

@@ -16,12 +16,15 @@ def generate_page(subject_request: SubjectRequest, stack_uuid: str) -> SubjectRe
 
 def gender_page_button(subject_request: SubjectRequest, stack_uuid: str):
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"),
-               telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"),
-               telebot.types.InlineKeyboardButton(text='收藏', callback_data=f"{stack_uuid}|collection"))  # TODO
-    subject_request.possible_request['back'] = BackRequest()
+    button_list = []
+    if not subject_request.is_root:
+        button_list.append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
+        subject_request.possible_request['back'] = BackRequest()
+    button_list.append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+    button_list.append(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f"{stack_uuid}|collection"))  # TODO
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
+    markup.add(*button_list)
     return markup
 
 

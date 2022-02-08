@@ -1,7 +1,6 @@
 """在看详情"""
-from utils.api import anime_img, user_collection_get, eps_get, user_data_get
 from plugins.info import gander_info_message
-from plugins.doing_page import gender_page_message
+from utils.api import anime_img, user_collection_get, eps_get
 
 
 def callback(call, bot):
@@ -56,28 +55,27 @@ def callback(call, bot):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
-
-def callback_page(call, bot):
-    """在看详情 翻页"""
-    # call_tg_id = call.from_user.id
-    msg = call.message
-    call_data = call.data.split('|')
-    tg_id = int(call_data[1])  # 被查询用户 Telegram ID
-    # if str(call_tg_id) != tg_id:
-    #     bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
-    #     return
-    offset = int(call_data[2])  # 当前用户所请求的页数
-    subject_type = int(call_data[3])  # 返回再看列表类型
-    user_data = user_data_get(tg_id)
-    page = gender_page_message(user_data, offset, tg_id, subject_type)
-    if call.message.content_type == 'text':
-        bot.edit_message_text(text=page['text'],
-                              chat_id=msg.chat.id,
-                              message_id=msg.message_id,
-                              parse_mode='Markdown',
-                              reply_markup=page['markup'])
-    else:
-        bot.delete_message(chat_id=msg.chat.id, message_id=msg.message_id)
-        bot.send_message(text=page['text'], chat_id=msg.chat.id,
-                         parse_mode='Markdown', reply_markup=page['markup'])
-    bot.answer_callback_query(call.id)
+# def callback_page(call, bot):
+#     """在看详情 翻页"""
+#     # call_tg_id = call.from_user.id
+#     msg = call.message
+#     call_data = call.data.split('|')
+#     tg_id = int(call_data[1])  # 被查询用户 Telegram ID
+#     # if str(call_tg_id) != tg_id:
+#     #     bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+#     #     return
+#     offset = int(call_data[2])  # 当前用户所请求的页数
+#     subject_type = int(call_data[3])  # 返回再看列表类型
+#     user_data = user_data_get(tg_id)
+#     page = gender_page_message(user_data, offset, tg_id, subject_type)
+#     if call.message.content_type == 'text':
+#         bot.edit_message_text(text=page['text'],
+#                               chat_id=msg.chat.id,
+#                               message_id=msg.message_id,
+#                               parse_mode='Markdown',
+#                               reply_markup=page['markup'])
+#     else:
+#         bot.delete_message(chat_id=msg.chat.id, message_id=msg.message_id)
+#         bot.send_message(text=page['text'], chat_id=msg.chat.id,
+#                          parse_mode='Markdown', reply_markup=page['markup'])
+#     bot.answer_callback_query(call.id)
