@@ -1,16 +1,20 @@
 import telebot
 
+from config import BOT_USERNAME
 from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
     EditRatingPageRequest
 from utils.api import get_subject_info, anime_img, user_collection_get
 from utils.converts import subject_type_to_emoji
 
 
-def generate_page(subject_request: SubjectRequest, stack_uuid: str) -> SubjectRequest:
+def generate_page(subject_request: SubjectRequest, stack_uuid: str, is_private_tg_id: int) -> SubjectRequest:
     user_collection = None
-    if (not subject_request.page_text) and (not subject_request.page_markup) and subject_request.user_data:
-        user_collection = user_collection_get(None, subject_request.subject_id,
-                                              subject_request.user_data['_user']['access_token'])
+    if (not subject_request.page_text) and (not subject_request.page_markup):
+        if subject_request.user_data:
+            user_collection = user_collection_get(None, subject_request.subject_id,
+                                                  subject_request.user_data['_user']['access_token'])
+        elif is_private_tg_id:
+            user_collection = user_collection_get(is_private_tg_id, subject_request.subject_id)
 
     if not subject_request.page_text:
         subject_request.page_text = gander_page_text(subject_request.subject_id, user_collection)
@@ -19,7 +23,7 @@ def generate_page(subject_request: SubjectRequest, stack_uuid: str) -> SubjectRe
         subject_request.page_image = anime_img(subject_request.subject_id)
 
     if not subject_request.page_markup:
-        if user_collection:
+        if is_private_tg_id:
             subject_request.page_markup = gender_page_manager_button(subject_request, stack_uuid, user_collection)
         else:
             subject_request.page_markup = gender_page_show_buttons(subject_request, stack_uuid)
@@ -60,7 +64,9 @@ def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
     button_list.append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
-    button_list.append(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f"{stack_uuid}|collection"))
+    button_list.append(
+        telebot.types.InlineKeyboardButton(text='去管理',
+                                           url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))
     subject_request.possible_request['collection'] = EditCollectionTypePageRequest(subject_request.subject_id)
     subject_request.possible_request['collection'].page_image = subject_request.page_image
     markup.add(*button_list)

@@ -217,7 +217,8 @@ def request_handler(stack: RequestStack):
     elif isinstance(top, CollectionsRequest):
         collection_list_page.generate_page(top, stack.uuid)
     elif isinstance(top, SubjectRequest):
-        subject_page.generate_page(top, stack.uuid)
+        is_private_tg_id = stack.request_message.from_user.id if stack.bot_message.chat.type == 'private' else 0
+        subject_page.generate_page(top, stack.uuid, is_private_tg_id)
     elif isinstance(top, SummaryRequest):
         summary_page.generate_page(top, stack.uuid)
     elif isinstance(top, EditCollectionTypePageRequest):

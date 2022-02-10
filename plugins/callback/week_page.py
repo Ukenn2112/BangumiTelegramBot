@@ -23,7 +23,7 @@ def generate_page(week_request: WeekRequest, stack_uuid: str) -> WeekRequest:
                 week_text_data += f'*[{num}]* {item["name_cn"] if item["name_cn"] else item["name"]}\n\n'
                 week_request.possible_request[str(item['id'])] = SubjectRequest(str(item['id']))
                 button_list.append(telebot.types.InlineKeyboardButton(
-                    text=str(num), callback_data=f"{stack_uuid}|{item['id']}"))  # TODO
+                    text=str(num), callback_data=f"{stack_uuid}|{item['id']}"))
             text = f'*在{air_weekday}放送的节目*\n\n{week_text_data}' \
                    f'共{count}部'
             markup.add(*button_list, row_width=5)

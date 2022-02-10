@@ -47,3 +47,5 @@ def callback(call, bot):
                                   reply_markup=new_do_message['markup'])
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
+
+# def generate_page() TODO

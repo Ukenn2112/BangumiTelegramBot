@@ -108,8 +108,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
                                    collection_type=request.collection_type,
                                    limit=limit)
         else:
-            button_list2.append(telebot.types.InlineKeyboardButton(
-                text='这是末页', callback_data="None"))
+            button_list2.append(telebot.types.InlineKeyboardButton(text='这是末页', callback_data="None"))
         markup.add(*button_list2)
     request.page_text = text
     request.page_markup = markup
