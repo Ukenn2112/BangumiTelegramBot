@@ -21,5 +21,3 @@ def send(message, bot):
         if message.text == f'/start@{BOT_USERNAME}':
             bot.send_message(message.chat.id, '请私聊我进行Bangumi绑定',
                              parse_mode='Markdown', timeout=20)
-        else:
-            pass

@@ -1,6 +1,8 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Literal
 
 import telebot
+
+COLLECTION_TYPE_STR = Literal['wish', 'collect', 'do', 'on_hold', 'dropped']
 
 
 class BaseRequest:
@@ -10,6 +12,7 @@ class BaseRequest:
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
         """所有页面的父类 抽象类 不应该被生成对象"""
         if type(self) == BaseRequest:
             raise RuntimeError("这是个抽象类,不能生成对象")
@@ -29,6 +32,7 @@ class WeekRequest(BaseRequest):
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
 
 
 class CollectionsRequest(BaseRequest):
@@ -53,22 +57,27 @@ class CollectionsRequest(BaseRequest):
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
 
 
 class SubjectRequest(BaseRequest):
-    def __init__(self, subject_id: str):
+    def __init__(self, subject_id: str, is_root: bool = False, user_data=None):
         """条目详情
 
         :param subject_id: 条目ID
+        :param is_root: 是否为根节点 如为真则不可返回
+        :param user_data: 用户信息 用于获取条目收藏
         """
         super().__init__()
         self.subject_id: str = subject_id
-        self.is_root: bool = False
+        self.is_root: bool = is_root
+        self.user_data = user_data
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
 
 
 class SummaryRequest(BaseRequest):
@@ -84,6 +93,40 @@ class SummaryRequest(BaseRequest):
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
+class EditCollectionTypePageRequest(BaseRequest):
+    def __init__(self, subject_id: str):
+        """修改收藏类型页
+
+        :param subject_id: 条目ID
+        """
+        super().__init__()
+        self.subject_id: str = subject_id
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
+class DoEditCollectionTypeRequest(BaseRequest):
+    def __init__(self, subject_id: str, collection_type: COLLECTION_TYPE_STR):
+        """修改收藏类型页
+
+        :param subject_id: 条目ID
+        """
+        super().__init__()
+        self.subject_id: str = subject_id
+        self.collection_type: COLLECTION_TYPE_STR = collection_type
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
 
 
 class BackRequest(BaseRequest):
@@ -98,7 +141,6 @@ class BackRequest(BaseRequest):
 
 
 class RequestStack:
-    stack: List[BaseRequest]
     request_message: telebot.types.Message
     bot_message: telebot.types.Message
 
@@ -106,5 +148,6 @@ class RequestStack:
         """
         tg页面栈
         """
-        self.stack = [page]
-        self.uuid = uuid
+        self.stack: List[BaseRequest] = [page]
+        self.uuid: str = uuid
+        self.call: Optional[telebot.types.CallbackQuery] = None

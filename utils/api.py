@@ -1,18 +1,18 @@
 """api 调用"""
-import time
-import json
-import redis
-import random
-import logging
-import requests
-
 import datetime
-import schedule
+import json
+import logging
+import random
 import threading
-
 from typing import Optional
 
+import redis
+import requests
+import schedule
+import time
+
 from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, REDIS_DATABASE
+
 # FIXME 似乎不应该在这里创建对象
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
@@ -205,9 +205,10 @@ def eps_status_get(test_id, eps_id, status):
 
 
 # 更新收藏状态
-def collection_post(test_id, subject_id, status, rating):
+def collection_post(test_id, subject_id, status, rating, access_token: str = None):
     """更新收藏状态"""
-    access_token = user_data_get(test_id).get('access_token')
+    if not access_token:
+        access_token = user_data_get(test_id).get('access_token')
     if not rating:
         params = {"status": (None, status)}
     else:
@@ -221,9 +222,10 @@ def collection_post(test_id, subject_id, status, rating):
 
 
 # 获取指定条目收藏信息
-def user_collection_get(test_id, subject_id):
+def user_collection_get(test_id, subject_id, access_token=None):
     """获取指定条目收藏信息"""
-    access_token = user_data_get(test_id).get('access_token')
+    if access_token is None:
+        access_token = user_data_get(test_id).get('access_token')
     url = f'https://api.bgm.tv/collection/{subject_id}'
     return requests_get(url, access_token=access_token)
 
@@ -363,7 +365,6 @@ def get_collection(subject_id: str, token: str = "", tg_id=""):
     if token == "":
         if tg_id == "":
             raise ValueError("参数错误,token 和tg_id须传一个")
-        from bot import user_data_get
         token = user_data_get(tg_id).get('access_token')
     if subject_id is None or subject_id == "":
         raise ValueError("subject_id不能为空")
