@@ -9,10 +9,10 @@ import telebot
 
 from config import BOT_TOKEN
 from model.page_model import RequestStack, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, BackRequest, \
-    EditCollectionTypePageRequest, DoEditCollectionTypeRequest
+    EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest
 from plugins import start, my, week, info, search, collection_list
-from plugins.callback import now_do, rating_call, add_new_eps, week_page, subject_page, \
-    collection_list_page, summary_page, edit_collection_type_page, do_edit_collection_type
+from plugins.callback import now_do, edit_rating_page, add_new_eps, week_page, subject_page, \
+    collection_list_page, summary_page, edit_collection_type_page
 from plugins.inline import sender, public
 from utils.api import run_continuously, redis_cli
 
@@ -93,46 +93,10 @@ def now_do_callback(call):
     now_do.callback(call, bot)
 
 
-# 评分 ./plugins/callback/rating_call
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'rating')
-def rating_callback(call):
-    rating_call.callback(call, bot)
-
-
 # 已看最新 ./plugins/callback/add_new_eps
 @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'add_new_eps')
 def add_new_eps_callback(call):
     add_new_eps.callback(call, bot)
-
-
-# # 在看列表 翻页 ./plugins/callback/now_do
-# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'do_page')
-# def do_page_callback(call):
-#     now_do.callback_page(call, bot)
-
-
-# # 搜索详情页 ./plugins/callback/search_details
-# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'search_details')
-# def search_details_callback(call):
-#     search_details.callback(call, bot)
-
-
-# # 收藏 ./plugins/callback/collection
-# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'collection')
-# def collection_callback(call):
-#     collection.callback(call, bot)
-
-
-# # week 返回 ./plugins/callback/week_back
-# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'back_week')
-# def back_week_callback(call):
-#     week_back.callback(call, bot)
-
-#
-# # 简介 ./plugins/callback/summary_call
-# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'summary')
-# def back_summary_callback(call):
-#     summary_call.callback(call, bot)
 
 
 @bot.chosen_inline_handler(func=lambda chosen_inline_result: True)
@@ -197,38 +161,23 @@ def global_callback_handler(call):
 
 
 def consumption_request(stack: RequestStack):
-    callback_text = None
+    callback_text = request_handler(stack)
     top = stack.stack[-1]
-    if isinstance(top, WeekRequest):
-        week_page.generate_page(top, stack.uuid)
-    elif isinstance(top, CollectionsRequest):
-        collection_list_page.generate_page(top, stack.uuid)
-    elif isinstance(top, SubjectRequest):
-        subject_page.generate_page(top, stack.uuid)
-    elif isinstance(top, SummaryRequest):
-        summary_page.generate_page(top, stack.uuid)
-    elif isinstance(top, EditCollectionTypePageRequest):
-        edit_collection_type_page.generate_page(top, stack.uuid)
-    elif isinstance(top, DoEditCollectionTypeRequest):
-        do_edit_collection_type.do(top, stack.request_message.from_user.id)
-        callback_text = top.callback_text
-        stack.stack = stack.stack[:-2]
-        top = stack.stack[-1]
-    elif isinstance(top, BackRequest):
-        stack.stack = stack.stack[:-2]
-        top = stack.stack[-1]
 
     if top.page_image:
         if stack.bot_message.content_type == 'text':
             bot.delete_message(
                 message_id=stack.bot_message.message_id,
-                chat_id=stack.request_message.chat.id)
+                chat_id=stack.request_message.chat.id
+            )
             stack.bot_message = bot.send_photo(
                 photo=top.page_image,
                 caption=top.page_text,
                 parse_mode='markdown',
                 reply_markup=top.page_markup,
-                chat_id=stack.request_message.chat.id)
+                chat_id=stack.request_message.chat.id,
+                reply_to_message_id=stack.request_message.message_id
+            )
         else:
             stack.bot_message = bot.edit_message_media(
                 media=telebot.types.InputMedia(type='photo', media=top.page_image,
@@ -255,12 +204,53 @@ def consumption_request(stack: RequestStack):
                 text=top.page_text,
                 reply_markup=top.page_markup,
                 parse_mode='markdown',
-                chat_id=stack.request_message.chat.id
+                chat_id=stack.request_message.chat.id,
+                reply_to_message_id=stack.request_message.message_id
             )
-    if stack.call:
-        bot.answer_callback_query(stack.call.id, text=callback_text)
-        stack.call = None
+    stack_call = stack.call
+    stack.call = None
     redis_cli.set(stack.uuid, pickle.dumps(stack), ex=3600)
+    if stack_call:
+        bot.answer_callback_query(stack_call.id, text=callback_text)
+
+
+def request_handler(stack: RequestStack):
+    callback_text = None
+    top = stack.stack[-1]
+    if isinstance(top, WeekRequest):
+        week_page.generate_page(top, stack.uuid)
+    elif isinstance(top, CollectionsRequest):
+        collection_list_page.generate_page(top, stack.uuid)
+    elif isinstance(top, SubjectRequest):
+        subject_page.generate_page(top, stack.uuid)
+    elif isinstance(top, SummaryRequest):
+        summary_page.generate_page(top, stack.uuid)
+    elif isinstance(top, EditCollectionTypePageRequest):
+        edit_collection_type_page.generate_page(top, stack.uuid)
+    elif isinstance(top, EditRatingPageRequest):
+        edit_rating_page.generate_page(top, stack.uuid)
+    elif isinstance(top, DoEditCollectionTypeRequest):
+        edit_collection_type_page.do(top, stack.request_message.from_user.id)
+        callback_text = top.callback_text
+        stack.stack = stack.stack[:-1]
+        stack.stack.append(BackRequest())
+        request_handler(stack)
+    elif isinstance(top, DoEditRatingRequest):
+        edit_rating_page.do(top, stack.request_message.from_user.id)
+        callback_text = top.callback_text
+        stack.stack = stack.stack[:-1]
+        stack.stack.append(BackRequest(True))
+        request_handler(stack)
+    elif isinstance(top, BackRequest):
+        stack.stack = stack.stack[:-2]
+        if top.needs_refresh:
+            top = stack.stack[-1]
+            top.page_text = None
+            top.page_image = None
+            top.page_markup = None
+            top.possible_request = {}
+            request_handler(stack)
+    return callback_text
 
 
 # 开始启动

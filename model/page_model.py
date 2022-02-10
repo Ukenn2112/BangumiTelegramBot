@@ -114,7 +114,7 @@ class EditCollectionTypePageRequest(BaseRequest):
 
 class DoEditCollectionTypeRequest(BaseRequest):
     def __init__(self, subject_id: str, collection_type: COLLECTION_TYPE_STR):
-        """修改收藏类型页
+        """修改收藏类型
 
         :param subject_id: 条目ID
         """
@@ -129,11 +129,48 @@ class DoEditCollectionTypeRequest(BaseRequest):
         self.callback_text: Optional[str] = None
 
 
+class EditRatingPageRequest(BaseRequest):
+    def __init__(self, subject_id: str):
+        """修改评分页
+
+        :param subject_id: 条目ID
+        """
+        super().__init__()
+        self.subject_id: str = subject_id
+        self.user_collection = None
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
+class DoEditRatingRequest(BaseRequest):
+    def __init__(self, subject_id: str, rating_num: int):
+        """修改评分
+
+        :param subject_id: 条目ID
+        """
+        super().__init__()
+        self.subject_id: str = subject_id
+        self.rating_num: int = rating_num
+        self.user_collection = None
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
 class BackRequest(BaseRequest):
-    def __init__(self):
+    def __init__(self, needs_refresh: bool = False):
         """返回请求
         """
         super().__init__()
+        self.needs_refresh = needs_refresh
+
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None

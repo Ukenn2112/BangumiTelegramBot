@@ -6,7 +6,7 @@ import math
 import requests
 import telebot
 
-from model.page_model import CollectionsRequest, SubjectRequest
+from model.page_model import CollectionsRequest, SubjectRequest, BackRequest
 from utils.api import requests_get, get_subject_info
 
 
@@ -54,8 +54,11 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
     nums_unicode = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
     button_list = []
     for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
+        epssssss = info["subject_info"]["eps"]
+        if not epssssss:
+            epssssss = info["subject_info"]["total_episodes"]
         text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
-                     f' `[{info["ep_status"]}/{info["subject_info"]["total_episodes"]}]`\n\n'
+                     f' `[{info["ep_status"]}/{epssssss}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
             text=num, callback_data=f"{stack_uuid}|{nums_unicode}"))
         request.possible_request[nums_unicode] = SubjectRequest(str(info['subject_id']), user_data=request.user_data)
@@ -81,13 +84,16 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
     if count > limit:
         button_list2 = []
         if offset - limit >= 0:
+            # button_list2.append(
+            #     telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|{offset - limit}'))
+            # request.possible_request[str(offset - limit)] = \
+            #     CollectionsRequest(request.user_data, subject_type,
+            #                        offset=offset - limit,
+            #                        collection_type=request.collection_type,
+            #                        limit=limit)
             button_list2.append(
-                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|{offset - limit}'))
-            request.possible_request[str(offset - limit)] = \
-                CollectionsRequest(request.user_data, subject_type,
-                                   offset=offset - limit,
-                                   collection_type=request.collection_type,
-                                   limit=limit)
+                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|back'))
+            request.possible_request["back"] = BackRequest()
         else:
             button_list2.append(telebot.types.InlineKeyboardButton(
                 text='这是首页', callback_data="None"))

@@ -1,6 +1,7 @@
 import telebot
 
-from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest
+from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
+    EditRatingPageRequest
 from utils.api import get_subject_info, anime_img, user_collection_get
 from utils.converts import subject_type_to_emoji
 
@@ -16,14 +17,14 @@ def generate_page(subject_request: SubjectRequest, stack_uuid: str) -> SubjectRe
 
     if not subject_request.page_image:
         subject_request.page_image = anime_img(subject_request.subject_id)
-    if subject_request.user_data:
-        subject_request.page_markup = gender_page_manager_button(subject_request, stack_uuid)
+    if user_collection:
+        subject_request.page_markup = gender_page_manager_button(subject_request, stack_uuid, user_collection)
     else:
         subject_request.page_markup = gender_page_show_buttons(subject_request, stack_uuid)
     return subject_request
 
 
-def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str):
+def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str, user_collection):
     markup = telebot.types.InlineKeyboardMarkup()
     button_list = []
     if not subject_request.is_root:
@@ -32,13 +33,18 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str)
     button_list.append(
         telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
     button_list.append(
-        telebot.types.InlineKeyboardButton(text='评分', callback_data=f"{stack_uuid}|rating"))  # TODO
+        telebot.types.InlineKeyboardButton(text='评分', callback_data=f"{stack_uuid}|rating"))
     button_list.append(
         telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
-    subject_request.possible_request['collection'] = EditCollectionTypePageRequest(subject_request.subject_id)
-    subject_request.possible_request['collection'].page_image = subject_request.page_image
+    edit_collection_type_page_request = EditCollectionTypePageRequest(subject_request.subject_id)
+    subject_request.possible_request['collection'] = edit_collection_type_page_request
+    edit_collection_type_page_request.page_image = subject_request.page_image
+    edit_rating_page_request = EditRatingPageRequest(subject_request.subject_id)
+    edit_rating_page_request.page_image = subject_request.page_image
+    edit_rating_page_request.user_collection = user_collection
+    subject_request.possible_request['rating'] = edit_rating_page_request
     markup.add(*button_list)
     return markup
 
@@ -52,7 +58,7 @@ def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
     button_list.append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
-    button_list.append(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f"{stack_uuid}|collection"))  # TODO
+    button_list.append(telebot.types.InlineKeyboardButton(text='收藏', callback_data=f"{stack_uuid}|collection"))
     subject_request.possible_request['collection'] = EditCollectionTypePageRequest(subject_request.subject_id)
     subject_request.possible_request['collection'].page_image = subject_request.page_image
     markup.add(*button_list)
@@ -70,7 +76,10 @@ def gander_page_text(subject_id, user_collection=None) -> str:
         text += f"➤ BGM 平均评分：`{subject_info['rating']['score']}`🌟\n"
     else:
         text += f"➤ BGM 平均评分：暂无评分\n"
-    if user_collection:  # TODO
+    epssssss = subject_info["eps"]
+    if not epssssss:
+        epssssss = subject_info["total_episodes"]
+    if user_collection:
         if 'rating' in user_collection:
             if user_collection['rating'] == 0:
                 text += f"➤ 您的评分：暂未评分\n"
@@ -78,7 +87,7 @@ def gander_page_text(subject_id, user_collection=None) -> str:
                 text += f"➤ 您的评分：`{user_collection['rating']}`🌟\n"
     else:
         if subject_type == 2 or subject_type == 6:  # 当类型为anime或real时
-            text += f"➤ 集数：共`{subject_info['eps']}`集\n"
+            text += f"➤ 集数：共`{epssssss}`集\n"
     if subject_type == 2 or subject_type == 6:  # 当类型为anime或real时
         if subject_type == 6:
             text += f"➤ 剧集类型：`{subject_info['platform']}`\n"
@@ -87,8 +96,8 @@ def gander_page_text(subject_id, user_collection=None) -> str:
         text += f"➤ 放送开始：`{subject_info['date']}`\n"
         if subject_info["_air_weekday"]:
             text += f"➤ 放送星期：`{subject_info['_air_weekday']}`\n"
-        # if eps_data is not None:
-        #     text += f"➤ 观看进度：`{eps_data['progress']}`\n"
+        if user_collection:
+            text += f"➤ 观看进度：`{user_collection['ep_status']}/{epssssss}`\n"
     if subject_type == 1:  # 当类型为book时
         text += f"➤ 书籍类型：`{subject_info['platform']}`\n"
         for box in subject_info['infobox']:
