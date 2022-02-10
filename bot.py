@@ -9,9 +9,10 @@ import telebot
 
 from config import BOT_TOKEN
 from model.page_model import RequestStack, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, BackRequest, \
-    EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest
+    EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
+    RefreshRequest
 from plugins import start, my, week, info, search, collection_list
-from plugins.callback import now_do, edit_rating_page, add_new_eps, week_page, subject_page, \
+from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page
 from plugins.inline import sender, public
 from utils.api import run_continuously, redis_cli
@@ -87,16 +88,10 @@ def callback_none(call):
     bot.answer_callback_query(call.id)
 
 
-# 在看详情 ./plugins/callback/now_do
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'now_do')
-def now_do_callback(call):
-    now_do.callback(call, bot)
-
-
-# 已看最新 ./plugins/callback/add_new_eps
-@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'add_new_eps')
-def add_new_eps_callback(call):
-    add_new_eps.callback(call, bot)
+# # 已看最新 ./plugins/callback/add_new_eps
+# @bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'add_new_eps')
+# def add_new_eps_callback(call):
+#     add_new_eps.callback(call, bot)
 
 
 @bot.chosen_inline_handler(func=lambda chosen_inline_result: True)
@@ -244,12 +239,16 @@ def request_handler(stack: RequestStack):
     elif isinstance(top, BackRequest):
         stack.stack = stack.stack[:-2]
         if top.needs_refresh:
-            top = stack.stack[-1]
-            top.page_text = None
-            top.page_image = None
-            top.page_markup = None
-            top.possible_request = {}
+            stack.stack.append(RefreshRequest())
             request_handler(stack)
+    elif isinstance(top, RefreshRequest):
+        stack.stack = stack.stack[:-1]
+        top = stack.stack[-1]
+        top.page_text = None
+        top.page_image = None
+        top.page_markup = None
+        top.possible_request = {}
+        request_handler(stack)
     return callback_text
 
 

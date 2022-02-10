@@ -8,19 +8,21 @@ from utils.converts import subject_type_to_emoji
 
 def generate_page(subject_request: SubjectRequest, stack_uuid: str) -> SubjectRequest:
     user_collection = None
-    if subject_request.user_data:
+    if (not subject_request.page_text) and (not subject_request.page_markup) and subject_request.user_data:
         user_collection = user_collection_get(None, subject_request.subject_id,
                                               subject_request.user_data['_user']['access_token'])
 
-    if (not subject_request.page_text) or subject_request.user_data:
+    if not subject_request.page_text:
         subject_request.page_text = gander_page_text(subject_request.subject_id, user_collection)
 
     if not subject_request.page_image:
         subject_request.page_image = anime_img(subject_request.subject_id)
-    if user_collection:
-        subject_request.page_markup = gender_page_manager_button(subject_request, stack_uuid, user_collection)
-    else:
-        subject_request.page_markup = gender_page_show_buttons(subject_request, stack_uuid)
+
+    if not subject_request.page_markup:
+        if user_collection:
+            subject_request.page_markup = gender_page_manager_button(subject_request, stack_uuid, user_collection)
+        else:
+            subject_request.page_markup = gender_page_show_buttons(subject_request, stack_uuid)
     return subject_request
 
 

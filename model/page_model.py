@@ -177,6 +177,17 @@ class BackRequest(BaseRequest):
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
 
 
+class RefreshRequest(BaseRequest):
+    def __init__(self):
+        """刷新请求
+        """
+        super().__init__()
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+
+
 class RequestStack:
     request_message: telebot.types.Message
     bot_message: telebot.types.Message
