@@ -104,7 +104,7 @@ def gander_page_text(subject_id, user_collection=None) -> str:
         text += f"➤ 放送开始：`{subject_info['date']}`\n"
         if subject_info["_air_weekday"]:
             text += f"➤ 放送星期：`{subject_info['_air_weekday']}`\n"
-        if user_collection:
+        if user_collection and 'ep_status' in user_collection:
             text += f"➤ 观看进度：`{user_collection['ep_status']}/{epssssss}`\n"
     if subject_type == 1:  # 当类型为book时
         text += f"➤ 书籍类型：`{subject_info['platform']}`\n"
@@ -160,14 +160,14 @@ def gander_page_text(subject_id, user_collection=None) -> str:
                 else:
                     text += f"➤ 售价：`{box['value']}`\n"
         text += f"➤ 发行日期：`{subject_info['date']}`\n"
-    if user_collection and user_collection['tag'] and len(user_collection['tag']) == 1 and user_collection['tag'][
-        0] == "":
+    if (user_collection and 'tag' in user_collection and user_collection['tag'] and len(user_collection['tag']) == 1 and
+            user_collection['tag'][0] == ""):
         user_collection['tag'] = []  # 鬼知道为什么没标签会返回个空字符串
     if subject_info['tags'] and len(subject_info['tags']) == 1 and subject_info['tags'][0] == "":
         subject_info['tags'] = []
-    if (user_collection and user_collection['tag']) or (subject_info['tags']):
+    if (user_collection and 'tag' in user_collection and user_collection['tag']) or (subject_info['tags']):
         text += f"➤ 标签："
-    if user_collection and user_collection['tag']:
+    if user_collection and 'tag' in user_collection and user_collection['tag']:
         for tag in user_collection['tag'][:10]:
             text += f"#{'x' if tag.isdecimal() else ''}{tag} "
         if subject_info['tags']:
@@ -179,16 +179,16 @@ def gander_page_text(subject_id, user_collection=None) -> str:
         tag_not_click = subject_info['tags']
     if tag_not_click and tag_not_click[0]:
         # 如果有列表
-        if not (user_collection and user_collection['tag']):
+        if not (user_collection and 'tag' in user_collection and user_collection['tag']):
             # 如果没有用户标签
             if tag_not_click and tag_not_click[0]:
                 for tag in tag_not_click[:10]:
                     text += f"`{tag['name']}` "
-        if user_collection and user_collection['tag'] and len(user_collection['tag']) < 10:
+        if user_collection and 'tag' in user_collection and user_collection['tag'] and len(user_collection['tag']) < 10:
             # 有用户标签 但 用户标签数小于10
             for tag in tag_not_click[:10 - len(user_collection['tag'])]:
                 text += f"`{tag['name']}` "
-        if (user_collection and user_collection['tag']) or (subject_info['tags']):
+        if (user_collection and 'tag' in user_collection and user_collection['tag']) or (subject_info['tags']):
             text += "\n"
     text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
             f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"

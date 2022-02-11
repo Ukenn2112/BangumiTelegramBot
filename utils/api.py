@@ -36,7 +36,7 @@ def user_data_get(test_id):
             if now_time >= expiry_time:  # 判断密钥是否过期
                 return expiry_data_get(test_id)
             else:
-                return i.get('data', {})
+                return i.get('data')
 
 
 def expiry_data_get(test_id):
