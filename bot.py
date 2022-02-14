@@ -10,7 +10,7 @@ import telebot
 from config import BOT_TOKEN
 from model.page_model import RequestStack, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, BackRequest, \
     EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
-    RefreshRequest
+    RefreshRequest, BaseRequest
 from plugins import start, my, week, info, search, collection_list
 from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page
@@ -156,8 +156,13 @@ def global_callback_handler(call):
 
 
 def consumption_request(stack: RequestStack):
-    callback_text = request_handler(stack)
-    top = stack.stack[-1]
+    callback_text = None
+    try:
+        callback_text = request_handler(stack)
+        top = stack.stack[-1]
+    except:
+        top = BaseRequest()
+        top.page_text = "发生了未知异常😖"
 
     if top.page_image:
         if stack.bot_message.content_type == 'text':
@@ -229,7 +234,7 @@ def request_handler(stack: RequestStack):
         edit_collection_type_page.do(top, stack.request_message.from_user.id)
         callback_text = top.callback_text
         stack.stack = stack.stack[:-1]
-        stack.stack.append(BackRequest())
+        stack.stack.append(BackRequest(True))
         request_handler(stack)
     elif isinstance(top, DoEditRatingRequest):
         edit_rating_page.do(top, stack.request_message.from_user.id)

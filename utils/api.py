@@ -272,9 +272,9 @@ def get_subject_info(subject_id, t_dict=None):
     """获取指定条目信息 并使用Redis缓存"""
     subject = redis_cli.get(f"subject:{subject_id}")
     if subject:
+        if subject == b"None__":
+            raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
         loads = json.loads(subject)
-    elif subject == "None__":
-        raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
         loads = requests_get(url=url)
@@ -298,9 +298,9 @@ def anime_img(subject_id):
     """动画简介图片获取 不需Access Token 并使用Redis缓存"""
     img_url = redis_cli.get(f"anime_img:{subject_id}")
     if img_url:
+        if img_url == b"None__":
+            return None
         return img_url.decode()
-    if img_url == "None__":
-        return None
     anime_name = get_subject_info(subject_id)['name']
     query = '''
     query ($id: Int, $page: Int, $perPage: Int, $search: String) {
@@ -376,10 +376,10 @@ def get_user(bgm_id: str) -> dict:
     """通过bgm_id 获取用户名"""
     data = redis_cli.get(f"bgm_user:{bgm_id}")
     if data:
-        if data != "None__":
-            return json.loads(data)
-        else:
+        if data == b"None__":
             raise FileNotFoundError
+        else:
+            return json.loads(data)
     user_data = requests_get(f'https://api.bgm.tv/user/{bgm_id}')
     if isinstance(user_data, dict) and user_data.get('code') == 404:
         redis_cli.set(f"bgm_user:{bgm_id}", "None__", ex=3600)

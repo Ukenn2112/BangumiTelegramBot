@@ -16,11 +16,17 @@ def generate_page(subject_request: SubjectRequest, stack_uuid: str, is_private_t
         elif is_private_tg_id:
             user_collection = user_collection_get(is_private_tg_id, subject_request.subject_id)
 
-    if not subject_request.page_text:
-        subject_request.page_text = gander_page_text(subject_request.subject_id, user_collection)
+    if not subject_request.page_text and not subject_request.page_image:
+        subject_info = get_subject_info(subject_request.subject_id)
+        if not subject_request.page_text:
+            subject_request.page_text = gander_page_text(subject_request.subject_id, user_collection, subject_info)
 
-    if not subject_request.page_image:
-        subject_request.page_image = anime_img(subject_request.subject_id)
+        if not subject_request.page_image:
+            subject_request.page_image = anime_img(subject_request.subject_id)
+            if (not subject_request.page_image
+                    and subject_info and 'images' in subject_info and 'large' in subject_info['images']
+                    and subject_info['images']['large']):
+                subject_request.page_image = subject_info['images']['large']
 
     if not subject_request.page_markup:
         if is_private_tg_id:
@@ -32,50 +38,69 @@ def generate_page(subject_request: SubjectRequest, stack_uuid: str, is_private_t
 
 def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str, user_collection):
     markup = telebot.types.InlineKeyboardMarkup()
-    button_list = []
+    button_list = [[], []]
     if not subject_request.is_root:
-        button_list.append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
+        button_list[1].append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
         subject_request.possible_request['back'] = BackRequest()
-    button_list.append(
-        telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
-    button_list.append(
-        telebot.types.InlineKeyboardButton(text='评分', callback_data=f"{stack_uuid}|rating"))
-    button_list.append(
-        telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
+    if 'status' not in user_collection and subject_request.is_root:
+        button_list[0].append(
+            telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+    else:
+        button_list[1].append(
+            telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
+
+    if 'status' in user_collection:
+        button_list[0].append(
+            telebot.types.InlineKeyboardButton(text='评分', callback_data=f"{stack_uuid}|rating"))
+        edit_rating_page_request = EditRatingPageRequest(subject_request.subject_id)
+        edit_rating_page_request.page_image = subject_request.page_image
+        edit_rating_page_request.user_collection = user_collection
+        subject_request.possible_request['rating'] = edit_rating_page_request
+
+        button_list[0].append(
+            telebot.types.InlineKeyboardButton(text='点格子(未完成)', callback_data=f"{stack_uuid}|point"))
+
+    button_list[0].append(
+        telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
     edit_collection_type_page_request = EditCollectionTypePageRequest(subject_request.subject_id)
     subject_request.possible_request['collection'] = edit_collection_type_page_request
     edit_collection_type_page_request.page_image = subject_request.page_image
-    edit_rating_page_request = EditRatingPageRequest(subject_request.subject_id)
-    edit_rating_page_request.page_image = subject_request.page_image
-    edit_rating_page_request.user_collection = user_collection
-    subject_request.possible_request['rating'] = edit_rating_page_request
-    markup.add(*button_list)
+
+    for i in button_list:
+        if i:
+            markup.add(*i)
     return markup
 
 
 def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
     markup = telebot.types.InlineKeyboardMarkup()
-    button_list = []
+    button_list = [[], []]
     if not subject_request.is_root:
-        button_list.append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
+        button_list[1].append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
         subject_request.possible_request['back'] = BackRequest()
-    button_list.append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+        button_list[1].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+    else:
+        button_list[0].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
-    button_list.append(
+    button_list[0].append(
         telebot.types.InlineKeyboardButton(text='去管理',
                                            url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))
     subject_request.possible_request['collection'] = EditCollectionTypePageRequest(subject_request.subject_id)
     subject_request.possible_request['collection'].page_image = subject_request.page_image
-    markup.add(*button_list)
+
+    for i in button_list:
+        if i:
+            markup.add(*i)
     return markup
 
 
-def gander_page_text(subject_id, user_collection=None) -> str:
+def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str:
     """详情页"""
-    subject_info = get_subject_info(subject_id)
+    if not subject_info:
+        subject_info = get_subject_info(subject_id)
     subject_type = subject_info['type']
     text = f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n" \
            f"{subject_info['name']}\n\n" \

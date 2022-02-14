@@ -13,9 +13,6 @@ class BaseRequest:
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
-        """所有页面的父类 抽象类 不应该被生成对象"""
-        if type(self) == BaseRequest:
-            raise RuntimeError("这是个抽象类,不能生成对象")
 
 
 class WeekRequest(BaseRequest):
