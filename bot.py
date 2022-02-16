@@ -10,10 +10,10 @@ import telebot
 from config import BOT_TOKEN
 from model.page_model import RequestStack, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, BackRequest, \
     EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
-    RefreshRequest, BaseRequest
+    RefreshRequest, BaseRequest, SubjectEpsPageRequest
 from plugins import start, my, week, info, search, collection_list
 from plugins.callback import edit_rating_page, week_page, subject_page, \
-    collection_list_page, summary_page, edit_collection_type_page
+    collection_list_page, summary_page, edit_collection_type_page, subject_eps_page
 from plugins.inline import sender, public
 from utils.api import run_continuously, redis_cli
 
@@ -230,25 +230,29 @@ def request_handler(stack: RequestStack):
         edit_collection_type_page.generate_page(top, stack.uuid)
     elif isinstance(top, EditRatingPageRequest):
         edit_rating_page.generate_page(top, stack.uuid)
+    elif isinstance(top, SubjectEpsPageRequest):
+        subject_eps_page.generate_page(top, stack.uuid)
+        if len(stack.stack) > 2 and isinstance(stack.stack[-2], SubjectEpsPageRequest):
+            del stack.stack[-2]
     elif isinstance(top, DoEditCollectionTypeRequest):
         edit_collection_type_page.do(top, stack.request_message.from_user.id)
         callback_text = top.callback_text
-        stack.stack = stack.stack[:-1]
+        del stack.stack[-1]
         stack.stack.append(BackRequest(True))
         request_handler(stack)
     elif isinstance(top, DoEditRatingRequest):
         edit_rating_page.do(top, stack.request_message.from_user.id)
         callback_text = top.callback_text
-        stack.stack = stack.stack[:-1]
+        del stack.stack[-1]
         stack.stack.append(BackRequest(True))
         request_handler(stack)
     elif isinstance(top, BackRequest):
-        stack.stack = stack.stack[:-2]
+        del stack.stack[-2:]  # 删除最后两个
         if top.needs_refresh:
             stack.stack.append(RefreshRequest())
             request_handler(stack)
     elif isinstance(top, RefreshRequest):
-        stack.stack = stack.stack[:-1]
+        del stack.stack[-1]  # 删除这个请求
         top = stack.stack[-1]
         top.page_text = None
         top.page_image = None

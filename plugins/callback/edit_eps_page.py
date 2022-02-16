@@ -1,4 +1,5 @@
 """已看最新"""
+from model.page_model import EditEpsPageRequest
 from plugins.info import gander_info_message
 from utils.api import collection_post, user_collection_get, eps_get, eps_status_get
 
@@ -48,4 +49,6 @@ def callback(call, bot):
     else:
         bot.answer_callback_query(call.id, text='和你没关系，别点了~', show_alert=True)
 
-# def generate_page() TODO
+
+def generate_page(request: EditEpsPageRequest, stack_uuid: str):
+    pass

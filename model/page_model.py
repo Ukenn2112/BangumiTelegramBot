@@ -161,6 +161,43 @@ class DoEditRatingRequest(BaseRequest):
         self.callback_text: Optional[str] = None
 
 
+class SubjectEpsPageRequest(BaseRequest):
+    def __init__(self, subject_id: str, limit=100, offset=0, user_data=None):
+        """展示条目章节页
+
+        :param subject_id: 条目ID
+        """
+
+        super().__init__()
+        self.subject_id: str = subject_id
+        self.user_data = user_data
+        self.limit = limit
+        self.offset = offset
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
+class EditEpsPageRequest(BaseRequest):
+    def __init__(self, subject_id: str, user_data):
+        """修改评分页
+
+        :param subject_id: 条目ID
+        """
+        super().__init__()
+        self.subject_id: str = subject_id
+        self.user_data = user_data
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
 class BackRequest(BaseRequest):
     def __init__(self, needs_refresh: bool = False):
         """返回请求

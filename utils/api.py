@@ -4,7 +4,7 @@ import json
 import logging
 import random
 import threading
-from typing import Optional
+from typing import Optional, Literal
 
 import redis
 import requests
@@ -291,6 +291,37 @@ def get_subject_info(subject_id, t_dict=None):
             loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
     if t_dict:
         t_dict["subject_info"] = loads
+    return loads
+
+
+def get_subject_episode(subject_id: int, type_: Literal[0, 1, 2, 3, None] = None, limit=100, offset=0):
+    """获取条目章节
+
+    :param subject_id:条目id
+    :param type_: 0,1,2,3 代表 本篇，sp，op，ed
+    :param limit: 每页数量
+    :param offset: 偏移量
+    """
+    episode = redis_cli.get(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}")
+    if episode:
+        if episode == b"None__":
+            raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
+        loads = json.loads(episode)
+    else:
+        url = f'https://api.bgm.tv/v0/episodes'
+        params = {
+            'subject_id': subject_id,
+            'type': type_,
+            'limit': limit,
+            'offset': offset
+        }
+        loads = requests_get(url=url, params=params)
+        if not loads:
+            redis_cli.set(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
+        redis_cli.set(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}",
+                      json.dumps(loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
     return loads
 
 

@@ -2,7 +2,7 @@ import telebot
 
 from config import BOT_USERNAME
 from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
-    EditRatingPageRequest
+    EditRatingPageRequest, SubjectEpsPageRequest
 from utils.api import get_subject_info, anime_img, user_collection_get
 from utils.converts import subject_type_to_emoji
 
@@ -60,7 +60,9 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
         subject_request.possible_request['rating'] = edit_rating_page_request
 
         button_list[0].append(
-            telebot.types.InlineKeyboardButton(text='点格子(未完成)', callback_data=f"{stack_uuid}|point"))
+            telebot.types.InlineKeyboardButton(text='点格子(未完成)', callback_data=f"{stack_uuid}|eps"))
+        subject_request.possible_request['eps'] = SubjectEpsPageRequest(subject_request.subject_id,
+                                                                        limit=12, user_data=subject_request.user_data)
 
     button_list[0].append(
         telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))

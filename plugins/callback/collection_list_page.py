@@ -104,7 +104,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
                 telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'{stack_uuid}|{offset + limit}'))
             request.possible_request[str(offset + limit)] = \
                 CollectionsRequest(request.user_data, subject_type,
-                                   offset=+limit,
+                                   offset=offset + limit,
                                    collection_type=request.collection_type,
                                    limit=limit)
         else:
