@@ -7,7 +7,7 @@ from utils.api import get_subject_episode
 
 def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEpsPageRequest:
     subject_id = request.subject_id
-    eps = get_subject_episode(int(subject_id), limit=request.limit, offset=request.offset)
+    eps = get_subject_episode(int(subject_id), limit=request.limit, offset=request.offset, type_=0)
     button_list = []
     text = "该条目章节列表:\n"
     for i in eps['data']:

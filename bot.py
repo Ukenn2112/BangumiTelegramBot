@@ -123,7 +123,7 @@ def set_bot_command(bot):
         telebot.types.BotCommand("my", "Bangumi收藏统计/空格加username或uid不绑定查询"),
         telebot.types.BotCommand("book", "Bangumi用户在读书籍"),
         telebot.types.BotCommand("anime", "Bangumi用户在看动画"),
-        telebot.types.BotCommand("game", "Bangumi用户在玩动画"),
+        telebot.types.BotCommand("game", "Bangumi用户在玩游戏"),
         telebot.types.BotCommand("real", "Bangumi用户在看剧集"),
         telebot.types.BotCommand("week", "空格加数字查询每日放送"),
         telebot.types.BotCommand("search", "搜索条目"),

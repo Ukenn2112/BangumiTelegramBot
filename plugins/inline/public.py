@@ -1,8 +1,10 @@
 """inline 方式公共搜索"""
 import telebot
+
+from config import BOT_USERNAME
+from plugins.info import gander_info_message
 from utils.api import anime_img, search_subject
 from utils.converts import subject_type_to_emoji, parse_markdown_v2, number_to_week
-from plugins.info import gander_info_message
 
 
 def query_public_text(inline_query, bot):
@@ -14,7 +16,7 @@ def query_public_text(inline_query, bot):
             img_url = anime_img(inline_query.query)
             subject_info = message['subject_info']
             if subject_info:
-                if img_url == 'None__' or not img_url:
+                if not img_url:
                     qr = telebot.types.InlineQueryResultArticle(
                         id=inline_query.query,
                         title=subject_type_to_emoji(subject_info['type']) + (
@@ -26,7 +28,10 @@ def query_public_text(inline_query, bot):
                             disable_web_page_preview=True
                         ),
                         description=subject_info["name"] if subject_info["name_cn"] else None,
-                        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
+                        reply_markup=telebot.types.InlineKeyboardMarkup().add(
+                            telebot.types.InlineKeyboardButton(text='去管理',
+                                                               url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
                     )
                 else:
                     qr = telebot.types.InlineQueryResultPhoto(
@@ -39,6 +44,10 @@ def query_public_text(inline_query, bot):
                         parse_mode="markdown",
                         description=subject_info["name"] if subject_info["name_cn"] else None,
                         thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+                        ,
+                        reply_markup=telebot.types.InlineKeyboardMarkup().add(
+                            telebot.types.InlineKeyboardButton(text='去管理',
+                                                               url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
                     )
                 query_result_list.append(qr)
     else:
@@ -93,8 +102,8 @@ def query_public_text(inline_query, bot):
             qr = telebot.types.InlineQueryResultArticle(
                 id=subject['url'],
                 title=emoji +
-                (subject["name_cn"] if subject["name_cn"]
-                 else subject["name"]),
+                      (subject["name_cn"] if subject["name_cn"]
+                       else subject["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
                     text,
                     parse_mode="markdownV2",
@@ -102,10 +111,10 @@ def query_public_text(inline_query, bot):
                 ),
                 description=subject["name"] if subject["name_cn"] else None,
                 thumb_url=subject["images"]["medium"] if subject["images"] else None,
-                reply_markup=telebot.types.InlineKeyboardMarkup().add(telebot.types.InlineKeyboardButton(
+                reply_markup=telebot.types.InlineKeyboardMarkup().add(*[telebot.types.InlineKeyboardButton(
                     text="展示详情",
                     switch_inline_query_current_chat=subject['id']
-                ))
+                ), telebot.types.InlineKeyboardButton(text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}")])
             )
             query_result_list.append(qr)
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
