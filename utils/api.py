@@ -102,7 +102,6 @@ def bgmuser_data(test_id):
 @schedule.repeat(schedule.every().day)
 def check_expiry_user():
     """检查是否有过期用户"""
-    data_seek = []
     with open('bgm_data.json') as f:
         data_seek = json.loads(f.read())
     for i in data_seek:
@@ -148,6 +147,7 @@ def requests_get(url, params: Optional[dict] = None, access_token: Optional[str]
     for num in range(max_retry_times):  # 如api请求错误 重试3次
         try:
             r = requests.get(url=url, params=params, headers=headers)
+            break
         except requests.ConnectionError as err:
             if num + 1 >= max_retry_times:
                 raise
