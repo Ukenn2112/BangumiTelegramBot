@@ -10,13 +10,13 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     subject_id = request.subject_id
     eps = get_subject_episode(int(subject_id), limit=request.limit, offset=request.offset, type_=request.type_)
     button_list = []
-    text = "该条目章节列表:\n"
+    text = "*该条目章节列表:*\n"
     for i in eps['data']:
         if i['ep'].is_integer():
             ep = str(int(i['ep']))
         else:
             ep = str(i['ep'])
-        text += f"*{ep}*"
+        text += f"*{ep}.*"
         if i['name_cn']:
             text += f" `{i['name_cn']}`"
         elif i['name']:

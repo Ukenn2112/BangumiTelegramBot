@@ -81,10 +81,10 @@ def send(message, bot):
                     if game.get('status').get('type') == 'collect':
                         game_collect = game.get('count')
         text = f'*Bangumi 用户数据统计：\n\n{nickname}*\n' \
-               f'➤ 动画：`{anime_do}在看，{anime_collect}看过`\n' \
-               f'➤ 图书：`{book_do}在读，{book_collect}读过`\n' \
-               f'➤ 音乐：`{music_do}在听，{music_collect}听过`\n' \
-               f'➤ 游戏：`{game_do}在玩，{game_collect}玩过`\n\n' \
+               f'*➤ 动画：*`{anime_do}在看，{anime_collect}看过`\n' \
+               f'*➤ 图书：*`{book_do}在读，{book_collect}读过`\n' \
+               f'*➤ 音乐：*`{music_do}在听，{music_collect}听过`\n' \
+               f'*➤ 游戏：*`{game_do}在玩，{game_collect}玩过`\n\n' \
                f'[🏠 个人主页](https://bgm.tv/user/{bgm_id})\n'
         img_url = f'https://bgm.tv/chart/img/{bgm_id}'
     except:

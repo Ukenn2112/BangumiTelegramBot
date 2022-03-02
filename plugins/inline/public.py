@@ -43,8 +43,7 @@ def query_public_text(inline_query, bot):
                         caption=message['text'],
                         parse_mode="markdown",
                         description=subject_info["name"] if subject_info["name_cn"] else None,
-                        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
-                        ,
+                        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
                         reply_markup=telebot.types.InlineKeyboardMarkup().add(
                             telebot.types.InlineKeyboardButton(text='去管理',
                                                                url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
@@ -61,27 +60,27 @@ def query_public_text(inline_query, bot):
             if subject['name_cn']:
                 text += f"{parse_markdown_v2(subject['name_cn'])}\n"
             text += "\n"
-            text += f"BGM ID：`{subject['id']}`\n"
+            text += f"*BGM ID：*`{subject['id']}`\n"
             if 'rating' in subject and subject['rating']['score']:
-                text += f"➤ BGM 平均评分：`{subject['rating']['score']}`🌟\n"
+                text += f"*➤ BGM 平均评分：*`{subject['rating']['score']}`🌟\n"
             if subject["type"] == 2 or subject["type"] == 6:  # 当类型为anime或real时
                 if 'eps' in subject and subject['eps']:
-                    text += f"➤ 集数：共`{subject['eps']}`集\n"
+                    text += f"*➤ 集数：*共`{subject['eps']}`集\n"
                 if subject['air_date']:
-                    text += f"➤ 放送日期：`{parse_markdown_v2(subject['air_date'])}`\n"
+                    text += f"*➤ 放送日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
                 if subject['air_weekday']:
-                    text += f"➤ 放送星期：`{number_to_week(subject['air_weekday'])}`\n"
+                    text += f"*➤ 放送星期：*`{number_to_week(subject['air_weekday'])}`\n"
             if subject["type"] == 1:  # 当类型为book时
                 if 'eps' in subject and subject['eps']:
-                    text += f"➤ 话数：共`{subject['eps']}`话\n"
+                    text += f"*➤ 话数：*共`{subject['eps']}`话\n"
                 if subject['air_date']:
-                    text += f"➤ 发售日期：`{parse_markdown_v2(subject['air_date'])}`\n"
+                    text += f"*➤ 发售日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
             if subject["type"] == 3:  # 当类型为music时
                 if subject['air_date']:
-                    text += f"➤ 发售日期：`{parse_markdown_v2(subject['air_date'])}`\n"
+                    text += f"*➤ 发售日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
             if subject["type"] == 4:  # 当类型为game时
                 if subject['air_date']:
-                    text += f"➤ 发行日期：`{parse_markdown_v2(subject['air_date'])}`\n"
+                    text += f"*➤ 发行日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
             text += f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
                     f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
             # if 'collection' in subject and subject['collection']:
@@ -101,9 +100,8 @@ def query_public_text(inline_query, bot):
             #     text += f"||_{utils.parse_markdown_v2(subject['summary'])}_||\n"
             qr = telebot.types.InlineQueryResultArticle(
                 id=subject['url'],
-                title=emoji +
-                      (subject["name_cn"] if subject["name_cn"]
-                       else subject["name"]),
+                title=emoji + (subject["name_cn"] if subject["name_cn"]
+                               else subject["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
                     text,
                     parse_mode="markdownV2",

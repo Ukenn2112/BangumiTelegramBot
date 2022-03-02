@@ -21,19 +21,19 @@ def generate_page(request: EditRatingPageRequest, stack_uuid: str) -> EditRating
     subject_info = get_subject_info(request.subject_id)
     text = (f"*{subject_info['name_cn']}*\n"
             f"{subject_info['name']}\n\n"
-            f"BGM ID：`{request.subject_id}`\n\n"
-            f"➤ BGM 平均评分：`{subject_info['rating']['score']}`🌟\n"
+            f"*BGM ID：*`{request.subject_id}`\n"
+            f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟\n"
             )
     if request.user_collection['rating'] == 0:
-        text += f"➤ 您的评分：暂未评分\n"
+        text += f"*➤ 您的评分：*暂未评分\n"
     else:
-        text += f"➤ 您的评分：`{request.user_collection['rating']}`🌟\n"
+        text += f"*➤ 您的评分：*`{request.user_collection['rating']}`🌟\n"
     if request.user_collection is not None:
         epssssss = subject_info["eps"]
         if not epssssss:
             epssssss = subject_info["total_episodes"]
-        text += f"➤ 观看进度：`{request.user_collection['ep_status']}/{epssssss}`\n"
-    text += f"💬 [吐槽箱](https://bgm.tv/subject/{request.subject_id}/comments)\n\n请点按下列数字进行评分"
+        text += f"*➤ 观看进度：*`{request.user_collection['ep_status']}/{epssssss}`\n"
+    text += f"\n💬 [吐槽箱](https://bgm.tv/subject/{request.subject_id}/comments)\n请点按下列数字进行评分"
     markup = telebot.types.InlineKeyboardMarkup()
     nums = range(1, 11)
     button_list = []

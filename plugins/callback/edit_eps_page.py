@@ -15,18 +15,18 @@ def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRe
         ep = str(int(episode_info['ep']))
     else:
         ep = str(episode_info['ep'])
-    text = f"{number_to_episode_type(episode_info['type'])}.{ep}\n"
+    text = f"*{number_to_episode_type(episode_info['type'])}.{ep}*"
     if episode_info['name_cn']:
-        text += f"`{episode_info['name_cn']}\n`"
+        text += f"* | {episode_info['name_cn']}*"
     if episode_info['name']:
-        text += f"`{episode_info['name']}\n`"
+        text += f"* / {episode_info['name']}*"
     if episode_info['duration']:
-        text += f"时长：{episode_info['duration']}\n"
+        text += f"\n*➤ 时长：*`{episode_info['duration']}`\n"
     if episode_info['airdate']:
-        text += f"首播日期：{episode_info['airdate']}\n"
+        text += f"*➤ 首播日期：*`{episode_info['airdate']}`\n"
     if episode_info['desc']:
-        text += f"章节简介：\n{episode_info['desc']}\n"
-    text += f"[讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
+        text += f"*➤ 章节简介：*\n{episode_info['desc']}\n"
+    text += f"💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
     markup = telebot.types.InlineKeyboardMarkup()
     request.possible_request['back'] = BackRequest()
     if request.access_token:

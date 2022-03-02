@@ -51,8 +51,6 @@ def send_anime(message):
 
 
 # 查询 Bangumi 用户在玩 game ./plugins/doing_page
-
-
 @bot.message_handler(commands=['game'])
 def send_game(message):
     collection_list.send(message, bot, 4)
