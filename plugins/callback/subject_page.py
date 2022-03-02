@@ -3,7 +3,7 @@ import telebot
 from config import BOT_USERNAME
 from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
     EditRatingPageRequest, SubjectEpsPageRequest
-from utils.api import get_subject_info, anime_img, user_collection_get
+from utils.api import get_subject_info, anime_img, user_collection_get, user_data_get
 from utils.converts import subject_type_to_emoji
 
 
@@ -14,6 +14,8 @@ def generate_page(subject_request: SubjectRequest, stack_uuid: str, is_private_t
             user_collection = user_collection_get(None, subject_request.subject_id,
                                                   subject_request.user_data['_user']['access_token'])
         elif is_private_tg_id:
+            subject_request.user_data = {}
+            subject_request.user_data['_user'] = user_data_get(is_private_tg_id)
             user_collection = user_collection_get(is_private_tg_id, subject_request.subject_id)
 
     if not subject_request.page_text and not subject_request.page_image:
@@ -60,9 +62,11 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
         subject_request.possible_request['rating'] = edit_rating_page_request
 
         button_list[0].append(
-            telebot.types.InlineKeyboardButton(text='点格子(未完成)', callback_data=f"{stack_uuid}|eps"))
-        subject_request.possible_request['eps'] = SubjectEpsPageRequest(subject_request.subject_id,
-                                                                        limit=12, user_data=subject_request.user_data)
+            telebot.types.InlineKeyboardButton(text='点格子', callback_data=f"{stack_uuid}|eps"))
+        subject_request.possible_request['eps'] = SubjectEpsPageRequest(
+            subject_request.subject_id,
+            limit=12,
+            access_token=subject_request.user_data['_user']['access_token'], type_=0)
 
     button_list[0].append(
         telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
@@ -83,8 +87,15 @@ def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
         button_list[1].append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
         subject_request.possible_request['back'] = BackRequest()
         button_list[1].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+        button_list[1].append(
+            telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
     else:
         button_list[0].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+        button_list[0].append(
+            telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
+    subject_request.possible_request['eps'] = SubjectEpsPageRequest(
+        subject_request.subject_id,
+        limit=12, type_=0)
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
     button_list[0].append(

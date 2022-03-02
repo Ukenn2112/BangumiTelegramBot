@@ -10,10 +10,10 @@ import telebot
 from config import BOT_TOKEN
 from model.page_model import RequestStack, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, BackRequest, \
     EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
-    RefreshRequest, BaseRequest, SubjectEpsPageRequest
+    RefreshRequest, BaseRequest, SubjectEpsPageRequest, EditEpsPageRequest, DoEditEpisodeRequest
 from plugins import start, my, week, info, search, collection_list
 from plugins.callback import edit_rating_page, week_page, subject_page, \
-    collection_list_page, summary_page, edit_collection_type_page, subject_eps_page
+    collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page
 from plugins.inline import sender, public
 from utils.api import run_continuously, redis_cli
 
@@ -117,7 +117,7 @@ def query_empty(inline_query):
         inline_query.id, [], switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None")
 
 
-def set_bot_command(bot):
+def set_bot_command(bot_):
     """设置Bot命令"""
     commands_list = [
         telebot.types.BotCommand("my", "Bangumi收藏统计/空格加username或uid不绑定查询"),
@@ -130,7 +130,7 @@ def set_bot_command(bot):
         telebot.types.BotCommand("start", "绑定Bangumi账号"),
     ]
     try:
-        return bot.set_my_commands(commands_list)
+        return bot_.set_my_commands(commands_list)
     except:
         pass
 
@@ -234,6 +234,8 @@ def request_handler(stack: RequestStack):
         subject_eps_page.generate_page(top, stack.uuid)
         if len(stack.stack) > 2 and isinstance(stack.stack[-2], SubjectEpsPageRequest):
             del stack.stack[-2]
+    elif isinstance(top,EditEpsPageRequest):
+        edit_eps_page.generate_page(top, stack.uuid)
     elif isinstance(top, DoEditCollectionTypeRequest):
         edit_collection_type_page.do(top, stack.request_message.from_user.id)
         callback_text = top.callback_text
@@ -242,6 +244,12 @@ def request_handler(stack: RequestStack):
         request_handler(stack)
     elif isinstance(top, DoEditRatingRequest):
         edit_rating_page.do(top, stack.request_message.from_user.id)
+        callback_text = top.callback_text
+        del stack.stack[-1]
+        stack.stack.append(BackRequest(True))
+        request_handler(stack)
+    elif isinstance(top, DoEditEpisodeRequest):
+        edit_eps_page.do(top, stack.request_message.from_user.id)
         callback_text = top.callback_text
         del stack.stack[-1]
         stack.stack.append(BackRequest(True))

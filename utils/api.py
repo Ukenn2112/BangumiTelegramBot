@@ -4,16 +4,17 @@ import json
 import logging
 import random
 import threading
-from typing import Optional, Literal
+import time
+from typing import Optional, Literal, List
 
 import redis
 import requests
 import schedule
-import time
 
 from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, REDIS_DATABASE
-
 # FIXME 似乎不应该在这里创建对象
+from model.page_model import EpStatusType
+
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
 
@@ -204,6 +205,31 @@ def eps_status_get(test_id, eps_id, status):
     return requests_get(url, access_token=access_token)
 
 
+# 更新收视进度状态
+def post_eps_status(tg_id: int, id_: int, status: EpStatusType, ep_id: List[int] = None, access_token=None):
+    """更新收视进度状态
+    :param tg_id:Telegram 用户id
+    :param id_: 章节 ID
+    :param status:收视类型
+    :param ep_id:使用 POST 批量更新 将章节以半角逗号分隔，如 3697,3698,3699。请求时 URL 中的 ep_id 为最后一个章节 ID
+    :param access_token:
+    :return:
+    """
+
+    if access_token is None:
+        access_token = user_data_get(tg_id).get('access_token')
+    url = f'https://api.bgm.tv/ep/{id_}/status/{status}'
+    headers = {'Authorization': 'Bearer ' + access_token}
+
+    params = None
+    if ep_id:
+        eps = ''
+        for i in ep_id:
+            eps += f',{i}'
+        params = {'ep_id': eps}
+    return requests.post(url=url, headers=headers, params=params)
+
+
 # 更新收藏状态
 def collection_post(test_id, subject_id, status, rating, access_token: str = None):
     """更新收藏状态"""
@@ -228,6 +254,14 @@ def user_collection_get(test_id, subject_id, access_token=None):
         access_token = user_data_get(test_id).get('access_token')
     url = f'https://api.bgm.tv/collection/{subject_id}'
     return requests_get(url, access_token=access_token)
+
+
+def get_user_progress(tg_id, subject_id):
+    """用户收视进度 这接口废弃了 少用..."""
+    userdata = user_data_get(tg_id)
+    access_token = userdata.get('access_token')
+    url = f'https://api.bgm.tv/user/{userdata["user_id"]}/progress'
+    return requests_get(url=url, access_token=access_token, params={'subject_id': subject_id})
 
 
 def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=None, private=None):

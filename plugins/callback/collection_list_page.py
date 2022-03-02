@@ -61,7 +61,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
                      f' `[{info["ep_status"]}/{epssssss}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
             text=num, callback_data=f"{stack_uuid}|{nums_unicode}"))
-        request.possible_request[nums_unicode] = SubjectRequest(str(info['subject_id']), user_data=request.user_data)
+        request.possible_request[nums_unicode] = SubjectRequest(info['subject_id'], user_data=request.user_data)
     if subject_type == 1:
         text = f'*{nickname} 在读的书籍*\n\n{text_data}' \
                f'共{count}本'
