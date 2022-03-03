@@ -1,7 +1,7 @@
 [![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/BangumiTelegramBot.png)](https://github.com/Ukenn2112/BangumiTelegramBot/)
 
 
-# 功能
+# 功能 <img src="https://cdn.jsdelivr.net/gh/Ukenn2112/image/IMG_4622.gif" alt="输入框查询发送" width="200" align='right'><img src="https://cdn.jsdelivr.net/gh/Ukenn2112/image/IMG_4643.gif" alt="动画再看更新" width="200" align='right'>
 
 - [x] OAuth授权
   - [x] 授权登录
@@ -18,6 +18,7 @@
 - [x] 每日放送查询
 
 ......
+
 # 使用方法
 
 - 安装 [Redis](https://redis.io/)
@@ -59,14 +60,55 @@
 
 ```
 start - 绑定Bangumi账号
-my - Bangumi收藏统计/空格加username或uid不绑定查询
+help - 使用帮助
 book - Bangumi用户在读书籍
 anime - Bangumi用户在看动画
-game - Bangumi用户在玩动画
+game - Bangumi用户在玩游戏
 real - Bangumi用户在看剧集
-week - 空格加数字查询每日放送
 week - 查询当日/空格加数字查询每日放送
 search - 搜索条目
+```
+
+# 文件树
+
+```txt
+BangumiTelegramBot   # 主目录
+│
+│  bgm_data.json     # Bangumi 用户密钥
+│  bot.py            # Bangumi Bot 模块
+│  config.py         # 配置文件
+│  oauth.py          # Bangumi Oauth 绑定验证模块
+│  requirements.txt  # Python 依赖
+│  
+├─plugins  # 功能
+│  │  doing_page.py  # 查询 Bangumi 用户在看
+│  │  help.py        # 使用帮助
+│  │  info.py        # 根据 SubjectId 返回对应条目信息
+│  │  search.py      # 搜索引导
+│  │  start.py       # 查询/绑定 Bangumi
+│  │  week.py        # 每日放送查询
+│  │  
+│  ├─callback  # 按钮查询
+│  │      collection.py      # 收藏
+│  │      letest_eps.py      # 已看最新
+│  │      now_do.py          # 在看详情
+│  │      rating_call.py     # 评分
+│  │      search_details.py  # 搜索详情
+│  │      summary_call.py    # 简介
+│  │      week_back.py       # 每日放送查询返回
+│  │      
+│  └─inline  # 消息框内联查询
+│          mybgm.py   # 查询 Bangumi 用户收藏统计
+│          public.py  # 公共内联搜索
+│          sender.py  # 私聊搜索或者在任何位置搜索前使用@内联搜索
+│          
+├─templates  # Oauth 认证提示页面模板
+│      error.html     # 绑定出错
+│      verified.html  # 重复验证
+│      
+└─utils  # 通用
+        api.py       # API 调用
+        converts.py  # 数据转换
 ```
 
 # 其它

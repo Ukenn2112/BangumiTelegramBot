@@ -1,20 +1,21 @@
-"""查询 Bangumi 用户收藏统计"""
+"""inline 方式查询个人统计"""
+import telebot
 import json
-from config import APP_ID, BOT_USERNAME
+from config import APP_ID
 from utils.api import requests_get, get_user, user_data_get
 
 
-def send(message, bot):
-    message_data = message.text.split(' ')
+def query_mybgm_text(inline_query, bot):
+    message_data = inline_query.query.split(' ')
+    query_result_list = []
     if len(message_data) == 1:
         # 未加参数 查询自己
-        tg_id = message.from_user.id
+        tg_id = inline_query.from_user.id
         user_data = user_data_get(tg_id)
         if user_data is None:
             # 如果未绑定 直接报错
-            bot.send_message(message.chat.id,
-                             f"未绑定Bangumi，请私聊使用[/start](https://t.me/{BOT_USERNAME}?start=none)进行绑定",
-                             parse_mode='Markdown', timeout=20)
+            bot.answer_inline_query(inline_query.id, query_result_list,
+                                    switch_pm_text="您未绑定Bangumi，请点击此条文字进行绑定", switch_pm_parameter="None", cache_time=0)
             return
         bgm_id = user_data.get('user_id')
         access_token = user_data.get('access_token')
@@ -22,9 +23,6 @@ def send(message, bot):
         # 加了参数 查参数中的人
         bgm_id = message_data[1]
         access_token = None
-    # 开始查询数据
-    msg = bot.send_message(message.chat.id, "正在查询请稍候...", reply_to_message_id=message.message_id, parse_mode='Markdown',
-                           timeout=20)
     params = {'app_id': APP_ID}
     url = f'https://api.bgm.tv/user/{bgm_id}/collections/status'
     try:
@@ -32,23 +30,23 @@ def send(message, bot):
             url=url, params=params, access_token=access_token)
         if startus_data is None:
             # Fixme 会有这种情况吗？
-            bot.send_message(message.chat.id, text='出错了,没有获取到您的统计信息',
-                             parse_mode='Markdown', timeout=20)
+            bot.answer_inline_query(inline_query.id, query_result_list,
+                                    switch_pm_text="出错了，没有获取到您的统计信息", switch_pm_parameter="None", cache_time=0)
             return
         if isinstance(startus_data, dict) and startus_data.get('code') == 404:
-            bot.edit_message_text(
-                text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
+            bot.answer_inline_query(inline_query.id, query_result_list,
+                                    switch_pm_text="出错了，没有查询到该用户", switch_pm_parameter="None", cache_time=0)
             return
         # 查询用户名
         try:
             user_data = get_user(bgm_id)
         except FileNotFoundError:
-            bot.edit_message_text(
-                text="出错了，没有查询到该用户", chat_id=message.chat.id, message_id=msg.message_id)
+            bot.answer_inline_query(inline_query.id, query_result_list,
+                                    switch_pm_text="出错了，没有获取到您的统计信息", switch_pm_parameter="None", cache_time=0)
             return
         except json.JSONDecodeError:
-            bot.edit_message_text(
-                text="出错了,无法获取到您的个人信息", chat_id=message.chat.id, message_id=msg.message_id)
+            bot.answer_inline_query(inline_query.id, query_result_list,
+                                    switch_pm_text="出错了,无法获取到您的个人信息", switch_pm_parameter="None", cache_time=0)
             return
         nickname = user_data.get('nickname')
         bgm_id = user_data.get('id')
@@ -87,10 +85,18 @@ def send(message, bot):
                f'*➤ 游戏：*`{game_do}在玩，{game_collect}玩过`\n\n' \
                f'[🏠 个人主页](https://bgm.tv/user/{bgm_id})\n'
         img_url = f'https://bgm.tv/chart/img/{bgm_id}'
+        qr = telebot.types.InlineQueryResultPhoto(
+            id=inline_query.query,
+            photo_url=img_url,
+            title=f'*{nickname} 的 Bangumi 数据统计*',
+            caption=text,
+            parse_mode="markdown",
+            thumb_url=img_url
+        )
+        query_result_list.append(qr)
     except:
-        bot.edit_message_text(
-            text="系统错误，请查看日志", chat_id=message.chat.id, message_id=msg.message_id)
+        bot.answer_inline_query(inline_query.id, query_result_list,
+                                switch_pm_text="系统错误，请查看日志", switch_pm_parameter="None", cache_time=0)
         raise
-    bot.delete_message(message.chat.id, message_id=msg.message_id, timeout=20)
-    bot.send_photo(chat_id=message.chat.id, photo=img_url,
-                   caption=text, parse_mode='Markdown')
+    bot.answer_inline_query(inline_query.id, query_result_list,
+                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None", cache_time=0)
