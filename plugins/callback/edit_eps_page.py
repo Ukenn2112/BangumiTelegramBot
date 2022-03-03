@@ -2,7 +2,7 @@
 import telebot
 
 from model.page_model import EditEpsPageRequest, BackRequest, DoEditEpisodeRequest
-from utils.api import post_eps_status
+from utils.api import post_eps_status, anime_img
 from utils.converts import number_to_episode_type
 
 
@@ -45,6 +45,8 @@ def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRe
         markup.add(*button_list, row_width=5)
 
     markup.add(telebot.types.InlineKeyboardButton(text="返回", callback_data=f'{stack_uuid}|back'))
+    if not request.page_image:
+        request.page_image = anime_img(request.subject_id)
     request.page_markup = markup
     request.page_text = text
     return request

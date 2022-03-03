@@ -3,7 +3,7 @@ import math
 import telebot
 
 from model.page_model import SubjectEpsPageRequest, BackRequest, EditEpsPageRequest
-from utils.api import get_subject_episode
+from utils.api import get_subject_episode, anime_img
 
 
 def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEpsPageRequest:
@@ -58,6 +58,8 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     markup.add(*button_list2)
     markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
     request.possible_request['back'] = BackRequest(needs_refresh=True)
+    if not request.page_image:
+        request.page_image = anime_img(request.subject_id)
     request.page_text = text
     request.page_markup = markup
     return request
