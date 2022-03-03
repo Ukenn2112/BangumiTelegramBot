@@ -1,7 +1,8 @@
 """类型转换"""
+from typing import Literal
 
 
-def subject_type_to_emoji(type_: int) -> str:
+def subject_type_to_emoji(type_: Literal[1, 2, 3, 4, 6]) -> str:
     """将subject_type转emoji"""
     if type_ == 1:
         return "📚"
@@ -56,6 +57,17 @@ def parse_markdown_v2(text: str) -> str:
          '}': '\\}',
          '.': '\\.',
          '!': '\\!'}))
+
+
+def number_to_episode_type(type_: Literal[0, 1, 2, 3]) -> str:
+    if type_ == 0:
+        return "ep"
+    if type_ == 1:
+        return "sp"
+    if type_ == 2:
+        return "op"
+    if type_ == 3:
+        return "ed"
 
 
 def remove_duplicate_newlines(text: str) -> str:

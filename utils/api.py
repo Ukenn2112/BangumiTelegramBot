@@ -1,19 +1,20 @@
 """api 调用"""
-import time
-import json
-import redis
-import random
-import logging
-import requests
-
 import datetime
-import schedule
+import json
+import logging
+import random
 import threading
+import time
+from typing import Optional, Literal, List
 
-from typing import Optional
+import redis
+import requests
+import schedule
 
 from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, REDIS_DATABASE
 # FIXME 似乎不应该在这里创建对象
+from model.page_model import EpStatusType
+
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
 
@@ -36,7 +37,7 @@ def user_data_get(test_id):
             if now_time >= expiry_time:  # 判断密钥是否过期
                 return expiry_data_get(test_id)
             else:
-                return i.get('data', {})
+                return i.get('data')
 
 
 def expiry_data_get(test_id):
@@ -102,7 +103,6 @@ def bgmuser_data(test_id):
 @schedule.repeat(schedule.every().day)
 def check_expiry_user():
     """检查是否有过期用户"""
-    data_seek = []
     with open('bgm_data.json') as f:
         data_seek = json.loads(f.read())
     for i in data_seek:
@@ -148,6 +148,7 @@ def requests_get(url, params: Optional[dict] = None, access_token: Optional[str]
     for num in range(max_retry_times):  # 如api请求错误 重试3次
         try:
             r = requests.get(url=url, params=params, headers=headers)
+            break
         except requests.ConnectionError as err:
             if num + 1 >= max_retry_times:
                 raise
@@ -204,10 +205,36 @@ def eps_status_get(test_id, eps_id, status):
     return requests_get(url, access_token=access_token)
 
 
+# 更新收视进度状态
+def post_eps_status(tg_id: int, id_: int, status: EpStatusType, ep_id: List[int] = None, access_token=None):
+    """更新收视进度状态
+    :param tg_id:Telegram 用户id
+    :param id_: 章节 ID
+    :param status:收视类型
+    :param ep_id:使用 POST 批量更新 将章节以半角逗号分隔，如 3697,3698,3699。请求时 URL 中的 ep_id 为最后一个章节 ID
+    :param access_token:
+    :return:
+    """
+
+    if access_token is None:
+        access_token = user_data_get(tg_id).get('access_token')
+    url = f'https://api.bgm.tv/ep/{id_}/status/{status}'
+    headers = {'Authorization': 'Bearer ' + access_token}
+
+    params = None
+    if ep_id:
+        eps = ''
+        for i in ep_id:
+            eps += f',{i}'
+        params = {'ep_id': eps}
+    return requests.post(url=url, headers=headers, params=params)
+
+
 # 更新收藏状态
-def collection_post(test_id, subject_id, status, rating):
+def collection_post(test_id, subject_id, status, rating, access_token: str = None):
     """更新收藏状态"""
-    access_token = user_data_get(test_id).get('access_token')
+    if not access_token:
+        access_token = user_data_get(test_id).get('access_token')
     if not rating:
         params = {"status": (None, status)}
     else:
@@ -221,11 +248,20 @@ def collection_post(test_id, subject_id, status, rating):
 
 
 # 获取指定条目收藏信息
-def user_collection_get(test_id, subject_id):
+def user_collection_get(test_id, subject_id, access_token=None):
     """获取指定条目收藏信息"""
-    access_token = user_data_get(test_id).get('access_token')
+    if access_token is None:
+        access_token = user_data_get(test_id).get('access_token')
     url = f'https://api.bgm.tv/collection/{subject_id}'
     return requests_get(url, access_token=access_token)
+
+
+def get_user_progress(tg_id, subject_id):
+    """用户收视进度 这接口废弃了 少用..."""
+    userdata = user_data_get(tg_id)
+    access_token = userdata.get('access_token')
+    url = f'https://api.bgm.tv/user/{userdata["user_id"]}/progress'
+    return requests_get(url=url, access_token=access_token, params={'subject_id': subject_id})
 
 
 def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=None, private=None):
@@ -270,9 +306,9 @@ def get_subject_info(subject_id, t_dict=None, access_token: Optional[str] = None
     """获取指定条目信息 并使用Redis缓存"""
     subject = redis_cli.get(f"subject:{subject_id}")
     if subject:
+        if subject == b"None__":
+            raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
         loads = json.loads(subject)
-    elif subject == "None__":
-        raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
         loads = requests_get(url=url, access_token=access_token) # 获取NSFW条目时需要access_token
@@ -292,13 +328,44 @@ def get_subject_info(subject_id, t_dict=None, access_token: Optional[str] = None
     return loads
 
 
+def get_subject_episode(subject_id: int, type_: Literal[0, 1, 2, 3, None] = None, limit=100, offset=0):
+    """获取条目章节
+
+    :param subject_id:条目id
+    :param type_: 0,1,2,3 代表 本篇，sp，op，ed
+    :param limit: 每页数量
+    :param offset: 偏移量
+    """
+    episode = redis_cli.get(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}")
+    if episode:
+        if episode == b"None__":
+            raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
+        loads = json.loads(episode)
+    else:
+        url = f'https://api.bgm.tv/v0/episodes'
+        params = {
+            'subject_id': subject_id,
+            'type': type_,
+            'limit': limit,
+            'offset': offset
+        }
+        loads = requests_get(url=url, params=params)
+        if not loads:
+            redis_cli.set(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
+        redis_cli.set(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}",
+                      json.dumps(loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+    return loads
+
+
 def anime_img(subject_id):
     """动画简介图片获取 不需Access Token 并使用Redis缓存"""
     img_url = redis_cli.get(f"anime_img:{subject_id}")
     if img_url:
+        if img_url == b"None__":
+            return None
         return img_url.decode()
-    if img_url == "None__":
-        return None
     anime_name = get_subject_info(subject_id)['name']
     query = '''
     query ($id: Int, $page: Int, $perPage: Int, $search: String) {
@@ -363,7 +430,6 @@ def get_collection(subject_id: str, token: str = "", tg_id=""):
     if token == "":
         if tg_id == "":
             raise ValueError("参数错误,token 和tg_id须传一个")
-        from bot import user_data_get
         token = user_data_get(tg_id).get('access_token')
     if subject_id is None or subject_id == "":
         raise ValueError("subject_id不能为空")
@@ -375,10 +441,10 @@ def get_user(bgm_id: str) -> dict:
     """通过bgm_id 获取用户名"""
     data = redis_cli.get(f"bgm_user:{bgm_id}")
     if data:
-        if data != "None__":
-            return json.loads(data)
-        else:
+        if data == b"None__":
             raise FileNotFoundError
+        else:
+            return json.loads(data)
     user_data = requests_get(f'https://api.bgm.tv/user/{bgm_id}')
     if isinstance(user_data, dict) and user_data.get('code') == 404:
         redis_cli.set(f"bgm_user:{bgm_id}", "None__", ex=3600)
