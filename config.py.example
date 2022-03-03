@@ -15,3 +15,6 @@ BOT_TOKEN = 'xxxxxxxxxxxxxxxxxxxxxxx'
 REDIS_HOST = 'localhost'
 REDIS_PORT = '6379'
 REDIS_DATABASE = 0
+
+# 日志等级 info/debug
+LOG_LEVEL = 'info'

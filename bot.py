@@ -18,9 +18,15 @@ from plugins.inline import sender, public
 from utils.api import run_continuously, redis_cli
 
 logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
-logging.basicConfig(level=logging.INFO,
-                    filename='run.log',
+try:
+    from config import LOG_LEVEL
+except ImportError:
+    LOG_LEVEL = "info"
+if LOG_LEVEL == "info":
+    telebot.logger.setLevel(logging.INFO)
+if LOG_LEVEL == "debug":
+    telebot.logger.setLevel(logging.DEBUG)
+logging.basicConfig(filename='run.log',
                     format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -232,7 +238,7 @@ def request_handler(stack: RequestStack):
         subject_eps_page.generate_page(top, stack.uuid)
         if len(stack.stack) > 2 and isinstance(stack.stack[-2], SubjectEpsPageRequest):
             del stack.stack[-2]
-    elif isinstance(top,EditEpsPageRequest):
+    elif isinstance(top, EditEpsPageRequest):
         edit_eps_page.generate_page(top, stack.uuid)
     elif isinstance(top, DoEditCollectionTypeRequest):
         edit_collection_type_page.do(top, stack.request_message.from_user.id)
