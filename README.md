@@ -28,7 +28,7 @@
 
 - 修改文件后缀 `data_bgm.json.example` 为 `data_bgm.json`
 
-- 安装依赖
+- 安装依赖 **注意：Python >= 3.8**
 
   ```
   pip3 install -r requirements.txt
