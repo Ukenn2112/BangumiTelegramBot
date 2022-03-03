@@ -7,10 +7,7 @@
   - [x] 授权登录
   - [x] 授权有效期刷新
 - [x] 查询个人收藏统计
-- [ ] 收视进度更新
-  - [x] 更新动画的收视进度
-  - [x] 更新其他类型的收视进度
-  - [ ] 批量更新收视进度
+- [x] 收视进度更新
 - [x] 观看完成最后一集后自动更新收藏状态为看过
 - [x] 在看评分
 - [x] 通过 Telegram Inline 功能进行条目搜索
@@ -81,21 +78,22 @@ BangumiTelegramBot   # 主目录
 │  requirements.txt  # Python 依赖
 │  
 ├─plugins  # 功能
-│  │  doing_page.py  # 查询 Bangumi 用户在看
-│  │  help.py        # 使用帮助
-│  │  info.py        # 根据 SubjectId 返回对应条目信息
-│  │  search.py      # 搜索引导
-│  │  start.py       # 查询/绑定 Bangumi
-│  │  week.py        # 每日放送查询
+│  │  collection_list.py  # 查询 Bangumi 用户在看
+│  │  help.py             # 使用帮助
+│  │  info.py             # 根据 SubjectId 返回对应条目信息
+│  │  search.py           # 搜索引导
+│  │  start.py            # 查询/绑定 Bangumi
+│  │  week.py             # 每日放送查询
 │  │  
 │  ├─callback  # 按钮查询
-│  │      collection.py      # 收藏
-│  │      letest_eps.py      # 已看最新
-│  │      now_do.py          # 在看详情
-│  │      rating_call.py     # 评分
-│  │      search_details.py  # 搜索详情
-│  │      summary_call.py    # 简介
-│  │      week_back.py       # 每日放送查询返回
+│  │      collection_list_page.py       # 用户在看
+│  │      edit_collection_type_page.py  # 收藏
+│  │      edit_eps_page.py              # 点格子
+│  │      edit_rating_page.py           # 评分
+│  │      subject_eps_page.py           # 章节详情
+│  │      subject_page.py               # 章节
+|  |      summary_page.py               # 简介
+│  │      week_back.py                  # 每日放送查询返回
 │  │      
 │  └─inline  # 消息框内联查询
 │          mybgm.py   # 查询 Bangumi 用户收藏统计
@@ -104,11 +102,15 @@ BangumiTelegramBot   # 主目录
 │          
 ├─templates  # Oauth 认证提示页面模板
 │      error.html     # 绑定出错
+|      expired.html   # 请求过期
 │      verified.html  # 重复验证
 │      
-└─utils  # 通用
-        api.py       # API 调用
-        converts.py  # 数据转换
+├─utils  # 通用
+|      api.py       # API 调用
+|      converts.py  # 数据转换
+│
+└─model  # 模型
+      page_model.py # 页面模型
 ```
 
 # 其它
