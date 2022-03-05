@@ -81,7 +81,8 @@ def query_public_text(inline_query, bot):
             if subject["type"] == 4:  # 当类型为game时
                 if subject['air_date']:
                     text += f"*➤ 发行日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
-            text += f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
+            text += f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)" \
+                    f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
                     f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
             # if 'collection' in subject and subject['collection']:
             #     text += f"➤ BGM 统计:\n"
@@ -105,7 +106,7 @@ def query_public_text(inline_query, bot):
                 input_message_content=telebot.types.InputTextMessageContent(
                     text,
                     parse_mode="markdownV2",
-                    disable_web_page_preview=True
+                    disable_web_page_preview=False
                 ),
                 description=subject["name"] if subject["name_cn"] else None,
                 thumb_url=subject["images"]["medium"] if subject["images"] else None,
