@@ -64,6 +64,7 @@ game - Bangumi用户在玩游戏
 real - Bangumi用户在看剧集
 week - 查询当日/空格加数字查询每日放送
 search - 搜索条目
+close - 关闭此对话
 ```
 
 # 文件树

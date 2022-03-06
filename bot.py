@@ -4,6 +4,7 @@ https://bangumi.github.io/api/
 """
 import logging
 import pickle
+import time
 
 import telebot
 
@@ -56,7 +57,6 @@ def send_anime(message):
     collection_list.send(message, bot, 2)
 
 
-
 # 查询 Bangumi 用户在玩 game ./plugins/doing_page
 @bot.message_handler(commands=['game'])
 def send_game(message):
@@ -85,6 +85,22 @@ def send_search_details(message):
 @bot.message_handler(commands=['info'])
 def send_subject_info(message):
     info.send(message, bot)
+
+
+# 关闭对话 ./pigins/close
+@bot.message_handler(commands=['close'])
+def close_message(message):
+    if message.reply_to_message is None:
+        return bot.send_message(message.chat.id, "错误使用, 请回复需要关闭的对话", parse_mode='Markdown', reply_to_message_id=message.message_id)
+    else:
+        if bot.get_me().id == message.reply_to_message.from_user.id:
+            bot.delete_message(
+                message.chat.id, message_id=message.reply_to_message.message_id)
+            msg = bot.send_message(
+                message.chat.id, "已关闭该对话", parse_mode='Markdown', reply_to_message_id=message.message_id)
+            bot.delete_message(message.chat.id, message_id=message.message_id)
+            time.sleep(5)
+            return bot.delete_message(message.chat.id, message_id=msg.id)
 
 
 # 空按钮回调处理
@@ -132,13 +148,14 @@ def set_bot_command(bot_):
     """设置Bot命令"""
     commands_list = [
         telebot.types.BotCommand("help", "使用帮助"),
+        telebot.types.BotCommand("start", "绑定Bangumi账号"),
         telebot.types.BotCommand("book", "Bangumi用户在读书籍"),
         telebot.types.BotCommand("anime", "Bangumi用户在看动画"),
         telebot.types.BotCommand("game", "Bangumi用户在玩游戏"),
         telebot.types.BotCommand("real", "Bangumi用户在看剧集"),
         telebot.types.BotCommand("week", "空格加数字查询每日放送"),
         telebot.types.BotCommand("search", "搜索条目"),
-        telebot.types.BotCommand("start", "绑定Bangumi账号"),
+        telebot.types.BotCommand("close", "关闭此对话"),
     ]
     try:
         return bot_.set_my_commands(commands_list)
