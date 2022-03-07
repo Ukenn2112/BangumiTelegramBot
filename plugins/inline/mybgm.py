@@ -1,6 +1,8 @@
 """inline 方式查询个人统计"""
-import telebot
 import json
+
+import telebot
+
 from config import APP_ID
 from utils.api import requests_get, get_user, user_data_get
 
@@ -99,4 +101,4 @@ def query_mybgm_text(inline_query, bot):
                                 switch_pm_text="系统错误，请查看日志", switch_pm_parameter="None", cache_time=0)
         raise
     bot.answer_inline_query(inline_query.id, query_result_list,
-                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None", cache_time=0)
+                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="help", cache_time=0)

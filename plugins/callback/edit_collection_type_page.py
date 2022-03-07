@@ -6,19 +6,19 @@ from model.page_model import EditCollectionTypePageRequest, BackRequest, DoEditC
 from utils.api import get_subject_info, user_data_get, user_collection_get, collection_post, anime_img
 
 
-def generate_page(request: EditCollectionTypePageRequest, stack_uuid: str) -> EditCollectionTypePageRequest:
+def generate_page(request: EditCollectionTypePageRequest, session_uuid: str) -> EditCollectionTypePageRequest:
     name = get_subject_info(request.subject_id)['name']
     text = f'*您想将 “*`{name}`*” 收藏为*\n\n'
     markup = telebot.types.InlineKeyboardMarkup()
-    button_list = [telebot.types.InlineKeyboardButton(text='返回', callback_data=f'{stack_uuid}|back'),
-                   telebot.types.InlineKeyboardButton(text='想看', callback_data=f'{stack_uuid}|wish'),
-                   telebot.types.InlineKeyboardButton(text='看过', callback_data=f'{stack_uuid}|collect'),
-                   telebot.types.InlineKeyboardButton(text='在看', callback_data=f'{stack_uuid}|do'),
-                   telebot.types.InlineKeyboardButton(text='搁置', callback_data=f'{stack_uuid}|on_hold'),
-                   telebot.types.InlineKeyboardButton(text='抛弃', callback_data=f'{stack_uuid}|dropped')]
-    request.possible_request['back'] = BackRequest()
+    button_list = [telebot.types.InlineKeyboardButton(text='返回', callback_data=f'{session_uuid}|back'),
+                   telebot.types.InlineKeyboardButton(text='想看', callback_data=f'{session_uuid}|wish'),
+                   telebot.types.InlineKeyboardButton(text='看过', callback_data=f'{session_uuid}|collect'),
+                   telebot.types.InlineKeyboardButton(text='在看', callback_data=f'{session_uuid}|do'),
+                   telebot.types.InlineKeyboardButton(text='搁置', callback_data=f'{session_uuid}|on_hold'),
+                   telebot.types.InlineKeyboardButton(text='抛弃', callback_data=f'{session_uuid}|dropped')]
+    request.possible_request['back'] = BackRequest(request.session)
     for i in COLLECTION_TYPE_STR.__args__:
-        request.possible_request[i] = DoEditCollectionTypeRequest(request.subject_id, i)
+        request.possible_request[i] = DoEditCollectionTypeRequest(request.session, request.subject_id, i)
     markup.add(*button_list, row_width=3)
     request.page_text = text
     request.page_markup = markup

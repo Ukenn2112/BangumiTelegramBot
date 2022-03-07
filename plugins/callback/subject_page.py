@@ -3,20 +3,16 @@ import telebot
 from config import BOT_USERNAME
 from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
     EditRatingPageRequest, SubjectEpsPageRequest
-from utils.api import get_subject_info, anime_img, user_collection_get, user_data_get
+from utils.api import get_subject_info, anime_img, user_collection_get
 from utils.converts import subject_type_to_emoji
 
 
-def generate_page(subject_request: SubjectRequest, stack_uuid: str, is_private_tg_id: int) -> SubjectRequest:
+def generate_page(subject_request: SubjectRequest, stack_uuid: str) -> SubjectRequest:
     user_collection = None
     if (not subject_request.page_text) and (not subject_request.page_markup):
-        if subject_request.user_data:
+        if subject_request.session.bot_message.chat.type == "private":
             user_collection = user_collection_get(None, subject_request.subject_id,
-                                                  subject_request.user_data['_user']['access_token'])
-        elif is_private_tg_id:
-            subject_request.user_data = {}
-            subject_request.user_data['_user'] = user_data_get(is_private_tg_id)
-            user_collection = user_collection_get(is_private_tg_id, subject_request.subject_id)
+                                                  subject_request.session.bgm_auth['access_token'])
 
     if not subject_request.page_text and not subject_request.page_image:
         subject_info = get_subject_info(subject_request.subject_id)
@@ -25,13 +21,9 @@ def generate_page(subject_request: SubjectRequest, stack_uuid: str, is_private_t
 
         if not subject_request.page_image:
             subject_request.page_image = anime_img(subject_request.subject_id)
-            if (not subject_request.page_image
-                    and subject_info and 'images' in subject_info and 'large' in subject_info['images']
-                    and subject_info['images']['large']):
-                subject_request.page_image = subject_info['images']['large']
 
     if not subject_request.page_markup:
-        if is_private_tg_id:
+        if subject_request.session.bot_message.chat.type == "private":
             subject_request.page_markup = gender_page_manager_button(subject_request, stack_uuid, user_collection)
         else:
             subject_request.page_markup = gender_page_show_buttons(subject_request, stack_uuid)
@@ -43,34 +35,37 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
     button_list = [[], []]
     if not subject_request.is_root:
         button_list[1].append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
-        subject_request.possible_request['back'] = BackRequest()
+        subject_request.possible_request['back'] = BackRequest(subject_request.session)
     if 'status' not in user_collection and subject_request.is_root:
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
     else:
         button_list[1].append(
             telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
-    subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
+    subject_request.possible_request['summary'] = SummaryRequest(subject_request.session, subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
 
     if 'status' in user_collection:
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='评分', callback_data=f"{stack_uuid}|rating"))
-        edit_rating_page_request = EditRatingPageRequest(subject_request.subject_id)
+        edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
         edit_rating_page_request.page_image = subject_request.page_image
         edit_rating_page_request.user_collection = user_collection
         subject_request.possible_request['rating'] = edit_rating_page_request
 
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='点格子', callback_data=f"{stack_uuid}|eps"))
-        subject_request.possible_request['eps'] = SubjectEpsPageRequest(
-            subject_request.subject_id,
-            limit=12,
-            access_token=subject_request.user_data['_user']['access_token'], type_=0)
+        subject_request.possible_request['eps'] = SubjectEpsPageRequest(subject_request.session,
+                                                                        subject_id=subject_request.subject_id,
+                                                                        limit=12, type_=0)
+    else:
+        button_list[0].append(
+            telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
 
     button_list[0].append(
         telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
-    edit_collection_type_page_request = EditCollectionTypePageRequest(subject_request.subject_id)
+    edit_collection_type_page_request = EditCollectionTypePageRequest(subject_request.session,
+                                                                      subject_request.subject_id)
     subject_request.possible_request['collection'] = edit_collection_type_page_request
     edit_collection_type_page_request.page_image = subject_request.page_image
 
@@ -85,7 +80,7 @@ def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
     button_list = [[], []]
     if not subject_request.is_root:
         button_list[1].append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
-        subject_request.possible_request['back'] = BackRequest()
+        subject_request.possible_request['back'] = BackRequest(subject_request.session)
         button_list[1].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
         button_list[1].append(
             telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
@@ -94,14 +89,14 @@ def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
     subject_request.possible_request['eps'] = SubjectEpsPageRequest(
-        subject_request.subject_id,
-        limit=12, type_=0)
-    subject_request.possible_request['summary'] = SummaryRequest(subject_request.subject_id)
+        subject_request.session, subject_id=subject_request.subject_id, limit=12, type_=0)
+    subject_request.possible_request['summary'] = SummaryRequest(subject_request.session, subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
     button_list[0].append(
         telebot.types.InlineKeyboardButton(text='去管理',
-                                           url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))
-    subject_request.possible_request['collection'] = EditCollectionTypePageRequest(subject_request.subject_id)
+                                           url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))  # TODO
+    subject_request.possible_request['collection'] = EditCollectionTypePageRequest(subject_request.session,
+                                                                                   subject_request.subject_id)
     subject_request.possible_request['collection'].page_image = subject_request.page_image
 
     for i in button_list:
@@ -117,7 +112,10 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
     subject_type = subject_info['type']
     text = f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n" \
            f"{subject_info['name']}\n\n" \
-           f"*BGM ID：*`{subject_id}`\n"
+           f"*BGM ID：*`{subject_id}` "
+    if user_collection and 'status' in user_collection:
+        text += user_collection['status']['name']
+    text += "\n"
     if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
         text += f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟\n"
     else:

@@ -12,8 +12,8 @@ import requests
 import schedule
 
 from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, REDIS_DATABASE
+
 # FIXME 似乎不应该在这里创建对象
-from model.page_model import EpStatusType
 
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
@@ -26,16 +26,16 @@ def data_seek_get(test_id):
     return int(test_id) in data_li  # 判断列表内是否有被验证的UID
 
 
-def user_data_get(test_id):
+def user_data_get(tg_id):
     """ 返回用户数据,如果过期则更新 """
     with open('bgm_data.json') as f:
         data_seek = json.loads(f.read())
     for i in data_seek:
-        if i.get('tg_user_id') == test_id:
+        if i.get('tg_user_id') == tg_id:
             expiry_time = i.get('expiry_time')
             now_time = datetime.datetime.now().strftime("%Y%m%d")
             if now_time >= expiry_time:  # 判断密钥是否过期
-                return expiry_data_get(test_id)
+                return expiry_data_get(tg_id)
             else:
                 return i.get('data')
 
@@ -206,7 +206,7 @@ def eps_status_get(test_id, eps_id, status):
 
 
 # 更新收视进度状态
-def post_eps_status(tg_id: int, id_: int, status: EpStatusType, ep_id: List[int] = None, access_token=None):
+def post_eps_status(tg_id: int, id_: int, status, ep_id: List[int] = None, access_token=None):
     """更新收视进度状态
     :param tg_id:Telegram 用户id
     :param id_: 章节 ID

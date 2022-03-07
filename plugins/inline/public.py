@@ -117,4 +117,4 @@ def query_public_text(inline_query, bot):
             )
             query_result_list.append(qr)
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
-                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None")
+                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="help")

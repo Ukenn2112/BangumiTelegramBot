@@ -1,9 +1,10 @@
 """inline 方式私聊搜索或者在任何位置搜索前使用@"""
 import telebot
-from utils.converts import subject_type_to_emoji
-from utils.api import search_subject
-from plugins.info import gander_info_message
+
 from config import BOT_USERNAME
+from plugins.info import gander_info_message
+from utils.api import search_subject
+from utils.converts import subject_type_to_emoji
 
 
 def query_sender_text(inline_query, bot):
@@ -48,4 +49,4 @@ def query_sender_text(inline_query, bot):
             )
             query_result_list.append(qr)
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
-                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="None")
+                            switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="help")

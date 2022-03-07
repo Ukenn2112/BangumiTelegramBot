@@ -1,17 +1,26 @@
 """查询 Bangumi 用户在看"""
-
+import json
+import math
 import threading
 
-import math
 import requests
 import telebot
 
 from model.page_model import CollectionsRequest, SubjectRequest, BackRequest
-from utils.api import requests_get, get_subject_info
+from utils.api import requests_get, get_subject_info, get_user
 
 
 def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRequest:
-    access_token = request.user_data['_user']['access_token']
+    if request.user_data is None:
+        try:
+            request.user_data = get_user(request.session.bgm_auth['user_id'])
+        except FileNotFoundError:
+            request.page_text = "出错了，无法获取到您的个人信息"
+            return request
+        except json.JSONDecodeError:
+            request.page_text = "出错了，无法获取到您的个人信息"
+            return request
+
     nickname = request.user_data.get('nickname')
     username = request.user_data.get('username')
     subject_type = request.subject_type
@@ -26,7 +35,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
     url = f'https://api.bgm.tv/v0/users/{username}/collections'
     try:
         response = requests_get(url=url, params=params,
-                                access_token=access_token)
+                                access_token=request.session.bgm_auth['access_token'])
     except requests.exceptions.BaseHTTPError:
         request.page_text = '出错啦，您貌似没有此状态类型的收藏'
         return request
@@ -61,7 +70,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
                      f' `[{info["ep_status"]}/{epssssss}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
             text=num, callback_data=f"{stack_uuid}|{nums_unicode}"))
-        request.possible_request[nums_unicode] = SubjectRequest(info['subject_id'], user_data=request.user_data)
+        request.possible_request[nums_unicode] = SubjectRequest(request.session, info['subject_id'])
     if subject_type == 1:
         text = f'*{nickname} 在读的书籍*\n\n{text_data}' \
                f'共{count}本'
@@ -93,7 +102,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
             #                        limit=limit)
             button_list2.append(
                 telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|back'))
-            request.possible_request["back"] = BackRequest()
+            request.possible_request["back"] = BackRequest(request.session)
         else:
             button_list2.append(telebot.types.InlineKeyboardButton(
                 text='这是首页', callback_data="None"))
@@ -102,11 +111,10 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
         if offset + limit < count:
             button_list2.append(
                 telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'{stack_uuid}|{offset + limit}'))
-            request.possible_request[str(offset + limit)] = \
-                CollectionsRequest(request.user_data, subject_type,
-                                   offset=offset + limit,
-                                   collection_type=request.collection_type,
-                                   limit=limit)
+            next_request = CollectionsRequest(request.session, subject_type, offset=offset + limit,
+                                              collection_type=request.collection_type, limit=limit)
+            request.possible_request[str(offset + limit)] = next_request
+            next_request.user_data = request.user_data
         else:
             button_list2.append(telebot.types.InlineKeyboardButton(text='这是末页', callback_data="None"))
         markup.add(*button_list2)

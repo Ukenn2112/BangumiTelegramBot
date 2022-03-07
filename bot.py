@@ -9,7 +9,8 @@ import time
 import telebot
 
 from config import BOT_TOKEN
-from model.page_model import RequestStack, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, BackRequest, \
+from model.page_model import RequestSession, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, \
+    BackRequest, \
     EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
     RefreshRequest, BaseRequest, SubjectEpsPageRequest, EditEpsPageRequest, DoEditEpisodeRequest
 from plugins import start, help, week, info, search, collection_list
@@ -91,7 +92,8 @@ def send_subject_info(message):
 @bot.message_handler(commands=['close'])
 def close_message(message):
     if message.reply_to_message is None:
-        return bot.send_message(message.chat.id, "错误使用, 请回复需要关闭的对话", parse_mode='Markdown', reply_to_message_id=message.message_id)
+        return bot.send_message(message.chat.id, "错误使用, 请回复需要关闭的对话", parse_mode='Markdown',
+                                reply_to_message_id=message.message_id)
     else:
         if bot.get_me().id == message.reply_to_message.from_user.id:
             bot.delete_message(
@@ -121,13 +123,16 @@ def test_chosen(chosen_inline_result):
 
 
 # inline 方式私聊搜索或者在任何位置搜索前使用@ ./plugins/inline/sender
-@bot.inline_handler(lambda query: query.query and (query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
+@bot.inline_handler(lambda query: query.query and (
+        query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
 def sender_query_text(inline_query):
     sender.query_sender_text(inline_query, bot)
 
 
 # inline 方式公共搜索 ./plugins/inline/public
-@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not str.startswith(query.query, '@') and not str.startswith(query.query, 'mybgm'))
+@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not str.startswith(query.query,
+                                                                                                     '@') and not str.startswith(
+    query.query, 'mybgm'))
 def public_query_text(inline_query):
     public.query_public_text(inline_query, bot)
 
@@ -173,128 +178,128 @@ def global_callback_handler(call):
         bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=1)
         return
     # redis_cli.delete(redis_key)  # TODO 没事务 多线程下可能出问题
-    stack: RequestStack = pickle.loads(call_data)
-    next_page = stack.stack[-1].possible_request.get(request_key, None)
+    session: RequestSession = pickle.loads(call_data)
+    next_page = session.stack[-1].possible_request.get(request_key, None)
     if not next_page:
         bot.answer_callback_query(call.id, "您的请求出错了", cache_time=3600)
         return
-    stack.stack.append(next_page)
-    stack.call = call
-    consumption_request(stack)
+    session.stack.append(next_page)
+    session.call = call
+    consumption_request(session)
 
 
-def consumption_request(stack: RequestStack):
+def consumption_request(session: RequestSession):
     callback_text = None
     try:
-        callback_text = request_handler(stack)
-        top = stack.stack[-1]
+        callback_text = request_handler(session)
+        top = session.stack[-1]
     except:
-        top = BaseRequest()
+        top = BaseRequest(session)
         top.page_text = "发生了未知异常😖"
 
     if top.page_image:
-        if stack.bot_message.content_type == 'text':
+        if session.bot_message.content_type == 'text':
             bot.delete_message(
-                message_id=stack.bot_message.message_id,
-                chat_id=stack.request_message.chat.id
+                message_id=session.bot_message.message_id,
+                chat_id=session.request_message.chat.id
             )
-            stack.bot_message = bot.send_photo(
+            session.bot_message = bot.send_photo(
                 photo=top.page_image,
                 caption=top.page_text,
                 parse_mode='markdown',
                 reply_markup=top.page_markup,
-                chat_id=stack.request_message.chat.id,
-                reply_to_message_id=stack.request_message.message_id
+                chat_id=session.request_message.chat.id,
+                reply_to_message_id=session.request_message.message_id
             )
         else:
-            stack.bot_message = bot.edit_message_media(
+            session.bot_message = bot.edit_message_media(
                 media=telebot.types.InputMedia(type='photo', media=top.page_image,
                                                caption=top.page_text, parse_mode="markdown"),
                 reply_markup=top.page_markup,
-                message_id=stack.bot_message.message_id,
-                chat_id=stack.request_message.chat.id
+                message_id=session.bot_message.message_id,
+                chat_id=session.request_message.chat.id
             )
     else:
-        if stack.bot_message.content_type == 'text':
-            stack.bot_message = bot.edit_message_text(
+        if session.bot_message.content_type == 'text':
+            session.bot_message = bot.edit_message_text(
                 text=top.page_text,
                 reply_markup=top.page_markup,
                 parse_mode='markdown',
-                message_id=stack.bot_message.message_id,
-                chat_id=stack.request_message.chat.id
+                message_id=session.bot_message.message_id,
+                chat_id=session.request_message.chat.id
             )
         else:
             bot.delete_message(
-                message_id=stack.bot_message.message_id,
-                chat_id=stack.request_message.chat.id
+                message_id=session.bot_message.message_id,
+                chat_id=session.request_message.chat.id
             )
-            stack.bot_message = bot.send_message(
+            session.bot_message = bot.send_message(
                 text=top.page_text,
                 reply_markup=top.page_markup,
                 parse_mode='markdown',
-                chat_id=stack.request_message.chat.id,
-                reply_to_message_id=stack.request_message.message_id
+                chat_id=session.request_message.chat.id,
+                reply_to_message_id=session.request_message.message_id
             )
-    stack_call = stack.call
-    stack.call = None
-    redis_cli.set(stack.uuid, pickle.dumps(stack), ex=3600)
+    stack_call = session.call
+    session.call = None
+    redis_cli.set(session.uuid, pickle.dumps(session), ex=3600)
     if stack_call:
         bot.answer_callback_query(stack_call.id, text=callback_text)
 
 
-def request_handler(stack: RequestStack):
+def request_handler(session: RequestSession):
     callback_text = None
-    top = stack.stack[-1]
+    top = session.stack[-1]
     if isinstance(top, WeekRequest):
-        week_page.generate_page(top, stack.uuid)
+        week_page.generate_page(top, session.uuid)
     elif isinstance(top, CollectionsRequest):
-        collection_list_page.generate_page(top, stack.uuid)
+        collection_list_page.generate_page(top, session.uuid)
     elif isinstance(top, SubjectRequest):
-        is_private_tg_id = stack.request_message.from_user.id if stack.bot_message.chat.type == 'private' else 0
-        subject_page.generate_page(top, stack.uuid, is_private_tg_id)
+        is_private_tg_id = session.request_message.from_user.id if session.bot_message.chat.type == 'private' else 0
+        subject_page.generate_page(top, session.uuid)
     elif isinstance(top, SummaryRequest):
-        summary_page.generate_page(top, stack.uuid)
+        summary_page.generate_page(top, session.uuid)
     elif isinstance(top, EditCollectionTypePageRequest):
-        edit_collection_type_page.generate_page(top, stack.uuid)
+        edit_collection_type_page.generate_page(top, session.uuid)
     elif isinstance(top, EditRatingPageRequest):
-        edit_rating_page.generate_page(top, stack.uuid)
+        edit_rating_page.generate_page(top, session.uuid)
     elif isinstance(top, SubjectEpsPageRequest):
-        subject_eps_page.generate_page(top, stack.uuid)
-        if len(stack.stack) > 2 and isinstance(stack.stack[-2], SubjectEpsPageRequest):
-            del stack.stack[-2]
+        subject_eps_page.generate_page(top, session.uuid)
+        if len(session.stack) > 2 and isinstance(session.stack[-2], SubjectEpsPageRequest):
+            del session.stack[-2]
     elif isinstance(top, EditEpsPageRequest):
-        edit_eps_page.generate_page(top, stack.uuid)
+        edit_eps_page.generate_page(top, session.uuid)
     elif isinstance(top, DoEditCollectionTypeRequest):
-        edit_collection_type_page.do(top, stack.request_message.from_user.id)
+        edit_collection_type_page.do(top, session.request_message.from_user.id)
         callback_text = top.callback_text
-        del stack.stack[-1]
-        stack.stack.append(BackRequest(True))
-        request_handler(stack)
+        del session.stack[-1]
+        session.stack.append(BackRequest(session, True))
+        request_handler(session)
     elif isinstance(top, DoEditRatingRequest):
-        edit_rating_page.do(top, stack.request_message.from_user.id)
+        edit_rating_page.do(top, session.request_message.from_user.id)
         callback_text = top.callback_text
-        del stack.stack[-1]
-        stack.stack.append(BackRequest(True))
-        request_handler(stack)
+        del session.stack[-1]
+        session.stack.append(BackRequest(session, True))
+        request_handler(session)
     elif isinstance(top, DoEditEpisodeRequest):
-        edit_eps_page.do(top, stack.request_message.from_user.id)
+        edit_eps_page.do(top, session.request_message.from_user.id)
         callback_text = top.callback_text
-        del stack.stack[-1]
-        stack.stack.append(BackRequest(True))
-        request_handler(stack)
+        del session.stack[-1]
+        session.stack.append(BackRequest(session, True))
+        request_handler(session)
     elif isinstance(top, BackRequest):
-        del stack.stack[-2:]  # 删除最后两个
+        del session.stack[-2:]  # 删除最后两个
         if top.needs_refresh:
-            stack.stack.append(RefreshRequest())
-            request_handler(stack)
+            session.stack.append(RefreshRequest(session))
+            request_handler(session)
     elif isinstance(top, RefreshRequest):
-        del stack.stack[-1]  # 删除这个请求
-        top = stack.stack[-1]
+        del session.stack[-1]  # 删除这个请求
+        top = session.stack[-1]
         top.page_text = None
         top.page_image = None
         top.page_markup = None
         top.possible_request = {}
-        request_handler(stack)
+        request_handler(session)
     return callback_text
 
 
