@@ -15,7 +15,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     if not request.user_collection:
         request.user_collection = user_collection_get(None, request.subject_id,
                                                       request.session.bgm_auth['access_token'])
-    id_to_emoji = {1: '📝', 2: '✅', 3: '❎'}
+    id_to_emoji = {1: '👀', 2: '🔘', 3: '🗑️'}
     user_eps = {}
     if request.user_collection and 'code' not in request.user_collection:
         data = get_user_progress(request.session.request_message.from_user.id, request.subject_id)
@@ -40,9 +40,9 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
         request.possible_request[str(i['id'])] = page_request
 
         if request.user_collection and 'code' not in request.user_collection:
-            text += id_to_emoji.get(user_eps.get(i['id'], ''), '☑️')
+            text += id_to_emoji.get(user_eps.get(i['id'], ''), '⚪')
             page_request.before_status = user_eps.get(i['id'], 0)
-        text += f"*{ep}.*"
+        text += f"*{ep.zfill(2)}.*"
         text += f" {i['name_cn'] or i['name'] or '未公布'} \n"
 
     total = eps['total']
