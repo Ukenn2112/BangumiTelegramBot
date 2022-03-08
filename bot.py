@@ -88,7 +88,7 @@ def send_subject_info(message):
     info.send(message, bot)
 
 
-# 关闭对话 ./pigins/close
+# 关闭对话
 @bot.message_handler(commands=['close'])
 def close_message(message):
     if message.reply_to_message is None:
