@@ -30,7 +30,7 @@ class RequestSession:
         self.stack: List[BaseRequest] = []
         self.uuid: str = uuid
         self.call: Optional[telebot.types.CallbackQuery] = None
-        self.request_message = request_message
+        self.request_message: telebot.types.Message = request_message
         self.bgm_auth = user_data_get(request_message.from_user.id)
 
 
@@ -53,7 +53,8 @@ class WeekRequest(BaseRequest):
 
 class CollectionsRequest(BaseRequest):
 
-    def __init__(self, session: RequestSession, subject_type: int, offset=0, collection_type=3, limit=10):
+    def __init__(self, session: RequestSession, subject_type: Literal[1, 2, 3, 4, 6], offset=0,
+                 collection_type: Literal[1, 2, 3, 4, 5, 6] = 3, limit=10):
         """用户收藏
         :param subject_type: 条目类型 1书籍 2动画 3音乐 4游戏 6三次元
         :param offset: 分页页数
@@ -62,9 +63,9 @@ class CollectionsRequest(BaseRequest):
 
         """
         super().__init__(session)
-        self.subject_type: int = subject_type
+        self.subject_type: Literal[1, 2, 3, 4, 6] = subject_type
         self.offset: int = offset
-        self.collection_type: int = collection_type
+        self.collection_type: Literal[1, 2, 3, 4, 5, 6] = collection_type
         self.limit: int = limit
 
         self.user_data = None

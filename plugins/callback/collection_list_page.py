@@ -8,6 +8,7 @@ import telebot
 
 from model.page_model import CollectionsRequest, SubjectRequest, BackRequest
 from utils.api import requests_get, get_subject_info, get_user
+from utils.converts import subject_type_to_str, collection_type_subject_type_str
 
 
 def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRequest:
@@ -37,15 +38,18 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
         response = requests_get(url=url, params=params,
                                 access_token=request.session.bgm_auth['access_token'])
     except requests.exceptions.BaseHTTPError:
-        request.page_text = '出错啦，您貌似没有此状态类型的收藏'
+        request.page_text = f'出错啦，您貌似没有{collection_type_subject_type_str(subject_type, request.collection_type)}' \
+                            f'的{subject_type_to_str(subject_type)}'
         return request
     if response is None:
-        request.page_text = '出错啦，您貌似没有此状态类型的收藏'
+        request.page_text = f'出错啦，您貌似没有{collection_type_subject_type_str(subject_type, request.collection_type)}' \
+                            f'的{subject_type_to_str(subject_type)}'
         return request
     count = response.get('total')  # 总在看数 int
     subject_list = response['data']
     if subject_list is None or len(subject_list) == 0:  # 是否有数据
-        request.page_text = '出错啦，您貌似没有此状态类型的收藏'
+        request.page_text = f'出错啦，您貌似没有{collection_type_subject_type_str(subject_type, request.collection_type)}' \
+                            f'的{subject_type_to_str(subject_type)}'
         return request
     # 循环查询 将条目信息数据存进去 多线程获取
     thread_list = []
@@ -66,40 +70,19 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
         epssssss = info["subject_info"]["eps"]
         if not epssssss:
             epssssss = info["subject_info"]["total_episodes"]
-        text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] if info["subject_info"]["name_cn"] else info["subject_info"]["name"]}' \
+        text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] or info["subject_info"]["name"]}' \
                      f' `[{info["ep_status"]}/{epssssss}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
             text=num, callback_data=f"{stack_uuid}|{nums_unicode}"))
         request.possible_request[nums_unicode] = SubjectRequest(request.session, info['subject_id'])
-    if subject_type == 1:
-        text = f'*{nickname} 在读的书籍*\n\n{text_data}' \
-               f'共{count}本'
-    elif subject_type == 2:
-        text = f'*{nickname} 在看的动画*\n\n{text_data}' \
-               f'共{count}部'
-    elif subject_type == 3:
-        text = f'*{nickname} 在听的音乐*\n\n{text_data}' \
-               f'共{count}张'
-    elif subject_type == 4:
-        text = f'*{nickname} 在玩的游戏*\n\n{text_data}' \
-               f'共{count}部'
-    elif subject_type == 6:
-        text = f'*{nickname} 在看的剧集*\n\n{text_data}' \
-               f'共{count}部'
-    else:
-        raise
+    text = f'*{nickname} {collection_type_subject_type_str(subject_type, request.collection_type)}' \
+           f'的{subject_type_to_str(subject_type)}*\n\n{text_data}' \
+           f'共{count}部'
     markup.add(*button_list, row_width=5)
     # 只有数量大于分页时 开启分页
     if count > limit:
         button_list2 = []
         if offset - limit >= 0:
-            # button_list2.append(
-            #     telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|{offset - limit}'))
-            # request.possible_request[str(offset - limit)] = \
-            #     CollectionsRequest(request.user_data, subject_type,
-            #                        offset=offset - limit,
-            #                        collection_type=request.collection_type,
-            #                        limit=limit)
             button_list2.append(
                 telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|back'))
             request.possible_request["back"] = BackRequest(request.session)
