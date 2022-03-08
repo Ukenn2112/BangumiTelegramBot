@@ -71,7 +71,7 @@ def number_to_episode_type(type_: Literal[0, 1, 2, 3]) -> str:
 
 
 def collection_type_subject_type_str(subject_type: Literal[1, 2, 3, 4, 6],
-                                     collection_type: Literal[1, 2, 3, 4, 5, None]):
+                                     collection_type: Literal[1, 2, 3, 4, 5, None]) -> str:
     if collection_type is None:
         return "收藏"
     if collection_type == 5:
@@ -128,6 +128,32 @@ def subject_type_to_str(type_: Literal[1, 2, 3, 4, 6]) -> str:
         return "剧集"
     else:
         return "???"
+
+
+def score_to_str(score: float) -> str:
+    if score is None:
+        return "暂无评分"
+    if score < 1.5:
+        return "不忍直视"
+    if score < 2.5:
+        return "很差"
+    if score < 3.5:
+        return "差"
+    if score < 4.5:
+        return "较差"
+    if score < 5.5:
+        return "不过不失"
+    if score < 6.5:
+        return "还行"
+    if score < 7.5:
+        return "推荐"
+    if score < 8.5:
+        return "力荐"
+    if score < 9.5:
+        return "神作"
+    if score < 10.5:
+        return "超神作"
+    return "???"
 
 
 def remove_duplicate_newlines(text: str) -> str:

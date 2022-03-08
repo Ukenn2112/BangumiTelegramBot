@@ -4,7 +4,7 @@ from config import BOT_USERNAME
 from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
     EditRatingPageRequest, SubjectEpsPageRequest
 from utils.api import get_subject_info, anime_img, user_collection_get
-from utils.converts import subject_type_to_emoji
+from utils.converts import subject_type_to_emoji, score_to_str
 
 
 def generate_page(subject_request: SubjectRequest, stack_uuid: str) -> SubjectRequest:
@@ -116,12 +116,13 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
     text = f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n" \
            f"{subject_info['name']}\n\n"
     if user_collection and 'status' in user_collection:
-        text += f"*BGM ID | 状态：*`{subject_id}` | {user_collection['status']['name']}"
+        text += f"*BGM ID：*`{subject_id}` | {user_collection['status']['name']}"
     else:
         text += f"*BGM ID：*`{subject_id}`"
     text += "\n"
     if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
-        text += f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟\n"
+        text += f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟 " \
+                f"{score_to_str(subject_info['rating']['score'])}\n"
     else:
         text += f"*➤ BGM 平均评分：*暂无评分\n"
     epssssss = subject_info["eps"]
