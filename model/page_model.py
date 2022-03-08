@@ -204,17 +204,14 @@ class SubjectEpsPageRequest(BaseRequest):
 
 
 class EditEpsPageRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_id: int, episode_id: int, episode_info: dict = None,
+    def __init__(self, session: RequestSession, episode_id: int, episode_info: dict = None,
                  before_status=None):
         """修改评分页
-
-        :param subject_id: 条目ID
         """
         super().__init__(session)
-        self.subject_id: int = subject_id  # TODO ?
         self.episode_id = episode_id
         self.episode_info = episode_info
-        self.before_status: EpStatusType = before_status  # TODO
+        self.before_status: int = before_status
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

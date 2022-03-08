@@ -5,6 +5,7 @@ import logging
 import random
 import threading
 import time
+from threading import Thread
 from typing import Optional, Literal, List
 
 import redis
@@ -225,9 +226,9 @@ def post_eps_status(tg_id: int, id_: int, status, ep_id: List[int] = None, acces
     if ep_id:
         eps = ''
         for i in ep_id:
-            eps += f',{i}'
-        params = {'ep_id': eps}
-    return requests.post(url=url, headers=headers, params=params)
+            eps += f'{i},'
+        params = {'ep_id': eps[:-1]}
+    return requests.post(url=url, headers=headers, data=params)
 
 
 # 更新收藏状态
@@ -311,7 +312,7 @@ def get_subject_info(subject_id, t_dict=None, access_token: Optional[str] = None
         loads = json.loads(subject)
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
-        loads = requests_get(url=url, access_token=access_token)  # 获取NSFW条目时需要access_token
+        loads = requests_get(url=url, access_token=access_token)  # TODO 获取NSFW条目时需要access_token
         if loads is None:
             redis_cli.set(f"subject:{subject_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
@@ -350,12 +351,39 @@ def get_subject_episode(subject_id: int, type_: Literal[0, 1, 2, 3, None] = None
             'offset': offset
         }
         loads = requests_get(url=url, params=params)
-        if not loads:
-            redis_cli.set(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}",
-                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
-            raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
+        Thread(target=cache_subject_episode, args=[limit, loads, offset, subject_id, type_])
+    return loads
+
+
+def cache_subject_episode(limit, loads, offset, subject_id, type_):
+    if not loads:
         redis_cli.set(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}",
-                      json.dumps(loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+                      "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+        raise FileNotFoundError(f"subject_id:{subject_id}获取失败")
+    redis_cli.set(f"subject_episode:{subject_id}:{type_}:{limit}:{offset}",
+                  json.dumps(loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+    for eps in loads['eps']:
+        eps['subject_id'] = int(subject_id)
+        redis_cli.set(f"episode:{eps['id']}",
+                      json.dumps(eps), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+
+
+def get_episode_info(episode_id: int):
+    access_token = None
+    episode = redis_cli.get(f"episode:{episode_id}")
+    if episode:
+        if episode == b"None__":
+            raise FileNotFoundError(f"episode_id:{episode_id}获取失败_缓存")
+        loads = json.loads(episode)
+    else:
+        url = f'https://api.bgm.tv/v0/episodes/{episode_id}'
+        loads = requests_get(url=url, access_token=access_token)  # TODO 获取NSFW条目时需要access_token
+        if loads is None:
+            redis_cli.set(f"episode:{episode_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError(f"subject_id:{episode_id}获取失败")
+        redis_cli.set(f"episode:{episode_id}", json.dumps(
+            loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
     return loads
 
 

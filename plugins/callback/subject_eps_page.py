@@ -24,7 +24,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
                 user_eps[eps['id']] = eps['status']['id']
 
     subject_id = request.subject_id
-    eps = get_subject_episode(int(subject_id), limit=request.limit, offset=request.offset, type_=request.type_)
+    eps = get_subject_episode(subject_id, limit=request.limit, offset=request.offset, type_=request.type_)
     button_list = []
     subject_info = request.subject_info
     text = f"*{subject_type_to_emoji(subject_info['type'])}" \
@@ -34,13 +34,16 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
             ep = str(int(i['ep']))
         else:
             ep = str(i['ep'])
+
+        button_list.append(telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{stack_uuid}|{i["id"]}'))
+        page_request = EditEpsPageRequest(request.session, i['id'], episode_info=i)
+        request.possible_request[str(i['id'])] = page_request
+
         if request.user_collection and 'code' not in request.user_collection:
             text += id_to_emoji.get(user_eps.get(i['id'], ''), '☑️')
+            page_request.before_status = user_eps.get(i['id'], 0)
         text += f"*{ep}.*"
         text += f" {i['name_cn'] or i['name'] or '未公布'} \n"
-        button_list.append(telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{stack_uuid}|{i["id"]}'))
-        request.possible_request[str(i['id'])] = EditEpsPageRequest(request.session, request.subject_id, i['id'],
-                                                                    episode_info=i)
 
     total = eps['total']
     limit = eps['limit']
@@ -51,7 +54,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
         if offset - limit >= 0:
             button_list2.append(
                 telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|pre'))
-            pre_request = SubjectEpsPageRequest(request.session, request.subject_id, limit=limit,
+            pre_request = SubjectEpsPageRequest(request.session, request.subject_id, limit=limit, type_=request.type_,
                                                 offset=offset - limit)
             pre_request.user_collection = request.user_collection
             request.possible_request['pre'] = pre_request
