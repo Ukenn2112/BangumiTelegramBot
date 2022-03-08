@@ -394,6 +394,24 @@ def anime_img(subject_id):
         if img_url == b"None__":
             return None
         return img_url.decode()
+    subject_info = get_subject_info(subject_id)
+    if subject_info['type'] != 2 and subject_info['type'] != 1 and 'images' in subject_info:
+        img_url = None
+        if 'large' in subject_info['images'] and subject_info['images']['large']:
+            img_url = subject_info['images']['large']
+        if 'common' in subject_info['images'] and subject_info['images']['common']:
+            img_url = subject_info['images']['common']
+        if 'medium' in subject_info['images'] and subject_info['images']['medium']:
+            img_url = subject_info['images']['medium']
+        if img_url:
+            redis_cli.set(f"anime_img:{subject_id}", img_url,
+                          ex=60 * 60 * 24 + random.randint(-3600, 3600))
+            return img_url
+        else:
+            redis_cli.set(f"anime_img:{subject_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            return None
+
     anime_name = get_subject_info(subject_id)['name']
     query = '''
     query ($id: Int, $page: Int, $perPage: Int, $search: String) {
