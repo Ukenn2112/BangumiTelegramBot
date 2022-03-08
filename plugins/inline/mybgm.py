@@ -17,7 +17,7 @@ def query_mybgm_text(inline_query, bot):
         if user_data is None:
             # 如果未绑定 直接报错
             bot.answer_inline_query(inline_query.id, query_result_list,
-                                    switch_pm_text="您未绑定Bangumi，请点击此条文字进行绑定", switch_pm_parameter="None", cache_time=0)
+                                    switch_pm_text="您未绑定Bangumi，请点击此条文字进行绑定", switch_pm_parameter="help", cache_time=0)
             return
         bgm_id = user_data.get('user_id')
         access_token = user_data.get('access_token')
@@ -33,22 +33,22 @@ def query_mybgm_text(inline_query, bot):
         if startus_data is None:
             # Fixme 会有这种情况吗？
             bot.answer_inline_query(inline_query.id, query_result_list,
-                                    switch_pm_text="出错了，没有获取到您的统计信息", switch_pm_parameter="None", cache_time=0)
+                                    switch_pm_text="出错了，没有获取到您的统计信息", switch_pm_parameter="help", cache_time=0)
             return
         if isinstance(startus_data, dict) and startus_data.get('code') == 404:
             bot.answer_inline_query(inline_query.id, query_result_list,
-                                    switch_pm_text="出错了，没有查询到该用户", switch_pm_parameter="None", cache_time=0)
+                                    switch_pm_text="出错了，没有查询到该用户", switch_pm_parameter="help", cache_time=0)
             return
         # 查询用户名
         try:
             user_data = get_user(bgm_id)
         except FileNotFoundError:
             bot.answer_inline_query(inline_query.id, query_result_list,
-                                    switch_pm_text="出错了，没有获取到您的统计信息", switch_pm_parameter="None", cache_time=0)
+                                    switch_pm_text="出错了，没有获取到您的统计信息", switch_pm_parameter="help", cache_time=0)
             return
         except json.JSONDecodeError:
             bot.answer_inline_query(inline_query.id, query_result_list,
-                                    switch_pm_text="出错了,无法获取到您的个人信息", switch_pm_parameter="None", cache_time=0)
+                                    switch_pm_text="出错了,无法获取到您的个人信息", switch_pm_parameter="help", cache_time=0)
             return
         nickname = user_data.get('nickname')
         bgm_id = user_data.get('id')
@@ -98,7 +98,7 @@ def query_mybgm_text(inline_query, bot):
         query_result_list.append(qr)
     except:
         bot.answer_inline_query(inline_query.id, query_result_list,
-                                switch_pm_text="系统错误，请查看日志", switch_pm_parameter="None", cache_time=0)
+                                switch_pm_text="系统错误，请查看日志", switch_pm_parameter="help", cache_time=0)
         raise
     bot.answer_inline_query(inline_query.id, query_result_list,
                             switch_pm_text="@BGM条目ID获取信息或关键字搜索", switch_pm_parameter="help", cache_time=0)

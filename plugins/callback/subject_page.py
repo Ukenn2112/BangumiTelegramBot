@@ -55,13 +55,13 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
 
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='点格子', callback_data=f"{stack_uuid}|eps"))
-        subject_request.possible_request['eps'] = SubjectEpsPageRequest(subject_request.session,
-                                                                        subject_id=subject_request.subject_id,
-                                                                        limit=12, type_=0)
+
     else:
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
-
+    subject_request.possible_request['eps'] = SubjectEpsPageRequest(subject_request.session,
+                                                                    subject_id=subject_request.subject_id,
+                                                                    limit=12, type_=0)
     button_list[0].append(
         telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
     edit_collection_type_page_request = EditCollectionTypePageRequest(subject_request.session,

@@ -20,7 +20,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     eps = get_subject_episode(int(subject_id), limit=request.limit, offset=request.offset, type_=request.type_)
     button_list = []
     subject_info = request.subject_info
-    text = f"*《{subject_type_to_emoji(subject_info['type'])}{subject_info['name_cn'] or subject_info['name']}》*章节列表:\n"
+    text = f"{subject_type_to_emoji(subject_info['type'])}*《{subject_info['name_cn'] or subject_info['name']}》*章节列表:\n"
     for i in eps['data']:
         if i['ep'].is_integer():
             ep = str(int(i['ep']))
