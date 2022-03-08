@@ -54,7 +54,7 @@ class WeekRequest(BaseRequest):
 class CollectionsRequest(BaseRequest):
 
     def __init__(self, session: RequestSession, subject_type: Literal[1, 2, 3, 4, 6], offset=0,
-                 collection_type: Literal[1, 2, 3, 4, 5, 6] = 3, limit=10):
+                 collection_type: Literal[1, 2, 3, 4, 5, None] = 3, limit=10):
         """用户收藏
         :param subject_type: 条目类型 1书籍 2动画 3音乐 4游戏 6三次元
         :param offset: 分页页数
@@ -65,7 +65,7 @@ class CollectionsRequest(BaseRequest):
         super().__init__(session)
         self.subject_type: Literal[1, 2, 3, 4, 6] = subject_type
         self.offset: int = offset
-        self.collection_type: Literal[1, 2, 3, 4, 5, 6] = collection_type
+        self.collection_type: Literal[1, 2, 3, 4, 5, None] = collection_type
         self.limit: int = limit
 
         self.user_data = None
