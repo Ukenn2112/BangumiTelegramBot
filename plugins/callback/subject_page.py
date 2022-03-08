@@ -111,10 +111,11 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
         subject_info = get_subject_info(subject_id)
     subject_type = subject_info['type']
     text = f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n" \
-           f"{subject_info['name']}\n\n" \
-           f"*BGM ID：*`{subject_id}` "
+           f"{subject_info['name']}\n\n"
     if user_collection and 'status' in user_collection:
-        text += user_collection['status']['name']
+        text += f"*BGM ID | 状态：*`{subject_id}` | {user_collection['status']['name']}"
+    else:
+        text += f"*BGM ID：*`{subject_id}`"
     text += "\n"
     if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
         text += f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟\n"
