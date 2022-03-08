@@ -38,8 +38,8 @@ def query_sender_text(inline_query, bot):
             emoji = subject_type_to_emoji(subject["type"])
             qr = telebot.types.InlineQueryResultArticle(
                 id=subject['url'], title=emoji +
-                (subject["name_cn"] if subject["name_cn"]
-                 else subject["name"]),
+                                         (subject["name_cn"] if subject["name_cn"]
+                                          else subject["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
                     message_text=f"/info@{BOT_USERNAME} {subject['id']}",
                     disable_web_page_preview=True

@@ -59,9 +59,10 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
     else:
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
-    subject_request.possible_request['eps'] = SubjectEpsPageRequest(subject_request.session,
-                                                                    subject_id=subject_request.subject_id,
-                                                                    limit=12, type_=0)
+    subject_eps_page_request = SubjectEpsPageRequest(subject_request.session, subject_id=subject_request.subject_id,
+                                                     limit=12, type_=0)
+    subject_eps_page_request.user_collection = user_collection
+    subject_request.possible_request['eps'] = subject_eps_page_request
     button_list[0].append(
         telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
     edit_collection_type_page_request = EditCollectionTypePageRequest(subject_request.session,
@@ -88,8 +89,10 @@ def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
         button_list[0].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
         button_list[0].append(
             telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
-    subject_request.possible_request['eps'] = SubjectEpsPageRequest(
-        subject_request.session, subject_id=subject_request.subject_id, limit=12, type_=0)
+    subject_eps_page_request = SubjectEpsPageRequest(subject_request.session, subject_id=subject_request.subject_id,
+                                                     limit=12, type_=0)
+    subject_eps_page_request.user_collection = {'code'}
+    subject_request.possible_request['eps'] = subject_eps_page_request
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.session, subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
     button_list[0].append(
