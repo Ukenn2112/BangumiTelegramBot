@@ -15,7 +15,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     if not request.user_collection:
         request.user_collection = user_collection_get(None, request.subject_id,
                                                       request.session.bgm_auth['access_token'])
-    id_to_emoji = {1: '📝', 2: '✅', 3: '❎'}
+    id_to_emoji = {1: '👀', 2: '🔘', 3: '🗑️'}
     user_eps = {}
     if request.user_collection and 'code' not in request.user_collection:
         data = get_user_progress(request.session.request_message.from_user.id, request.subject_id)
@@ -35,8 +35,8 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
         else:
             ep = str(i['ep'])
         if request.user_collection and 'code' not in request.user_collection:
-            text += id_to_emoji.get(user_eps.get(i['id'], ''), '☑️')
-        text += f"*{ep}.*"
+            text += id_to_emoji.get(user_eps.get(i['id'], ''), '⚪')
+        text += f"`{ep.zfill(2)}`*.*"
         text += f" {i['name_cn'] or i['name'] or '未公布'} \n"
         button_list.append(telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{stack_uuid}|{i["id"]}'))
         request.possible_request[str(i['id'])] = EditEpsPageRequest(request.session, request.subject_id, i['id'],
