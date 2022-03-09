@@ -155,7 +155,13 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
             if box.get('key') == '作者':
                 text += f"*➤ 作者：*`{box['value']}`\n"
             if box.get('key') == '出版社':
-                text += f"*➤ 出版社：*`{box['value']}`\n"
+                if isinstance(box['value'], list):
+                    text += f"*➤ 出版社：*"
+                    for price in box['value']:
+                        text += f" `{price['v']}`"
+                    text += "\n"
+                else:
+                    text += f"*➤ 出版社：*`{box['value']}`\n"
         text += f"*➤ 发售日期：*`{subject_info['date']}`\n"
     if subject_type == 3:  # 当类型为Music时
         for box in subject_info['infobox']:

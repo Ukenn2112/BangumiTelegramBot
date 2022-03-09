@@ -114,6 +114,19 @@ def collection_type_subject_type_str(subject_type: Literal[1, 2, 3, 4, 6],
     return "????"
 
 
+def collection_type_markup_text_list(subject_type: Literal[1, 2, 3, 4, 6]) -> list:
+    if subject_type == 1:
+        return ["想读", "读过", "在读"]
+    if subject_type == 2:
+        return ["想看", "看过", "在看"]
+    if subject_type == 3:
+        return ["想听", "听过", "在听"]
+    if subject_type == 4:
+        return ["想玩", "玩过", "在玩"]
+    if subject_type == 6:
+        return ["想看", "看过", "在看"]
+
+
 def subject_type_to_str(type_: Literal[1, 2, 3, 4, 6]) -> str:
     """将subject_type转文字"""
     if type_ == 1:

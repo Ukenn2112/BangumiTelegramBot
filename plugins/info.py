@@ -70,7 +70,13 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
             if box.get('key') == '作者':
                 text += f"*➤ 作者：*`{box['value']}`\n"
             if box.get('key') == '出版社':
-                text += f"*➤ 出版社：*`{box['value']}`\n"
+                if isinstance(box['value'], list):
+                    text += f"*➤ 出版社：*"
+                    for price in box['value']:
+                        text += f" `{price['v']}`"
+                    text += "\n"
+                else:
+                    text += f"*➤ 出版社：*`{box['value']}`\n"
         text += f"➤ 发售日期：`{subject_info['date']}`\n"
     if subject_type == 3:  # 当类型为Music时
         for box in subject_info['infobox']:
