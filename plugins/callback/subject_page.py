@@ -180,7 +180,13 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
             if box.get('key') == '播放时长':
                 text += f"*➤ 播放时长：*`{box['value']}`\n"
             if box.get('key') == '价格':
-                text += f"*➤ 价格：*`{box['value']}`\n"
+                if isinstance(box['value'], list):
+                    text += f"*➤ 价格：*"
+                    for price in box['value']:
+                        text += f" `{price['v']}`"
+                    text += "\n"
+                else:
+                    text += f"*➤ 价格：*`{box['value']}`\n"
         text += f"*➤ 发售日期：*`{subject_info['date']}`\n"
     if subject_type == 4:  # 当类型为Game时
         for box in subject_info['infobox']:
