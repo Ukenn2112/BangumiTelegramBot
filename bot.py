@@ -193,10 +193,10 @@ def consumption_request(session: RequestSession):
     try:
         callback_text = request_handler(session)
         top = session.stack[-1]
-    except:
+    except Exception as e:
         top = BaseRequest(session)
         top.page_text = "发生了未知异常😖"
-
+        logging.error(e)
     if top.page_image:
         if session.bot_message.content_type == 'text':
             bot.delete_message(
