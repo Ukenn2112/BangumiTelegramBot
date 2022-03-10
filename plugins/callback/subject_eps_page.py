@@ -30,10 +30,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     text = f"*{subject_type_to_emoji(subject_info['type'])}" \
            f"『 {subject_info['name_cn'] or subject_info['name']} 』章节列表:*\n\n"
     for i in eps['data']:
-        if i['ep'].is_integer():
-            ep = str(int(i['ep']))
-        else:
-            ep = str(i['ep'])
+        ep = str(i['ep'])
 
         button_list.append(telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{stack_uuid}|{i["id"]}'))
         page_request = EditEpsPageRequest(request.session, i['id'], episode_info=i)
