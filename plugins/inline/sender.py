@@ -22,7 +22,6 @@ def query_sender_text(inline_query, bot):
                         else subject_info["name"]
                     ), input_message_content=telebot.types.InputTextMessageContent(
                         message_text=f"/info@{BOT_USERNAME} {message_data[0]}",
-                        parse_mode="markdown",
                         disable_web_page_preview=True
                     ), description=subject_info["name"] if subject_info["name_cn"] else None,
                     thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
