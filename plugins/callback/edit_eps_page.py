@@ -11,11 +11,7 @@ def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRe
     episode_info = request.episode_info
     if not episode_info:
         episode_info = get_episode_info(request.episode_id)
-    if episode_info['ep'].is_integer():
-        ep = str(int(episode_info['ep']))
-    else:
-        ep = str(episode_info['ep'])
-    text = f"*{number_to_episode_type(episode_info['type'])}.{ep}*"
+    text = f"*{number_to_episode_type(episode_info['type'])}.{episode_info['ep']}*"
     if episode_info['name_cn']:
         text += f"* | {episode_info['name_cn']}*"
     if episode_info['name']:
