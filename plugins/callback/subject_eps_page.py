@@ -12,7 +12,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
         request.page_image = anime_img(request.subject_id)
     if not request.subject_info:
         request.subject_info = get_subject_info(request.subject_id)
-    if not request.user_collection:
+    if not request.user_collection and request.session.bgm_auth:
         request.user_collection = user_collection_get(None, request.subject_id,
                                                       request.session.bgm_auth['access_token'])
     id_to_emoji = {1: '👀', 2: '🔘', 3: '🗑️'}

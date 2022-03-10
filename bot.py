@@ -8,6 +8,7 @@ import time
 
 import telebot
 
+import config
 from config import BOT_TOKEN
 from model.page_model import RequestSession, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, \
     BackRequest, \
@@ -20,16 +21,14 @@ from plugins.inline import sender, public, mybgm
 from utils.api import run_continuously, redis_cli
 
 logger = telebot.logger
-try:
-    from config import LOG_LEVEL
-except ImportError:
-    LOG_LEVEL = "info"
-if LOG_LEVEL == "info":
+if 'LOG_LEVEL' in dir(config):
+    telebot.logger.setLevel(config.LOG_LEVEL.upper())
+    logging.getLogger().setLevel(config.LOG_LEVEL.upper())
+else:
     telebot.logger.setLevel(logging.INFO)
-if LOG_LEVEL == "debug":
-    telebot.logger.setLevel(logging.DEBUG)
-logging.basicConfig(filename='run.log',
-                    format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+    logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                    handlers=[logging.FileHandler("run.log", encoding="UTF-8"), logging.StreamHandler()])
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -195,8 +194,8 @@ def consumption_request(session: RequestSession):
         top = session.stack[-1]
     except Exception as e:
         top = BaseRequest(session)
-        top.page_text = "发生了未知异常😖"
-        logging.error(e)
+        top.page_text = "发生了未知异常QAQ"
+        logging.exception(f"发生异常 session:{session.uuid}")
     if top.page_image:
         if session.bot_message.content_type == 'text':
             bot.delete_message(
@@ -255,7 +254,6 @@ def request_handler(session: RequestSession):
     elif isinstance(top, CollectionsRequest):
         collection_list_page.generate_page(top, session.uuid)
     elif isinstance(top, SubjectRequest):
-        is_private_tg_id = session.request_message.from_user.id if session.bot_message.chat.type == 'private' else 0
         subject_page.generate_page(top, session.uuid)
     elif isinstance(top, SummaryRequest):
         summary_page.generate_page(top, session.uuid)
