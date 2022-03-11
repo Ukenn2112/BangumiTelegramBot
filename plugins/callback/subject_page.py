@@ -2,8 +2,8 @@ import telebot
 
 from config import BOT_USERNAME
 from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
-    EditRatingPageRequest, SubjectEpsPageRequest
-from utils.api import get_subject_info, anime_img, user_collection_get, get_subject_relations
+    EditRatingPageRequest, SubjectEpsPageRequest, SubjectRelationsPageRequest
+from utils.api import get_subject_info, anime_img, user_collection_get
 from utils.converts import subject_type_to_emoji, score_to_str
 
 
@@ -37,19 +37,13 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
     if not subject_request.is_root:
         button_list[1].append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
         subject_request.possible_request['back'] = BackRequest(subject_request.session)
+    button_list[0].append(
+        telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+    button_list[0].append(
+        telebot.types.InlineKeyboardButton(text='关联', callback_data=f"{stack_uuid}|relations"))
     if user_collection:
-        if 'status' not in user_collection and subject_request.is_root:
-            button_list[0].append(
-                telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
-        else:
-            button_list[1].append(
-                telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
-        subject_request.possible_request['summary'] = SummaryRequest(subject_request.session,
-                                                                     subject_request.subject_id)
-        subject_request.possible_request['summary'].page_image = subject_request.page_image
-
         if 'status' in user_collection:
-            button_list[0].append(
+            button_list[1].append(
                 telebot.types.InlineKeyboardButton(text='评分', callback_data=f"{stack_uuid}|rating"))
             edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
             edit_rating_page_request.page_image = subject_request.page_image
@@ -58,7 +52,6 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
 
             button_list[0].append(
                 telebot.types.InlineKeyboardButton(text='点格子', callback_data=f"{stack_uuid}|eps"))
-
         else:
             button_list[0].append(
                 telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
@@ -66,24 +59,24 @@ def gender_page_manager_button(subject_request: SubjectRequest, stack_uuid: str,
                                                          limit=12, type_=0)
         subject_eps_page_request.user_collection = user_collection
         subject_request.possible_request['eps'] = subject_eps_page_request
-        button_list[0].append(
+        button_list[1].append(
             telebot.types.InlineKeyboardButton(text='收藏管理', callback_data=f"{stack_uuid}|collection"))
         edit_collection_type_page_request = EditCollectionTypePageRequest(subject_request.session,
                                                                           subject_request.subject_id)
         subject_request.possible_request['collection'] = edit_collection_type_page_request
         edit_collection_type_page_request.page_image = subject_request.page_image
     else:
-        button_list[0].append(
-            telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
-        subject_request.possible_request['summary'] = SummaryRequest(subject_request.session,
-                                                                     subject_request.subject_id)
-        subject_request.possible_request['summary'].page_image = subject_request.page_image
-        button_list[0].append(
-            telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
-        subject_eps_page_request = SubjectEpsPageRequest(subject_request.session, subject_id=subject_request.subject_id,
-                                                         limit=12, type_=0)
+        subject_eps_page_request = SubjectEpsPageRequest(
+            subject_request.session, subject_id=subject_request.subject_id, limit=12, type_=0)
         subject_eps_page_request.user_collection = user_collection
         subject_request.possible_request['eps'] = subject_eps_page_request
+        button_list[0].append(
+            telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
+    subject_request.possible_request['summary'] = SummaryRequest(subject_request.session,
+                                                                 subject_request.subject_id)
+    subject_request.possible_request['summary'].page_image = subject_request.page_image
+    relations_request = SubjectRelationsPageRequest(subject_request.session, subject_id=subject_request.subject_id)
+    subject_request.possible_request['relations'] = relations_request
 
     for i in button_list:
         if i:
@@ -97,29 +90,29 @@ def gender_page_show_buttons(subject_request: SubjectRequest, stack_uuid: str):
     if not subject_request.is_root:
         button_list[1].append(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
         subject_request.possible_request['back'] = BackRequest(subject_request.session)
-        button_list[1].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
-        button_list[1].append(
-            telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
-    else:
-        button_list[0].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
-        button_list[0].append(
-            telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
+    button_list[1].append(
+        telebot.types.InlineKeyboardButton(text='去管理',
+                                           url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))  # TODO
+    button_list[0].append(telebot.types.InlineKeyboardButton(text='简介', callback_data=f"{stack_uuid}|summary"))
+    button_list[0].append(
+        telebot.types.InlineKeyboardButton(text='章节', callback_data=f"{stack_uuid}|eps"))
+    button_list[0].append(
+        telebot.types.InlineKeyboardButton(text='关联', callback_data=f"{stack_uuid}|relations"))
     subject_eps_page_request = SubjectEpsPageRequest(subject_request.session, subject_id=subject_request.subject_id,
                                                      limit=12, type_=0)
     subject_eps_page_request.user_collection = {'code'}
     subject_request.possible_request['eps'] = subject_eps_page_request
     subject_request.possible_request['summary'] = SummaryRequest(subject_request.session, subject_request.subject_id)
     subject_request.possible_request['summary'].page_image = subject_request.page_image
-    button_list[0].append(
-        telebot.types.InlineKeyboardButton(text='去管理',
-                                           url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))  # TODO
+    relations_request = SubjectRelationsPageRequest(subject_request.session, subject_id=subject_request.subject_id)
+    subject_request.possible_request['relations'] = relations_request
     subject_request.possible_request['collection'] = EditCollectionTypePageRequest(subject_request.session,
                                                                                    subject_request.subject_id)
     subject_request.possible_request['collection'].page_image = subject_request.page_image
 
     for i in button_list:
         if i:
-            markup.add(*i)
+            markup.add(*i, row_width=4)
     return markup
 
 
@@ -260,11 +253,4 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
             text += "\n"
     text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
             f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
-    subject_relations = get_subject_relations(subject_id)
-    if subject_relations != "None__":
-        for relation in subject_relations:
-            if relation['relation'] == '前传':
-                text += f"\n*前传：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
-            if relation['relation'] == '续集':
-                text += f"\n*续集：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
     return text

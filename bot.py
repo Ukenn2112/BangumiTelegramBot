@@ -13,10 +13,12 @@ from config import BOT_TOKEN
 from model.page_model import RequestSession, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, \
     BackRequest, \
     EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
-    RefreshRequest, BaseRequest, SubjectEpsPageRequest, EditEpsPageRequest, DoEditEpisodeRequest
+    RefreshRequest, BaseRequest, SubjectEpsPageRequest, EditEpsPageRequest, DoEditEpisodeRequest, \
+    SubjectRelationsPageRequest
 from plugins import start, help, week, info, search, collection_list
 from plugins.callback import edit_rating_page, week_page, subject_page, \
-    collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page
+    collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
+    subject_relations_page
 from plugins.inline import sender, public, mybgm
 from utils.api import run_continuously, redis_cli
 
@@ -265,6 +267,8 @@ def request_handler(session: RequestSession):
         subject_eps_page.generate_page(top, session.uuid)
         if len(session.stack) > 2 and isinstance(session.stack[-2], SubjectEpsPageRequest):
             del session.stack[-2]
+    elif isinstance(top, SubjectRelationsPageRequest):
+        subject_relations_page.generate_page(top)
     elif isinstance(top, EditEpsPageRequest):
         edit_eps_page.generate_page(top, session.uuid)
     elif isinstance(top, DoEditCollectionTypeRequest):

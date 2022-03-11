@@ -348,7 +348,7 @@ def get_subject_characters(subject_id, access_token: Optional[str] = None):
     return loads
 
 
-def get_subject_relations(subject_id, access_token: Optional[str] = None):
+def get_subject_relations(subject_id):
     """获取关联条目信息 并使用Redis缓存"""
     subject_relations = redis_cli.get(f"subject_relations:{subject_id}")
     if subject_relations:
@@ -357,7 +357,7 @@ def get_subject_relations(subject_id, access_token: Optional[str] = None):
         loads = json.loads(subject_relations)
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}/subjects'  # TODO 获取NSFW条目时需要access_token
-        loads = requests_get(url=url, access_token=access_token)
+        loads = requests_get(url=url)
         if loads is None:
             redis_cli.set(f"subject_relations:{subject_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透

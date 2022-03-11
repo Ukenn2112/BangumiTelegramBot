@@ -204,6 +204,25 @@ class SubjectEpsPageRequest(BaseRequest):
         self.callback_text: Optional[str] = None
 
 
+class SubjectRelationsPageRequest(BaseRequest):
+    def __init__(self, session: RequestSession, subject_id: int):
+        """展示条目关联条目
+
+        :param subject_id: 条目ID
+        """
+
+        super().__init__(session)
+        self.subject_id: int = subject_id
+
+        self.subject_info: Optional[dict] = None
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
 class EditEpsPageRequest(BaseRequest):
     def __init__(self, session: RequestSession, episode_id: int, episode_info: dict = None,
                  before_status=None):
