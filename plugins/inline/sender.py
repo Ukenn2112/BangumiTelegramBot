@@ -30,17 +30,11 @@ def query_sender_text(inline_query, bot):
                 query_result_list.append(qr)
             else:
                 subject_characters = get_subject_characters(message_data[0])
-                for _character in subject_characters:
-                    if '角色' == message_data[1]:
-                        characters_list = subject_characters
-                    if '主' in message_data[1]:
-                        if _character['relation'] == '主角':
-                            characters_list.append(_character)
-                    if '配' in message_data[1]:
-                        if _character['relation'] == '配角':
-                            characters_list.append(_character)
-                    if '客' in message_data[1]:
-                        if _character['relation'] == '客串':
+                if '角色' == message_data[1]:
+                    characters_list = subject_characters
+                else:
+                    for _character in subject_characters:
+                        if message_data[1] in _character['relation']:
                             characters_list.append(_character)
                 for character in characters_list:
                     text = f"*{character['name']}*"
