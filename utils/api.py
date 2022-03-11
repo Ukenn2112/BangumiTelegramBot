@@ -370,7 +370,7 @@ def get_subject_relations(subject_id):
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
             raise FileNotFoundError(f"subject_id:{subject_id}获取关联条目信息失败")
         redis_cli.set(f"subject_relations:{subject_id}", json.dumps(
-            loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+            loads), ex=60 * 60 * 24 * 7 + random.randint(-3600, 3600))
     return loads
 
 

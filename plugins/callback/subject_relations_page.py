@@ -1,15 +1,20 @@
-from itertools import groupby
+from collections import defaultdict
 
 import telebot
 
 from model.page_model import BackRequest, SubjectRelationsPageRequest, SubjectRequest
-from utils.api import anime_img, get_subject_info, get_subject_relations
+from utils.api import get_subject_info, get_subject_relations
 from utils.converts import subject_type_to_emoji
 
 
+def full_group_by(items, key=lambda x: x):
+    d = defaultdict(list)
+    for item in items:
+        d[key(item)].append(item)
+    return d.items()
+
+
 def generate_page(request: SubjectRelationsPageRequest) -> SubjectRelationsPageRequest:
-    if not request.page_image:
-        request.page_image = anime_img(request.subject_id)
     if not request.subject_info:
         request.subject_info = get_subject_info(request.subject_id)
     subject_id = request.subject_id
@@ -23,13 +28,13 @@ def generate_page(request: SubjectRelationsPageRequest) -> SubjectRelationsPageR
         text = f"*{subject_type_to_emoji(subject_info['type'])}" \
                f"『 {subject_info['name_cn'] or subject_info['name']} 』关联条目:*\n\n"
 
-        relation_group = groupby(relations, lambda a: a['relation'])
+        relation_group = full_group_by(relations, lambda a: a['relation'])
         num: int = 1
         for key, relationss in relation_group:
             text += f"*➤ {key}:*\n"
             for relation in relationss:
-                text += f"    `{str(num).zfill(2)}`*.* {subject_type_to_emoji(relation['type'])}" \
-                        f"_{relation['name_cn'] or relation['name']}_\n"
+                text += f"`{str(num).zfill(2)}`. {subject_type_to_emoji(relation['type'])}" \
+                        f"{relation['name_cn'] or relation['name']}\n"
                 button_list.append(
                     telebot.types.InlineKeyboardButton(text=str(num), callback_data=f'{request.session.uuid}|{num}'))
                 request.possible_request[str(num)] = SubjectRequest(request.session, relation['id'])
