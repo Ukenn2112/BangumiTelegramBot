@@ -41,6 +41,13 @@ def user_data_get(tg_id):
                 return i.get('data')
 
 
+def nsfw_token():
+    """ 返回可以查看NSFW内容的token"""
+    with open('bgm_data.json') as f:
+        data_seek = json.loads(f.read())
+        return data_seek[0]['data']['access_token']
+
+
 def expiry_data_get(test_id):
     """更新过期用户数据"""
     with open('bgm_data.json') as f:
@@ -164,46 +171,46 @@ def requests_get(url, params: Optional[dict] = None, access_token: Optional[str]
             raise
 
 
-def eps_get(test_id, subject_id):
-    """获取用户观看eps数据"""
-    user_data = user_data_get(test_id)
-    access_token = user_data['access_token']
-    params = {
-        'subject_id': subject_id,
-        'type': 0}
-    url = 'https://api.bgm.tv/v0/episodes'
-    data_eps = requests_get(url, params, access_token)
-    epsid_li = [i['id'] for i in data_eps['data']]  # 所有eps_id
-
-    params = {'subject_id': subject_id}
-    url = f"https://api.bgm.tv/user/{user_data['user_id']}/progress"
-    data_watched = requests_get(url, params, access_token)
-    if data_watched is not None:
-        watched_id_li = [i['id'] for i in data_watched['eps']]  # 已观看 eps_id
-    else:
-        watched_id_li = [0]  # 无观看集数
-    eps_n = len(set(epsid_li))  # 总集数
-    watched_n = len(set(epsid_li) & set(watched_id_li))  # 已观看了集数
-    unwatched_id = epsid_li  # 去除已观看过集数的 eps_id
-    try:
-        for watched_li in watched_id_li:
-            unwatched_id.remove(watched_li)
-    except ValueError:
-        pass
-    # 输出
-    eps_data = {'progress': str(watched_n) + '/' + str(eps_n),  # 已观看/总集数 进度 str
-                'watched': watched_n,  # 已观看集数 int
-                'eps_n': str(eps_n),  # 总集数 str
-                'unwatched_id': unwatched_id}  # 未观看 eps_di list
-    return eps_data
+# def eps_get(test_id, subject_id):
+#     """获取用户观看eps数据"""
+#     user_data = user_data_get(test_id)
+#     access_token = user_data['access_token']
+#     params = {
+#         'subject_id': subject_id,
+#         'type': 0}
+#     url = 'https://api.bgm.tv/v0/episodes'
+#     data_eps = requests_get(url, params, access_token)
+#     epsid_li = [i['id'] for i in data_eps['data']]  # 所有eps_id
+#
+#     params = {'subject_id': subject_id}
+#     url = f"https://api.bgm.tv/user/{user_data['user_id']}/progress"
+#     data_watched = requests_get(url, params, access_token)
+#     if data_watched is not None:
+#         watched_id_li = [i['id'] for i in data_watched['eps']]  # 已观看 eps_id
+#     else:
+#         watched_id_li = [0]  # 无观看集数
+#     eps_n = len(set(epsid_li))  # 总集数
+#     watched_n = len(set(epsid_li) & set(watched_id_li))  # 已观看了集数
+#     unwatched_id = epsid_li  # 去除已观看过集数的 eps_id
+#     try:
+#         for watched_li in watched_id_li:
+#             unwatched_id.remove(watched_li)
+#     except ValueError:
+#         pass
+#     # 输出
+#     eps_data = {'progress': str(watched_n) + '/' + str(eps_n),  # 已观看/总集数 进度 str
+#                 'watched': watched_n,  # 已观看集数 int
+#                 'eps_n': str(eps_n),  # 总集数 str
+#                 'unwatched_id': unwatched_id}  # 未观看 eps_di list
+#     return eps_data
 
 
 # 更新收视进度状态
-def eps_status_get(test_id, eps_id, status):
-    """更新收视进度状态"""
-    access_token = user_data_get(test_id).get('access_token')
-    url = f'https://api.bgm.tv/ep/{eps_id}/status/{status}'
-    return requests_get(url, access_token=access_token)
+# def eps_status_get(test_id, eps_id, status):
+#     """更新收视进度状态"""
+#     access_token = user_data_get(test_id).get('access_token')
+#     url = f'https://api.bgm.tv/ep/{eps_id}/status/{status}'
+#     return requests_get(url, access_token=access_token)
 
 
 # 更新收视进度状态
@@ -303,7 +310,7 @@ def get_calendar() -> dict:
         return calendar
 
 
-def get_subject_info(subject_id, t_dict=None, access_token: Optional[str] = None):
+def get_subject_info(subject_id, t_dict=None):
     """获取指定条目信息 并使用Redis缓存"""
     subject = redis_cli.get(f"subject:{subject_id}")
     if subject:
@@ -312,7 +319,7 @@ def get_subject_info(subject_id, t_dict=None, access_token: Optional[str] = None
         loads = json.loads(subject)
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
-        loads = requests_get(url=url, access_token=access_token)  # TODO 获取NSFW条目时需要access_token
+        loads = requests_get(url=url, access_token=nsfw_token())
         if loads is None:
             redis_cli.set(f"subject:{subject_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
@@ -329,7 +336,7 @@ def get_subject_info(subject_id, t_dict=None, access_token: Optional[str] = None
     return loads
 
 
-def get_subject_characters(subject_id, access_token: Optional[str] = None):
+def get_subject_characters(subject_id):
     """获取指定条目角色信息 并使用Redis缓存"""
     subject_characters = redis_cli.get(f"subject_characters:{subject_id}")
     if subject_characters:
@@ -337,8 +344,8 @@ def get_subject_characters(subject_id, access_token: Optional[str] = None):
             raise FileNotFoundError(f"subject_id:{subject_id}角色数据获取失败_缓存")
         loads = json.loads(subject_characters)
     else:
-        url = f'https://api.bgm.tv/v0/subjects/{subject_id}/characters'  # TODO 获取NSFW条目时需要access_token
-        loads = requests_get(url=url, access_token=access_token)
+        url = f'https://api.bgm.tv/v0/subjects/{subject_id}/characters'
+        loads = requests_get(url=url, access_token=nsfw_token())
         if loads is None:
             redis_cli.set(f"subject_characters:{subject_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
@@ -356,8 +363,8 @@ def get_subject_relations(subject_id):
             raise FileNotFoundError(f"subject_id:{subject_id}获取关联条目信息失败_缓存")
         loads = json.loads(subject_relations)
     else:
-        url = f'https://api.bgm.tv/v0/subjects/{subject_id}/subjects'  # TODO 获取NSFW条目时需要access_token
-        loads = requests_get(url=url)
+        url = f'https://api.bgm.tv/v0/subjects/{subject_id}/subjects'
+        loads = requests_get(url=url, access_token=nsfw_token())
         if loads is None:
             redis_cli.set(f"subject_relations:{subject_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
@@ -388,7 +395,7 @@ def get_subject_episode(subject_id: int, type_: Literal[0, 1, 2, 3, None] = None
             'limit': limit,
             'offset': offset
         }
-        loads = requests_get(url=url, params=params)
+        loads = requests_get(url=url, params=params, access_token=nsfw_token())
         Thread(target=cache_subject_episode, args=[limit, loads, offset, subject_id, type_])
     return loads
 
@@ -407,7 +414,6 @@ def cache_subject_episode(limit, loads, offset, subject_id, type_):
 
 
 def get_episode_info(episode_id: int):
-    access_token = None
     episode = redis_cli.get(f"episode:{episode_id}")
     if episode:
         if episode == b"None__":
@@ -415,7 +421,7 @@ def get_episode_info(episode_id: int):
         loads = json.loads(episode)
     else:
         url = f'https://api.bgm.tv/v0/episodes/{episode_id}'
-        loads = requests_get(url=url, access_token=access_token)  # TODO 获取NSFW条目时需要access_token
+        loads = requests_get(url=url, access_token=nsfw_token())
         if loads is None:
             redis_cli.set(f"episode:{episode_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
@@ -505,11 +511,7 @@ def search_subject(keywords: str,
               "start": start, "max_results": max_results}
     url = f'https://api.bgm.tv/search/subject/{keywords}'
     try:
-        r = requests.get(url=url, params=params)
-    except requests.ConnectionError:
-        r = requests.get(url=url, params=params)
-    try:
-        j = json.loads(r.text)
+        j = requests_get(url=url, params=params, access_token=nsfw_token())
     except:
         return {"results": 0, 'list': []}
     return j
