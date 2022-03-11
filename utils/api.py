@@ -437,19 +437,14 @@ def anime_img(subject_id):
         img_url = None
         if 'large' in subject_info['images'] and subject_info['images']['large']:
             img_url = subject_info['images']['large']
-        if 'common' in subject_info['images'] and subject_info['images']['common']:
+        elif 'common' in subject_info['images'] and subject_info['images']['common']:
             img_url = subject_info['images']['common']
-        if 'medium' in subject_info['images'] and subject_info['images']['medium']:
+        elif 'medium' in subject_info['images'] and subject_info['images']['medium']:
             img_url = subject_info['images']['medium']
         if img_url:
             redis_cli.set(f"anime_img:{subject_id}", img_url,
                           ex=60 * 60 * 24 + random.randint(-3600, 3600))
             return img_url
-        else:
-            redis_cli.set(f"anime_img:{subject_id}",
-                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
-            return None
-
     anime_name = get_subject_info(subject_id)['name']
     query = '''
     query ($id: Int, $page: Int, $perPage: Int, $search: String) {
@@ -477,8 +472,19 @@ def anime_img(subject_id):
                       ex=60 * 60 * 24 + random.randint(-3600, 3600))
         return img_url
     else:
-        redis_cli.set(f"anime_img:{subject_id}",
-                      "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+        if 'large' in subject_info['images'] and subject_info['images']['large']:
+            img_url = subject_info['images']['large']
+        elif 'common' in subject_info['images'] and subject_info['images']['common']:
+            img_url = subject_info['images']['common']
+        elif 'medium' in subject_info['images'] and subject_info['images']['medium']:
+            img_url = subject_info['images']['medium']
+        if img_url:
+            redis_cli.set(f"anime_img:{subject_id}", img_url,
+                          ex=60 * 60 * 24 + random.randint(-3600, 3600))
+            return img_url
+        else:
+            redis_cli.set(f"anime_img:{subject_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
         return None
 
 
