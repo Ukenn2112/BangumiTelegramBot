@@ -4,8 +4,9 @@ from typing import Optional
 
 import telebot
 
+from config import BOT_USERNAME
 from model.page_model import SubjectRequest, RequestSession
-from utils.api import get_subject_info
+from utils.api import get_subject_info, get_subject_relations
 from utils.converts import subject_type_to_emoji
 
 
@@ -158,7 +159,14 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
         if (user_rating and user_rating['tag']) or (subject_info['tags']):
             text += "\n"
     text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
-            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
+            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
+    subject_relations = get_subject_relations(subject_id)
+    if subject_relations != "None__":
+        for relation in subject_relations:
+            if relation['relation'] == '前传':
+                text += f"\n*前传：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
+            if relation['relation'] == '续集':
+                text += f"\n*续集：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
     markup = telebot.types.InlineKeyboardMarkup()
     if eps_data is not None:
         unwatched_id = eps_data['unwatched_id']

@@ -348,6 +348,25 @@ def get_subject_characters(subject_id, access_token: Optional[str] = None):
     return loads
 
 
+def get_subject_relations(subject_id, access_token: Optional[str] = None):
+    """获取关联条目信息 并使用Redis缓存"""
+    subject_relations = redis_cli.get(f"subject_relations:{subject_id}")
+    if subject_relations:
+        if subject_relations == b"None__":
+            raise FileNotFoundError(f"subject_id:{subject_id}获取关联条目信息失败_缓存")
+        loads = json.loads(subject_relations)
+    else:
+        url = f'https://api.bgm.tv/v0/subjects/{subject_id}/subjects'  # TODO 获取NSFW条目时需要access_token
+        loads = requests_get(url=url, access_token=access_token)
+        if loads is None:
+            redis_cli.set(f"subject_relations:{subject_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError(f"subject_id:{subject_id}获取关联条目信息失败")
+        redis_cli.set(f"subject_relations:{subject_id}", json.dumps(
+            loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+    return loads
+
+
 def get_subject_episode(subject_id: int, type_: Literal[0, 1, 2, 3, None] = None, limit=100, offset=0):
     """获取条目章节
 

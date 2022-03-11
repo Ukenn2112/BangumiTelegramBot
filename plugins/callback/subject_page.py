@@ -3,7 +3,7 @@ import telebot
 from config import BOT_USERNAME
 from model.page_model import SubjectRequest, BackRequest, SummaryRequest, EditCollectionTypePageRequest, \
     EditRatingPageRequest, SubjectEpsPageRequest
-from utils.api import get_subject_info, anime_img, user_collection_get
+from utils.api import get_subject_info, anime_img, user_collection_get, get_subject_relations
 from utils.converts import subject_type_to_emoji, score_to_str
 
 
@@ -259,5 +259,12 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
         if (user_collection and 'tag' in user_collection and user_collection['tag']) or (subject_info['tags']):
             text += "\n"
     text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
-            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
+            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
+    subject_relations = get_subject_relations(subject_id)
+    if subject_relations != "None__":
+        for relation in subject_relations:
+            if relation['relation'] == '前传':
+                text += f"\n*前传：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
+            if relation['relation'] == '续集':
+                text += f"\n*续集：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
     return text
