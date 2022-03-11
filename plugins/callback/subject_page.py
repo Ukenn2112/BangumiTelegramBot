@@ -127,6 +127,8 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
         text += f"*BGM ID：*`{subject_id}` | {user_collection['status']['name']}"
     else:
         text += f"*BGM ID：*`{subject_id}`"
+    if subject_info['nsfw']:
+        text += "🔞"
     text += "\n"
     if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
         text += f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟 " \
