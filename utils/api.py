@@ -5,6 +5,8 @@ import logging
 import random
 import threading
 import time
+from urllib import parse
+from lxml import etree
 from threading import Thread
 from typing import Optional, Literal, List
 
@@ -545,3 +547,26 @@ def get_user(bgm_id: str) -> dict:
         redis_cli.set(f"bgm_user:{bgm_id}", json.dumps(
             user_data), ex=3600 * 24 * 7)
         return user_data
+
+
+def post_eps_reply(tg_id, eps_id, reply_text):
+    """章节评论"""
+    cookie = user_data_get(tg_id).get('cookie')
+    if cookie is None:
+        return None
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
+               'Cookie': cookie}
+    result = requests.get(f'https://bgm.tv/ep/{eps_id}', headers=headers)
+    html = etree.HTML(result.text.encode('utf-8'))
+    formhash = html.xpath('//input[@name="formhash"]/@value')[0]
+    lastview = html.xpath('//input[@name="lastview"]/@value')[0]
+    FormData = {
+        'content': reply_text,
+        'related_photo': 0,
+        'formhash': formhash,
+        'lastview': lastview,
+        'submit': 'submit'
+    }
+    data = parse.urlencode(FormData)
+    headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
+    return requests.post(f'https://bgm.tv/subject/ep/{eps_id}/new_reply', headers=headers, data=data)
