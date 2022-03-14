@@ -16,6 +16,7 @@ def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRe
         text += f"* | {episode_info['name_cn']}*"
     if episode_info['name']:
         text += f"* / {episode_info['name']}*"
+    text += f"\n\n*EP ID：* `{episode_id}`"
     if episode_info['duration']:
         text += f"\n*➤ 时长：*`{episode_info['duration']}`\n"
     if episode_info['airdate']:

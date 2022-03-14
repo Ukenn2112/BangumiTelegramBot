@@ -549,17 +549,18 @@ def get_user(bgm_id: str) -> dict:
         return user_data
 
 
-def post_eps_reply(tg_id, eps_id, reply_text):
+def post_eps_reply(tg_id, ep_id, reply_text):
     """章节评论"""
     cookie = user_data_get(tg_id).get('cookie')
     if cookie is None:
         return None
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
                'Cookie': cookie}
-    result = requests.get(f'https://bgm.tv/ep/{eps_id}', headers=headers)
+    result = requests.get(f'https://bgm.tv/ep/{ep_id}', headers=headers)
     html = etree.HTML(result.text.encode('utf-8'))
     formhash = html.xpath('//input[@name="formhash"]/@value')[0]
     lastview = html.xpath('//input[@name="lastview"]/@value')[0]
+    reply_text += '\n[i]# 此消息由 [url=https://github.com/Ukenn2112/BangumiTelegramBot]BangumiTelegramBot[/url] 发送 [i](bgm24)'
     FormData = {
         'content': reply_text,
         'related_photo': 0,
@@ -569,4 +570,4 @@ def post_eps_reply(tg_id, eps_id, reply_text):
     }
     data = parse.urlencode(FormData)
     headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
-    return requests.post(f'https://bgm.tv/subject/ep/{eps_id}/new_reply', headers=headers, data=data)
+    return requests.post(f'https://bgm.tv/subject/ep/{ep_id}/new_reply', headers=headers, data=data)

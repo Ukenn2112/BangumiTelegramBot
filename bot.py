@@ -20,7 +20,7 @@ from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
     subject_relations_page
 from plugins.inline import sender, public, mybgm
-from utils.api import run_continuously, redis_cli
+from utils.api import post_eps_reply, run_continuously, redis_cli, user_data_get
 
 logger = telebot.logger
 if 'LOG_LEVEL' in dir(config):
@@ -89,6 +89,30 @@ def send_subject_info(message):
     info.send(message, bot)
 
 
+# 章节评论 （试验功能）
+@bot.message_handler(commands=['reply'])
+def send_eps_reply(message):
+    tg_id = message.from_user.id
+    user_data = user_data_get(tg_id)
+    data = message.text.split(' ')
+    if user_data:
+        if len(data) > 2 and data[1].isdecimal():
+            try:
+                p = post_eps_reply(tg_id, data[1], data[2])
+                if p is not None:
+                    bot.send_message(message.chat.id, "发送评论成功",
+                                     reply_to_message_id=message.message_id)
+                else:
+                    bot.send_message(message.chat.id, "发送评论失败",
+                                     reply_to_message_id=message.message_id)
+            except:
+                bot.send_message(message.chat.id, "发送评论失败",
+                                 reply_to_message_id=message.message_id)
+        else:
+            bot.send_message(message.chat.id, "错误使用 `/reply eps_id test`", parse_mode='Markdown',
+                             reply_to_message_id=message.message_id)
+
+
 # 关闭对话
 @bot.message_handler(commands=['close'])
 def close_message(message):
@@ -125,7 +149,7 @@ def test_chosen(chosen_inline_result):
 
 # inline 方式私聊搜索或者在任何位置搜索前使用@ ./plugins/inline/sender
 @bot.inline_handler(lambda query: query.query and (
-        query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
+    query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
 def sender_query_text(inline_query):
     sender.query_sender_text(inline_query, bot)
 
@@ -162,6 +186,7 @@ def set_bot_command(bot_):
         telebot.types.BotCommand("week", "空格加数字查询每日放送"),
         telebot.types.BotCommand("search", "搜索条目"),
         telebot.types.BotCommand("close", "关闭此对话"),
+        telebot.types.BotCommand("reply", "发送章节评论 (试验功能)"),
     ]
     try:
         return bot_.set_my_commands(commands_list)
