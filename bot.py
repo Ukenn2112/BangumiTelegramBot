@@ -95,6 +95,8 @@ def send_reply(message):
     if message.chat.type == 'private':
         if message.reply_to_message is None:
             return
+        if message.reply_to_message.from_user.id == message.from_user.id:
+            return
         if message.reply_to_message.content_type == 'photo':
             return
         reply_message_data = message.reply_to_message.text.split('\n')
