@@ -90,27 +90,29 @@ def send_subject_info(message):
 
 
 # 章节评论 （试验功能）
-@bot.message_handler(commands=['reply'])
-def send_eps_reply(message):
-    tg_id = message.from_user.id
-    user_data = user_data_get(tg_id)
-    data = message.text.split(' ')
-    if user_data:
-        if len(data) > 2 and data[1].isdecimal():
-            try:
-                p = post_eps_reply(tg_id, data[1], data[2])
-                if p is not None:
-                    bot.send_message(message.chat.id, "发送评论成功",
-                                     reply_to_message_id=message.message_id)
-                else:
-                    bot.send_message(message.chat.id, "发送评论失败",
-                                     reply_to_message_id=message.message_id)
-            except:
-                bot.send_message(message.chat.id, "发送评论失败",
-                                 reply_to_message_id=message.message_id)
-        else:
-            bot.send_message(message.chat.id, "错误使用 `/reply eps_id test`", parse_mode='Markdown',
-                             reply_to_message_id=message.message_id)
+@bot.message_handler(func=lambda m: True)
+def echo_all(message):
+    if message.chat.type == 'private':
+        if message.reply_to_message is None:
+            return
+        if message.reply_to_message.content_type == 'photo':
+            return
+        reply_message_data = message.reply_to_message.text.split('\n')
+        if 'EP ID' in reply_message_data[2]:
+            ep_id = reply_message_data[2].replace('EP ID： ', '')
+            if ep_id.isdecimal():
+                try:
+                    p = post_eps_reply(message.from_user.id, ep_id, message.text)
+                    if p is not None:
+                        return bot.send_message(message.chat.id, "发送评论成功",
+                                                reply_to_message_id=message.message_id)
+                    else:
+                        return bot.send_message(message.chat.id, "发送评论失败",
+                                                reply_to_message_id=message.message_id)
+                except:
+                    return bot.send_message(message.chat.id, "发送评论失败",
+                                            reply_to_message_id=message.message_id)
+    return
 
 
 # 关闭对话
@@ -183,10 +185,9 @@ def set_bot_command(bot_):
         telebot.types.BotCommand("anime", "Bangumi用户在看动画"),
         telebot.types.BotCommand("game", "Bangumi用户在玩游戏"),
         telebot.types.BotCommand("real", "Bangumi用户在看剧集"),
-        telebot.types.BotCommand("week", "空格加数字查询每日放送"),
+        telebot.types.BotCommand("week", "每日放送"),
         telebot.types.BotCommand("search", "搜索条目"),
         telebot.types.BotCommand("close", "关闭此对话"),
-        telebot.types.BotCommand("reply", "发送章节评论 (试验功能)"),
     ]
     try:
         return bot_.set_my_commands(commands_list)

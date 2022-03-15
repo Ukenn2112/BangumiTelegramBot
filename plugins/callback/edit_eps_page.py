@@ -23,10 +23,11 @@ def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRe
         text += f"*➤ 首播日期：*`{episode_info['airdate']}`\n"
     if episode_info['desc']:
         text += f"*➤ 章节简介：*\n{episode_info['desc']}\n"
-    text += f"💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
+    text += f"\n💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
     markup = telebot.types.InlineKeyboardMarkup()
     request.possible_request['back'] = BackRequest(request.session)
     if request.session.bot_message.chat.type == 'private' and request.before_status is not None:
+        text += "\n*回复此消息即可对此章节进行评论 (灰度试验功能)*"
         button_list = []
         if request.before_status != 2:
             button_list.append(telebot.types.InlineKeyboardButton(text="看过", callback_data=f'{stack_uuid}|watched'))
