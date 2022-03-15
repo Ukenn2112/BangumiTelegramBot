@@ -91,7 +91,7 @@ def send_subject_info(message):
 
 # 章节评论 （试验功能）
 @bot.message_handler(func=lambda m: True)
-def echo_all(message):
+def send_reply(message):
     if message.chat.type == 'private':
         if message.reply_to_message is None:
             return
