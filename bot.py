@@ -100,11 +100,12 @@ def send_reply(message):
         if message.reply_to_message.content_type == 'photo':
             return
         reply_message_data = message.reply_to_message.text.split('\n')
-        if 'EP ID' in reply_message_data[2]:
+        if len(reply_message_data) > 1 and 'EP ID' in reply_message_data[2]:
             ep_id = reply_message_data[2].replace('EP ID： ', '')
             if ep_id.isdecimal():
                 try:
-                    p = post_eps_reply(message.from_user.id, ep_id, message.text)
+                    p = post_eps_reply(message.from_user.id,
+                                       ep_id, message.text)
                     if p is not None:
                         return bot.send_message(message.chat.id, "发送评论成功",
                                                 reply_to_message_id=message.message_id)
