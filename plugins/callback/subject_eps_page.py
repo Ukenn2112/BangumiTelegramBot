@@ -4,7 +4,7 @@ import telebot
 
 from model.page_model import SubjectEpsPageRequest, BackRequest, EditEpsPageRequest
 from utils.api import get_subject_episode, anime_img, get_subject_info, user_collection_get, get_user_progress
-from utils.converts import subject_type_to_emoji
+from utils.converts import subject_type_to_emoji, number_to_episode_type
 
 
 def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEpsPageRequest:
@@ -28,7 +28,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     button_list = []
     subject_info = request.subject_info
     text = f"*{subject_type_to_emoji(subject_info['type'])}" \
-           f"『 {subject_info['name_cn'] or subject_info['name']} 』章节列表:*\n\n"
+           f"『 {subject_info['name_cn'] or subject_info['name']} 』{number_to_episode_type(request.type_)}章节列表:*\n\n"
     for i in eps['data']:
         ep = str(i['ep'])
 

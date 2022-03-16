@@ -1,5 +1,7 @@
 """类型转换"""
-from typing import Literal
+from typing import Literal, List
+
+import telebot.types
 
 
 def subject_type_to_emoji(type_: Literal[1, 2, 3, 4, 6]) -> str:
@@ -167,6 +169,54 @@ def score_to_str(score: float) -> str:
     if score < 10.5:
         return "超神作"
     return "???"
+
+
+def convert_telegram_message_to_bbcode(text: str, entities: List[telebot.types.MessageEntity]) -> str:
+    if not entities:
+        return text
+    new_text = bytearray()
+    encode = text.encode('utf-16-le')
+    for i in range((len(encode) // 2) + 1):
+        for entity in entities[::-1]:
+            if i == entity.offset + entity.length:
+                if entity.type == 'bold':
+                    new_text += "[/b]".encode('utf-16-le')
+                elif entity.type == 'italic':
+                    new_text += "[/i]".encode('utf-16-le')
+                elif entity.type == 'underline':
+                    new_text += "[/u]".encode('utf-16-le')
+                elif entity.type == 'strikethrough':
+                    new_text += "[/s]".encode('utf-16-le')
+                elif entity.type == 'spoiler':
+                    new_text += "[/mask]".encode('utf-16-le')
+                elif entity.type == 'code':
+                    new_text += "[/code]".encode('utf-16-le')
+                elif entity.type == 'pre':
+                    new_text += "[/code]".encode('utf-16-le')
+                elif entity.type == 'text_link':
+                    new_text += "[/url]".encode('utf-16-le')
+        for entity in entities:
+            if i == entity.offset:
+                if entity.type == 'bold':
+                    new_text += "[b]".encode('utf-16-le')
+                elif entity.type == 'italic':
+                    new_text += "[i]".encode('utf-16-le')
+                elif entity.type == 'underline':
+                    new_text += "[u]".encode('utf-16-le')
+                elif entity.type == 'strikethrough':
+                    new_text += "[s]".encode('utf-16-le')
+                elif entity.type == 'spoiler':
+                    new_text += "[mask]".encode('utf-16-le')
+                elif entity.type == 'code':
+                    new_text += "[code]".encode('utf-16-le')
+                elif entity.type == 'pre':
+                    new_text += "[code]".encode('utf-16-le')
+                elif entity.type == 'text_link':
+                    new_text += "[url=".encode('utf-16-le') + entity.url.encode('utf-16-le') + "]".encode('utf-16-le')
+
+        if i < len(encode) / 2:
+            new_text += encode[i * 2:i * 2 + 2]
+    return new_text.decode('utf-16-le')
 
 
 def remove_duplicate_newlines(text: str) -> str:

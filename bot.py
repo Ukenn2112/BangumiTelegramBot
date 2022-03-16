@@ -20,7 +20,8 @@ from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
     subject_relations_page
 from plugins.inline import sender, public, mybgm
-from utils.api import post_eps_reply, run_continuously, redis_cli, user_data_get
+from utils.api import post_eps_reply, run_continuously, redis_cli
+from utils.converts import convert_telegram_message_to_bbcode
 
 logger = telebot.logger
 if 'LOG_LEVEL' in dir(config):
@@ -90,33 +91,31 @@ def send_subject_info(message):
 
 
 # 章节评论 （试验功能）
-@bot.message_handler(func=lambda m: True)
+@bot.message_handler()
 def send_reply(message):
-    if message.chat.type == 'private':
-        if message.reply_to_message is None:
-            return
-        if message.reply_to_message.from_user.id == message.from_user.id:
-            return
-        if message.reply_to_message.content_type == 'photo':
-            return
-        reply_message_data = message.reply_to_message.text.split('\n')
-        if len(reply_message_data) > 1 and 'EP ID' in reply_message_data[2]:
-            ep_id = reply_message_data[2].replace('EP ID： ', '')
-            if ep_id.isdecimal():
-                try:
-                    p = post_eps_reply(message.from_user.id,
-                                       ep_id, message.text)
-                    if p is not None:
-                        return bot.send_message(message.chat.id, "发送评论成功",
-                                                reply_to_message_id=message.message_id)
-                    else:
-                        return bot.send_message(message.chat.id, "发送评论失败",
-                                                reply_to_message_id=message.message_id)
-                except:
-                    return bot.send_message(message.chat.id, "发送评论失败",
-                                            reply_to_message_id=message.message_id)
-    return
+    if message.chat.type != 'private':
+        return
+    if message.reply_to_message is None:
+        return
+    if message.reply_to_message.from_user.username != config.BOT_USERNAME:
+        return
+    if message.reply_to_message.content_type != 'text':
+        return
+    reply_message_data = message.reply_to_message.text.split('\n')
+    if len(reply_message_data) > 1 and 'EP ID' in reply_message_data[2]:
+        ep_id = reply_message_data[2].replace('EP ID： ', '')
+        if ep_id.isdecimal():
+            try:
+                text = message.text
+                text = convert_telegram_message_to_bbcode(text, message.entities)
 
+                post_eps_reply(message.from_user.id, ep_id, text)
+            except:
+                bot.send_message(message.chat.id, "发送评论失败(这是灰度测试功能,还未正式上线哦",
+                                 reply_to_message_id=message.message_id)
+                raise
+            bot.send_message(message.chat.id, "发送评论成功",
+                             reply_to_message_id=message.message_id)
 
 # 关闭对话
 @bot.message_handler(commands=['close'])
@@ -154,7 +153,7 @@ def test_chosen(chosen_inline_result):
 
 # inline 方式私聊搜索或者在任何位置搜索前使用@ ./plugins/inline/sender
 @bot.inline_handler(lambda query: query.query and (
-    query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
+        query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
 def sender_query_text(inline_query):
     sender.query_sender_text(inline_query, bot)
 

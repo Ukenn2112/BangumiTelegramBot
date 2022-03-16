@@ -5,14 +5,14 @@ import logging
 import random
 import threading
 import time
-from urllib import parse
-from lxml import etree
 from threading import Thread
 from typing import Optional, Literal, List
+from urllib import parse
 
 import redis
 import requests
 import schedule
+from lxml import etree
 
 from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, REDIS_DATABASE
 
@@ -553,7 +553,7 @@ def post_eps_reply(tg_id, ep_id, reply_text):
     """章节评论"""
     cookie = user_data_get(tg_id).get('cookie')
     if cookie is None:
-        return None
+        raise RuntimeError("未添加Cookie")
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
                'Cookie': cookie}
     result = requests.get(f'https://bgm.tv/ep/{ep_id}', headers=headers)
