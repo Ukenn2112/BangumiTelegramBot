@@ -18,12 +18,12 @@ def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRe
         text += f"* / {episode_info['name']}*"
     text += f"\n\n*EP ID：* `{episode_id}`"
     if episode_info['duration']:
-        text += f"\n*➤ 时长：*`{episode_info['duration']}`\n"
+        text += f"\n*➤ 时长：*`{episode_info['duration']}`"
     if episode_info['airdate']:
-        text += f"*➤ 首播日期：*`{episode_info['airdate']}`\n"
+        text += f"\n*➤ 首播日期：*`{episode_info['airdate']}`"
     if episode_info['desc']:
-        text += f"*➤ 章节简介：*\n{episode_info['desc']}\n"
-    text += f"\n💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
+        text += f"\n*➤ 章节简介：*\n{episode_info['desc']}"
+    text += f"\n\n💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
     markup = telebot.types.InlineKeyboardMarkup()
     request.possible_request['back'] = BackRequest(request.session)
     if request.session.bot_message.chat.type == 'private' and request.before_status is not None:

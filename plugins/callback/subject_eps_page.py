@@ -69,6 +69,37 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
             request.possible_request['next'] = next_request
         else:
             button_list2.append(telebot.types.InlineKeyboardButton(text='这是末页', callback_data="None"))
+    if request.subject_info['type'] == 2:
+        button_list3 = []
+        if request.type_ != 0:
+            button_list3.append(
+                telebot.types.InlineKeyboardButton(text='本篇', callback_data=f"{stack_uuid}|eps"))
+            subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
+                                                             limit=12, type_=0)
+            subject_eps_page_request.user_collection = request.user_collection
+            request.possible_request['eps'] = subject_eps_page_request
+        if request.type_ != 1:
+            button_list3.append(
+                telebot.types.InlineKeyboardButton(text='SP', callback_data=f"{stack_uuid}|eps1"))
+            subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
+                                                             limit=12, type_=1)
+            subject_eps_page_request.user_collection = request.user_collection
+            request.possible_request['eps1'] = subject_eps_page_request
+        if request.type_ != 2:
+            button_list3.append(
+                telebot.types.InlineKeyboardButton(text='OP', callback_data=f"{stack_uuid}|eps2"))
+            subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
+                                                             limit=12, type_=2)
+            subject_eps_page_request.user_collection = request.user_collection
+            request.possible_request['eps2'] = subject_eps_page_request
+        if request.type_ != 3:
+            button_list3.append(
+                telebot.types.InlineKeyboardButton(text='ED', callback_data=f"{stack_uuid}|eps3"))
+            subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
+                                                             limit=12, type_=3)
+            subject_eps_page_request.user_collection = request.user_collection
+            request.possible_request['eps3'] = subject_eps_page_request
+        markup.add(*button_list3, row_width=3)
     markup.add(*button_list, row_width=6)
     markup.add(*button_list2)
     markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
