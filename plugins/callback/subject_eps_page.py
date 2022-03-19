@@ -2,7 +2,7 @@ import math
 
 import telebot
 
-from model.page_model import SubjectEpsPageRequest, BackRequest, EditEpsPageRequest
+from model.page_model import DoEditCollectionTypeRequest, SubjectEpsPageRequest, BackRequest, EditEpsPageRequest
 from utils.api import get_subject_episode, anime_img, get_subject_info, user_collection_get, get_user_progress
 from utils.converts import subject_type_to_emoji, number_to_episode_type
 
@@ -102,6 +102,9 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
         markup.add(*button_list3, row_width=3)
     markup.add(*button_list, row_width=6)
     markup.add(*button_list2)
+    if len(user_eps) == total and len(user_eps) != 0:
+        markup.add(telebot.types.InlineKeyboardButton(text='将此章节收藏改为看过？', callback_data=f"{stack_uuid}|collect"))
+        request.possible_request['collect'] = DoEditCollectionTypeRequest(request.session, request.subject_id, 'collect')
     markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
     request.possible_request['back'] = BackRequest(request.session, needs_refresh=True)
 
