@@ -90,6 +90,23 @@ def send_subject_info(message):
     info.send(message, bot)
 
 
+# 关闭对话
+@bot.message_handler(commands=['close'])
+def close_message(message):
+    if message.reply_to_message is None:
+        return bot.send_message(message.chat.id, "错误使用, 请回复需要关闭的对话", parse_mode='Markdown',
+                                reply_to_message_id=message.message_id)
+    else:
+        if bot.get_me().id == message.reply_to_message.from_user.id:
+            bot.delete_message(
+                message.chat.id, message_id=message.reply_to_message.message_id)
+            msg = bot.send_message(
+                message.chat.id, "已关闭该对话", parse_mode='Markdown', reply_to_message_id=message.message_id)
+            bot.delete_message(message.chat.id, message_id=message.message_id)
+            time.sleep(5)
+            return bot.delete_message(message.chat.id, message_id=msg.id)
+
+
 # 章节评论 （试验功能）
 @bot.message_handler()
 def send_reply(message):
@@ -116,22 +133,6 @@ def send_reply(message):
                 raise
             bot.send_message(message.chat.id, "发送评论成功",
                              reply_to_message_id=message.message_id)
-
-# 关闭对话
-@bot.message_handler(commands=['close'])
-def close_message(message):
-    if message.reply_to_message is None:
-        return bot.send_message(message.chat.id, "错误使用, 请回复需要关闭的对话", parse_mode='Markdown',
-                                reply_to_message_id=message.message_id)
-    else:
-        if bot.get_me().id == message.reply_to_message.from_user.id:
-            bot.delete_message(
-                message.chat.id, message_id=message.reply_to_message.message_id)
-            msg = bot.send_message(
-                message.chat.id, "已关闭该对话", parse_mode='Markdown', reply_to_message_id=message.message_id)
-            bot.delete_message(message.chat.id, message_id=message.message_id)
-            time.sleep(5)
-            return bot.delete_message(message.chat.id, message_id=msg.id)
 
 
 # 空按钮回调处理
