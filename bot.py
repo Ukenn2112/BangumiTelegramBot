@@ -1,6 +1,9 @@
 #!/usr/bin/python
 """
-https://bangumi.github.io/api/
+BangumiTelegramBot 在 Telegram 上简单操作 Bangumi
+
+https://github.com/Ukenn2112/BangumiTelegramBot
+
 """
 import logging
 import pickle
@@ -20,7 +23,7 @@ from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
     subject_relations_page
 from plugins.inline import sender, public, mybgm
-from utils.api import post_eps_reply, run_continuously, redis_cli
+from utils.api import create_sql, post_eps_reply, run_continuously, redis_cli
 from utils.converts import convert_telegram_message_to_bbcode
 
 logger = telebot.logger
@@ -336,6 +339,7 @@ def request_handler(session: RequestSession):
 
 # 开始启动
 if __name__ == '__main__':
+    create_sql()
     set_bot_command(bot)
     stop_run_continuously = run_continuously()
     bot.infinity_polling()

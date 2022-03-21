@@ -26,8 +26,6 @@
 
   根据文件内提示修改 `config.py` 配置文件
 
-- 修改文件后缀 `data_bgm.json.example` 为 `data_bgm.json`
-
 - 安装依赖 **注意：Python >= 3.8**
 
   ```
@@ -72,7 +70,7 @@ close - 关闭此对话
 ```txt
 BangumiTelegramBot   # 主目录
 │
-│  bgm_data.json     # Bangumi 用户密钥
+│  user_data.db      # Bangumi 用户密钥
 │  bot.py            # Bangumi Bot 模块
 │  config.py         # 配置文件
 │  oauth.py          # Bangumi Oauth 绑定验证模块

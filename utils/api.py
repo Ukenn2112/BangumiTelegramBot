@@ -1,8 +1,12 @@
-"""api 调用"""
+"""api 调用
+
+https://bangumi.github.io/api/"""
+
 import datetime
 import json
 import logging
 import random
+import sqlite3
 import threading
 import time
 from threading import Thread
@@ -21,43 +25,71 @@ from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, RED
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 
 
-def data_seek_get(test_id):
+def create_sql():
+    """创建数据库"""
+    sql = sqlite3.connect("user_data.db")
+    sql.execute("""create table if not exists
+        %s(
+        %s integer primary key autoincrement,
+        %s integer,
+        %s integer,
+        %s varchar(128),
+        %s varchar(128),
+        %s varchar(128),
+        %s varchar(128))"""
+                % ('user',
+                   'id',
+                   'tg_id',
+                   'bgm_id',
+                   'access_token',
+                   'refresh_token',
+                   'cookie',
+                   'expiry_time'
+                   ))
+    sql.close()
+
+
+def data_seek_get(tg_id):
     """ 判断是否绑定Bangumi """
-    with open('bgm_data.json') as f:  # 打开文件
-        data_seek = json.loads(f.read())  # 读取
-    data_li = [i['tg_user_id'] for i in data_seek]  # 写入列表
-    return int(test_id) in data_li  # 判断列表内是否有被验证的UID
+    sql = sqlite3.connect("user_data.db")
+    data = sql.execute(
+        f"select * from user where tg_id={tg_id}").fetchone()
+    sql.close()
+    if data is not None:
+        return True
+    else:
+        return False
 
 
 def user_data_get(tg_id):
     """ 返回用户数据,如果过期则更新 """
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    for i in data_seek:
-        if i.get('tg_user_id') == tg_id:
-            expiry_time = i.get('expiry_time')
-            now_time = datetime.datetime.now().strftime("%Y%m%d")
-            if now_time >= expiry_time:  # 判断密钥是否过期
-                return expiry_data_get(tg_id)
-            else:
-                return i.get('data')
+    sql = sqlite3.connect("user_data.db")
+    data = sql.execute(
+        f"select * from user where tg_id={tg_id}").fetchone()
+    sql.close()
+    if data is None:
+        return False
+    expiry_time = data[6]
+    now_time = datetime.datetime.now().strftime("%Y%m%d")
+    if now_time >= expiry_time:  # 判断密钥是否过期
+        return expiry_data_get(tg_id)
+    else:
+        return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4]}
 
 
 def nsfw_token():
     """ 返回可以查看NSFW内容的token"""
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-        return data_seek[0]['data']['access_token']
+    sql = sqlite3.connect("user_data.db")
+    data = sql.execute("select * from user").fetchone()
+    sql.close()
+    return data[3]
 
 
-def expiry_data_get(test_id):
+def expiry_data_get(tg_id):
     """更新过期用户数据"""
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    refresh_token = None
-    for i in data_seek:
-        if i.get('tg_user_id') == test_id:
-            refresh_token = i.get('data', {}).get('refresh_token')
+    sql = sqlite3.connect("user_data.db")
+    refresh_token = sql.execute(
+        f"select refresh_token from user where tg_id={tg_id}").fetchone()[0]
     callback_url = f'{WEBSITE_BASE}oauth_callback'
     resp = requests.post(
         'https://bgm.tv/oauth/access_token',
@@ -73,32 +105,26 @@ def expiry_data_get(test_id):
         }
     )
     access_token = json.loads(resp.text).get('access_token')  # 更新access_token
-    refresh_token = json.loads(resp.text).get(
-        'refresh_token')  # 更新refresh_token
+    refresh_token = json.loads(resp.text).get('refresh_token')  # 更新refresh_token
     expiry_time = (datetime.datetime.now() +
                    datetime.timedelta(days=7)).strftime("%Y%m%d")  # 更新过期时间
 
     # 替换数据
-    if access_token or refresh_token is not None:
-        with open("bgm_data.json", 'r+', encoding='utf-8') as f:
-            data = json.load(f)
-            for i in data:
-                if i['tg_user_id'] == test_id:
-                    i['data']['access_token'] = access_token
-                    i['data']['refresh_token'] = refresh_token
-                    i['expiry_time'] = expiry_time
-            f.seek(0)
-            json.dump(data, f, ensure_ascii=False, indent=4)
-            f.truncate()
+    sql.execute(
+        f"update user set access_token='{access_token}' where tg_id={tg_id}")
+    sql.commit()
+    sql.execute(
+        f"update user set refresh_token='{refresh_token}' where tg_id={tg_id}")
+    sql.commit()
+    sql.execute(
+        f"update user set expiry_time='{expiry_time}' where tg_id={tg_id}")
+    sql.commit()
 
     # 读取数据
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    user_data = None
-    for i in data_seek:
-        if i.get('tg_user_id') == test_id:
-            user_data = i.get('data', {})
-    return user_data
+    data = sql.execute(
+        f"select * from user where tg_id={tg_id}").fetchone()
+    sql.close()
+    return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4]}
 
 
 # 获取BGM用户信息 TODO 存入数据库
@@ -113,13 +139,13 @@ def bgmuser_data(test_id):
 @schedule.repeat(schedule.every().day)
 def check_expiry_user():
     """检查是否有过期用户"""
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    for i in data_seek:
-        expiry_time = i.get('expiry_time')
-        now_time = datetime.datetime.now().strftime("%Y%m%d")
-        if now_time >= expiry_time:  # 判断密钥是否过期
-            expiry_data_get(i.get('tg_user_id'))
+    sql = sqlite3.connect("user_data.db")
+    data = sql.execute("select tg_id, expiry_time from user")
+    now_time = datetime.datetime.now().strftime("%Y%m%d")
+    for i in data:
+        if now_time >= i[1]:  # 判断密钥是否过期
+            expiry_data_get(i[0])
+    sql.close()
 
 
 def run_continuously(interval=1):
