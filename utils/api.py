@@ -62,7 +62,7 @@ def user_data_get(tg_id):
     if now_time >= expiry_time:  # 判断密钥是否过期
         return expiry_data_get(tg_id)
     else:
-        return {"user_id": data[1], "access_token": data[2]}
+        return {"user_id": data[1], "access_token": data[2], "cookie": data[3]}
 
 
 def nsfw_token():
@@ -558,7 +558,8 @@ def post_eps_reply(tg_id, ep_id, reply_text):
         raise RuntimeError("未添加Cookie")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
-        'Cookie': cookie}
+        'Cookie': cookie
+    }
     result = requests.get(f'https://bgm.tv/ep/{ep_id}', headers=headers)
     html = etree.HTML(result.text.encode('utf-8'))
     formhash = html.xpath('//input[@name="formhash"]/@value')[0]
