@@ -1,91 +1,80 @@
 """inline 方式公共搜索"""
+from typing import List
+
 import telebot
+from telebot.types import InlineQueryResultArticle
 
 from config import BOT_USERNAME
-from plugins.info import gander_info_message
-from utils.api import anime_img, search_subject, get_subject_characters
+from plugins.callback.subject_page import gander_page_text
+from plugins.inline.sender import query_subject_characters, query_search_sender
+from utils.api import anime_img, search_subject, get_subject_info
 from utils.converts import subject_type_to_emoji, parse_markdown_v2, number_to_week
 
 
-def query_public_text(inline_query, bot):
-    message_data = inline_query.query.split(' ')
-    query_result_list = []
-    characters_list = []
-    if not inline_query.offset:
-        offset = 0
-        if message_data[0].isdecimal():
-            if len(message_data) != 2:
-                message = gander_info_message("", message_data[0])
-                img_url = anime_img(message_data[0])
-                subject_info = message['subject_info']
-                if subject_info:
-                    if not img_url:
-                        qr = telebot.types.InlineQueryResultArticle(
-                            id=message_data[0],
-                            title=subject_type_to_emoji(subject_info['type']) + (
-                                subject_info["name_cn"] if subject_info["name_cn"]
-                                else subject_info["name"]),
-                            input_message_content=telebot.types.InputTextMessageContent(
-                                message['text'],
-                                parse_mode="markdown",
-                                disable_web_page_preview=True
-                            ),
-                            description=subject_info["name"] if subject_info["name_cn"] else None,
-                            thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
-                            reply_markup=telebot.types.InlineKeyboardMarkup().add(
-                                telebot.types.InlineKeyboardButton(text='去管理',
-                                                                   url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
-                        )
-                    else:
-                        qr = telebot.types.InlineQueryResultPhoto(
-                            id=message_data[0],
-                            photo_url=img_url,
-                            title=subject_type_to_emoji(subject_info['type']) + (
-                                subject_info["name_cn"] if subject_info["name_cn"]
-                                else subject_info["name"]),
-                            caption=message['text'],
-                            parse_mode="markdown",
-                            description=subject_info["name"] if subject_info["name_cn"] else None,
-                            thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
-                            reply_markup=telebot.types.InlineKeyboardMarkup().add(
-                                telebot.types.InlineKeyboardButton(text='去管理',
-                                                                   url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
-                        )
-                    query_result_list.append(qr)
-            else:
-                subject_characters = get_subject_characters(message_data[0])
-                if '角色' == message_data[1]:
-                    characters_list = subject_characters
-                else:
-                    for _character in subject_characters:
-                        if message_data[1] in _character['relation']:
-                            characters_list.append(_character)
-                for character in characters_list:
-                    text = f"*{character['name']}*"
-                    description = character['relation']
-                    if len(character['actors']) != 0:
-                        description += f" | CV: {[cv['name'] for cv in character['actors']][0]}"
-                    else:
-                        pass
-                    text += f"\n{description}\n" \
-                            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}&rhash=48797fd986e111)" \
-                            f"\n📖 [详情](https://bgm.tv/character/{character['id']})"
-                    qr = telebot.types.InlineQueryResultArticle(
-                        id=character['id'],
-                        title=character['name'],
-                        description=description,
-                        input_message_content=telebot.types.InputTextMessageContent(
-                            text,
-                            parse_mode="markdown",
-                            disable_web_page_preview=False
-                        ),
-                        thumb_url=character['images']['grid'] if character['images'] else None
-                    )
-                    query_result_list.append(qr)
+def query_subject_info(inline_query, bot):
+    subject_id = inline_query.query.split(" ")[1]
+    subject_info = get_subject_info(subject_id)
+    text = gander_page_text(subject_id, subject_info=subject_info)
+    img_url = anime_img(subject_id)
+    if subject_info:
+        if not img_url:
+            qr = telebot.types.InlineQueryResultArticle(
+                id=f"S:{subject_id}",
+                title=subject_type_to_emoji(subject_info['type']) + (
+                    subject_info["name_cn"] if subject_info["name_cn"]
+                    else subject_info["name"]),
+                input_message_content=telebot.types.InputTextMessageContent(
+                    text,
+                    parse_mode="markdown",
+                    disable_web_page_preview=True
+                ),
+                description=subject_info["name"] if subject_info["name_cn"] else None,
+                thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
+                reply_markup=telebot.types.InlineKeyboardMarkup().add(
+                    telebot.types.InlineKeyboardButton(text='去管理',
+                                                       url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
+            )
+        else:
+            qr = telebot.types.InlineQueryResultPhoto(
+                id=f"S:{subject_id}",
+                photo_url=img_url,
+                title=subject_type_to_emoji(subject_info['type']) + (
+                    subject_info["name_cn"] if subject_info["name_cn"]
+                    else subject_info["name"]),
+                caption=text,
+                parse_mode="markdown",
+                description=subject_info["name"] if subject_info["name_cn"] else None,
+                thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
+                reply_markup=telebot.types.InlineKeyboardMarkup().add(
+                    telebot.types.InlineKeyboardButton(text='去管理',
+                                                       url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
+            )
+        bot.answer_inline_query(inline_query.id, [qr],
+                                switch_pm_text=subject_info['name_cn'] or subject_info['name'],
+                                switch_pm_parameter=f"{subject_info['id']}", cache_time=0)
+
+
+def query_search(inline_query, bot):
+    offset = int(inline_query.offset or 0)
+    query_result_list: List[InlineQueryResultArticle] = []
+    if inline_query.query.startswith("📚"):
+        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=1)
+        pm_text = "书籍搜索模式,请直接输入关键词"
+    elif inline_query.query.startswith("🌸"):
+        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=2)
+        pm_text = "动画搜索模式,请直接输入关键词"
+    elif inline_query.query.startswith("🎵"):
+        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=3)
+        pm_text = "音乐搜索模式,请直接输入关键词"
+    elif inline_query.query.startswith("🎮"):
+        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=4)
+        pm_text = "游戏搜索模式,请直接输入关键词"
+    elif inline_query.query.startswith("📺"):
+        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=6)
+        pm_text = "剧集搜索模式,请直接输入关键词"
     else:
-        offset = int(inline_query.offset)
-    subject_list = search_subject(
-        message_data[0], response_group="large", start=offset)
+        subject_list = search_subject(inline_query.query, response_group="large", start=offset)
+        pm_text = "条目搜索"
     if 'list' in subject_list and subject_list["list"] is not None:
         for subject in subject_list["list"]:
             emoji = subject_type_to_emoji(subject["type"])
@@ -117,27 +106,11 @@ def query_public_text(inline_query, bot):
             text += f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)" \
                     f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
                     f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
-            # if 'collection' in subject and subject['collection']:
-            #     text += f"➤ BGM 统计:\n"
-            #     if 'wish' in subject['collection']:
-            #         text += f"想:{subject['collection']['wish']} "
-            #     if 'collect' in subject['collection']:
-            #         text += f"完:{subject['collection']['collect']} "
-            #     if 'doing' in subject['collection']:
-            #         text += f"在:{subject['collection']['doing']} "
-            #     if 'on_hold' in subject['collection']:
-            #         text += f"搁:{subject['collection']['on_hold']} "
-            #     if 'dropped' in subject['collection']:
-            #         text += f"抛:{subject['collection']['dropped']} "
-            #   text += "\n"
-            # if subject['summary']:
-            #     text += f"||_{utils.parse_markdown_v2(subject['summary'])}_||\n"
-            button_list = []
-            button_list.append(telebot.types.InlineKeyboardButton(
-                text="展示详情", switch_inline_query_current_chat=subject['id']))
-            if subject["type"] == 2 or subject["type"] == 6:  # 当类型为anime或real时
+            button_list = [telebot.types.InlineKeyboardButton(
+                text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}")]
+            if subject["type"] != 3:  # 当类型为anime或real时
                 button_list.append(telebot.types.InlineKeyboardButton(
-                    text="角色", switch_inline_query_current_chat=f"{subject['id']} 角色"))
+                    text="角色", switch_inline_query_current_chat=f"'sc ' {subject['id']}"))
             button_list.append(telebot.types.InlineKeyboardButton(
                 text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"))
             qr = telebot.types.InlineQueryResultArticle(
@@ -154,9 +127,24 @@ def query_public_text(inline_query, bot):
                 reply_markup=telebot.types.InlineKeyboardMarkup().add(*button_list)
             )
             query_result_list.append(qr)
-    if len(characters_list) != 0:
-        pm_text = f"共 {len(characters_list)} 个结果，可替换输入 主角，配角 对搜索结果分类"
-    else:
         pm_text = f"共 {subject_list['results']} 个结果"
     bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
-                            switch_pm_text=pm_text, switch_pm_parameter="help")
+                            switch_pm_text=pm_text, switch_pm_parameter="help", cache_time=0)
+
+
+def query_public_text(inline_query, bot):
+    query: str = inline_query.query
+    query_param = inline_query.query.split(' ')
+    if query.startswith("sc ") and query_param[1].isdecimal():
+        # subject_characters 条目角色
+        query_subject_characters(inline_query, bot)
+    elif query.startswith("S ") and query_param[1].isdecimal():
+        # subject_info 条目
+        query_subject_info(inline_query, bot)
+    elif query.startswith("@"):
+        # @ 搜索
+        inline_query.query = inline_query.query[1:]
+        query_search_sender(inline_query, bot)
+    else:
+        # search_subject 普通搜索
+        query_search(inline_query, bot)

@@ -1,17 +1,8 @@
-from collections import defaultdict
-
 import telebot
 
 from model.page_model import BackRequest, SubjectRelationsPageRequest, SubjectRequest
 from utils.api import get_subject_info, get_subject_relations
-from utils.converts import subject_type_to_emoji
-
-
-def full_group_by(items, key=lambda x: x):
-    d = defaultdict(list)
-    for item in items:
-        d[key(item)].append(item)
-    return d.items()
+from utils.converts import subject_type_to_emoji, full_group_by
 
 
 def generate_page(request: SubjectRelationsPageRequest) -> SubjectRelationsPageRequest:

@@ -156,16 +156,13 @@ def test_chosen(chosen_inline_result):
 
 
 # inline 方式私聊搜索或者在任何位置搜索前使用@ ./plugins/inline/sender
-@bot.inline_handler(lambda query: query.query and (
-        query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
+@bot.inline_handler(lambda query: query.query and query.chat_type == 'sender' and not query.query.startswith('mybgm'))
 def sender_query_text(inline_query):
     sender.query_sender_text(inline_query, bot)
 
 
 # inline 方式公共搜索 ./plugins/inline/public
-@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not str.startswith(query.query,
-                                                                                                     '@') and not str.startswith(
-    query.query, 'mybgm'))
+@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not query.query.startswith('mybgm'))
 def public_query_text(inline_query):
     public.query_public_text(inline_query, bot)
 
