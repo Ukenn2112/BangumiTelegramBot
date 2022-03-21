@@ -23,73 +23,59 @@ from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, RED
 # FIXME 似乎不应该在这里创建对象
 
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
+sql_con = sqlite3.connect("bot.db", check_same_thread=False)
 
 
 def create_sql():
     """创建数据库"""
-    sql = sqlite3.connect("user_data.db")
-    sql.execute("""create table if not exists
-        %s(
-        %s integer primary key autoincrement,
-        %s integer,
-        %s integer,
-        %s varchar(128),
-        %s varchar(128),
-        %s varchar(128),
-        %s varchar(128))"""
-                % ('user',
-                   'id',
-                   'tg_id',
-                   'bgm_id',
-                   'access_token',
-                   'refresh_token',
-                   'cookie',
-                   'expiry_time'
-                   ))
-    sql.close()
+
+    sql_con.execute(f"""create table if not exists
+        user(
+        id integer primary key AUTOINCREMENT,
+        tg_id integer,
+        bgm_id integer,
+        access_token varchar(128),
+        refresh_token varchar(128),
+        cookie varchar(128),
+        expiry_time timestamp,
+        create_time timestamp,
+        update_time timestamp)
+        """)
+
+    sql_con.execute(f"""create unique index if not exists tg_id_index on user (tg_id)""")
 
 
 def data_seek_get(tg_id):
     """ 判断是否绑定Bangumi """
-    sql = sqlite3.connect("user_data.db")
-    data = sql.execute(
-        f"select * from user where tg_id={tg_id}").fetchone()
-    sql.close()
-    if data is not None:
-        return True
-    else:
-        return False
+    data = sql_con.execute(f"select tg_id from user where tg_id=?", (tg_id,)).fetchone()
+    return bool(data)
 
 
 def user_data_get(tg_id):
     """ 返回用户数据,如果过期则更新 """
-    sql = sqlite3.connect("user_data.db")
-    data = sql.execute(
-        f"select * from user where tg_id={tg_id}").fetchone()
-    sql.close()
+    data = sql_con.execute(
+        f"select tg_id,bgm_id,access_token,cookie,expiry_time from user where tg_id=?", (tg_id,)).fetchone()
     if data is None:
         return False
-    expiry_time = data[6]
-    now_time = datetime.datetime.now().strftime("%Y%m%d")
+    expiry_time = data[4]
+    now_time = datetime.datetime.now().timestamp() // 1000
     if now_time >= expiry_time:  # 判断密钥是否过期
         return expiry_data_get(tg_id)
     else:
-        return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4]}
+        return {"user_id": data[1], "access_token": data[2]}
 
 
 def nsfw_token():
     """ 返回可以查看NSFW内容的token"""
-    sql = sqlite3.connect("user_data.db")
-    data = sql.execute("select * from user").fetchone()
-    sql.close()
-    return data[3]
+    data = sql_con.execute("select access_token from user limit 1").fetchone()
+    return data[0]
 
 
 def expiry_data_get(tg_id):
     """更新过期用户数据"""
-    sql = sqlite3.connect("user_data.db")
-    refresh_token = sql.execute(
-        f"select refresh_token from user where tg_id={tg_id}").fetchone()[0]
+    cur = sql_con.cursor()
+    refresh_token = cur.execute(
+        f"select refresh_token from user where tg_id=?", (tg_id,)).fetchone()[0]
     callback_url = f'{WEBSITE_BASE}oauth_callback'
     resp = requests.post(
         'https://bgm.tv/oauth/access_token',
@@ -107,24 +93,17 @@ def expiry_data_get(tg_id):
     access_token = json.loads(resp.text).get('access_token')  # 更新access_token
     refresh_token = json.loads(resp.text).get('refresh_token')  # 更新refresh_token
     expiry_time = (datetime.datetime.now() +
-                   datetime.timedelta(days=7)).strftime("%Y%m%d")  # 更新过期时间
+                   datetime.timedelta(days=7)).timestamp() // 1000  # 更新过期时间
 
     # 替换数据
-    sql.execute(
-        f"update user set access_token='{access_token}' where tg_id={tg_id}")
-    sql.commit()
-    sql.execute(
-        f"update user set refresh_token='{refresh_token}' where tg_id={tg_id}")
-    sql.commit()
-    sql.execute(
-        f"update user set expiry_time='{expiry_time}' where tg_id={tg_id}")
-    sql.commit()
+    cur.execute(
+        f"update user set access_token=?,refresh_token=?,expiry_time=?,update_time=? where tg_id=?",
+        (access_token, refresh_token, expiry_time, datetime.datetime.now().timestamp() // 1000, tg_id,))
+    sql_con.commit()
 
     # 读取数据
-    data = sql.execute(
-        f"select * from user where tg_id={tg_id}").fetchone()
-    sql.close()
-    return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4]}
+    data = sql_con.execute(f"select bgm_id,access_token from user where tg_id=?", (tg_id,)).fetchone()
+    return {"user_id": data[0], "access_token": data[1]}
 
 
 # 获取BGM用户信息 TODO 存入数据库
@@ -136,16 +115,13 @@ def bgmuser_data(test_id):
     return user_data
 
 
-@schedule.repeat(schedule.every().day)
+@schedule.repeat(schedule.every().day.at("03:00"))
 def check_expiry_user():
     """检查是否有过期用户"""
-    sql = sqlite3.connect("user_data.db")
-    data = sql.execute("select tg_id, expiry_time from user")
-    now_time = datetime.datetime.now().strftime("%Y%m%d")
+    data = sql_con.execute("select tg_id, expiry_time from user where ? > expiry_time",
+                           (datetime.datetime.now().timestamp() // 1000,)).fetchall()
     for i in data:
-        if now_time >= i[1]:  # 判断密钥是否过期
-            expiry_data_get(i[0])
-    sql.close()
+        expiry_data_get(i[0])
 
 
 def run_continuously(interval=1):
@@ -580,8 +556,9 @@ def post_eps_reply(tg_id, ep_id, reply_text):
     cookie = user_data_get(tg_id).get('cookie')
     if cookie is None:
         raise RuntimeError("未添加Cookie")
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
-               'Cookie': cookie}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
+        'Cookie': cookie}
     result = requests.get(f'https://bgm.tv/ep/{ep_id}', headers=headers)
     html = etree.HTML(result.text.encode('utf-8'))
     formhash = html.xpath('//input[@name="formhash"]/@value')[0]

@@ -6,8 +6,8 @@ Bangumi OAuth 用户授权机制文档 https://github.com/bangumi/api/blob/maste
 import datetime
 import json.decoder
 import pathlib
-from os import path
 import sqlite3
+from os import path
 from urllib import parse as url_parse
 
 import redis
@@ -24,7 +24,8 @@ base_dir = pathlib.Path(path.dirname(__file__))
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
-
+sql_con = sqlite3.connect("bot.db", check_same_thread=False,
+                          detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
 
 # 错误访问
 @app.route('/')
@@ -44,10 +45,9 @@ def oauth_index():
         if 'tg_id' not in params or not params['tg_id']:
             return render_template('error.html')  # 发生错误
         tg_id = params['tg_id']
-        sql = sqlite3.connect("user_data.db")
-        data = sql.execute(
+
+        data = sql_con.execute(
             f"select * from user where tg_id={tg_id}").fetchone()
-        sql.close()
         if data is not None:
             return render_template('verified.html')  # 发生错误
 
@@ -57,7 +57,7 @@ def oauth_index():
             'redirect_uri': CALLBACK_URL,
             'state': state,
         })
-    except:
+    except Exception as e:
         return render_template('error.html')
     return redirect(USER_AUTH_URL)
 
@@ -101,12 +101,12 @@ def oauth_callback():
     refresh_token = r['refresh_token']
     cookie = None
     expiry_time = (datetime.datetime.now() +
-                   datetime.timedelta(days=7)).strftime("%Y%m%d")
-    sql = sqlite3.connect("user_data.db")
-    sql.execute("insert into user(tg_id,bgm_id,access_token,refresh_token,cookie,expiry_time) values(?,?,?,?,?,?)",
-                (tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time))
-    sql.commit()
-    sql.close()
+                   datetime.timedelta(days=7)).timestamp() // 1000
+    sql_con.execute(
+        "insert into user(tg_id,bgm_id,access_token,refresh_token,cookie,expiry_time,create_time) "
+        "values(?,?,?,?,?,?,?)",
+        (tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time, datetime.datetime.now().timestamp() // 1000,))
+    sql_con.commit()
     param = "None"
     if 'param' in params:
         param = params['param']
