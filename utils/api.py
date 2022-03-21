@@ -102,8 +102,8 @@ def expiry_data_get(tg_id):
     sql_con.commit()
 
     # 读取数据
-    data = sql_con.execute(f"select bgm_id,access_token from user where tg_id=?", (tg_id,)).fetchone()
-    return {"user_id": data[0], "access_token": data[1]}
+    data = sql_con.execute(f"select bgm_id,access_token,cookie from user where tg_id=?", (tg_id,)).fetchone()
+    return {"user_id": data[0], "access_token": data[1], 'cookie': data[2]}
 
 
 # 获取BGM用户信息 TODO 存入数据库
