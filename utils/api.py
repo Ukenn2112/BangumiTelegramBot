@@ -49,18 +49,6 @@ def create_sql():
     sql.close()
 
 
-def data_seek_get(tg_id):
-    """ 判断是否绑定Bangumi """
-    sql = sqlite3.connect("user_data.db")
-    data = sql.execute(
-        f"select * from user where tg_id={tg_id}").fetchone()
-    sql.close()
-    if data is not None:
-        return True
-    else:
-        return False
-
-
 def user_data_get(tg_id):
     """ 返回用户数据,如果过期则更新 """
     sql = sqlite3.connect("user_data.db")
@@ -74,7 +62,7 @@ def user_data_get(tg_id):
     if now_time >= expiry_time:  # 判断密钥是否过期
         return expiry_data_get(tg_id)
     else:
-        return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4]}
+        return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4], "cookie": data[5]}
 
 
 def nsfw_token():
@@ -111,20 +99,14 @@ def expiry_data_get(tg_id):
 
     # 替换数据
     sql.execute(
-        f"update user set access_token='{access_token}' where tg_id={tg_id}")
-    sql.commit()
-    sql.execute(
-        f"update user set refresh_token='{refresh_token}' where tg_id={tg_id}")
-    sql.commit()
-    sql.execute(
-        f"update user set expiry_time='{expiry_time}' where tg_id={tg_id}")
+        f"update user set access_token='{access_token}', refresh_token='{refresh_token}', expiry_time='{expiry_time}' where tg_id={tg_id}")
     sql.commit()
 
     # 读取数据
     data = sql.execute(
         f"select * from user where tg_id={tg_id}").fetchone()
     sql.close()
-    return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4]}
+    return {"user_id": data[2], "access_token": data[3], "refresh_token": data[4], "cookie": data[5]}
 
 
 # 获取BGM用户信息 TODO 存入数据库
