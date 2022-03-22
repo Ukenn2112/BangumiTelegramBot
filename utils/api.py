@@ -509,14 +509,23 @@ def search_subject(keywords: str,
     :param start: 开始条数
     :param max_results: 每页条数 最多 25
     """
+    keywords = keywords.strip()
+    data = redis_cli.get(f"subject_search:{keywords}:{type_}:{response_group}:{max_results}:{start}")
+    if data:
+        if data == b"None__":
+            raise FileNotFoundError
+        else:
+            return json.loads(data)
     params = {"type": type_, "responseGroup": response_group,
               "start": start, "max_results": max_results}
     url = f'https://api.bgm.tv/search/subject/{keywords}'
     try:
-        j = requests_get(url=url, params=params, access_token=nsfw_token())
+        data = requests_get(url=url, params=params, access_token=nsfw_token())
     except:
-        return {"results": 0, 'list': []}
-    return j
+        data = {"results": 0, 'list': []}
+    redis_cli.set(f"subject_search:{keywords}:{type_}:{response_group}:{max_results}:{start}", json.dumps(data),
+                  ex=3600 * 24)
+    return data
 
 
 def get_collection(subject_id: str, token: str = "", tg_id=""):
@@ -588,6 +597,7 @@ session = requests.session()
 
 def get_mono_search(keywords: str, page: int = 1, cat: Literal['all', 'crt', 'prsn'] = 'all'):
     """搜索人物"""
+    keywords = keywords.strip()
     data = redis_cli.get(f"mono_search:{keywords}:{cat}:{page}")
     if data:
         if data == b"None__":
