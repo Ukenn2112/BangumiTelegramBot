@@ -57,23 +57,24 @@ def query_subject_info(inline_query, bot):
 def query_search(inline_query, bot):
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
-    if inline_query.query.startswith("📚") or inline_query.query.startswith("B "):
-        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=1)
+    query = inline_query.query
+    if query.startswith("📚") or query.startswith("B ") or query.startswith("b "):
+        subject_list = search_subject(query[1:], response_group="large", start=offset, type_=1)
         pm_text = "书籍搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🌸") or inline_query.query.startswith("A "):
-        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=2)
+    elif query.startswith("🌸") or query.startswith("A ") or query.startswith("a "):
+        subject_list = search_subject(query[1:], response_group="large", start=offset, type_=2)
         pm_text = "动画搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🎵") or inline_query.query.startswith("M "):
-        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=3)
+    elif query.startswith("🎵") or query.startswith("M ") or query.startswith("m "):
+        subject_list = search_subject(query[1:], response_group="large", start=offset, type_=3)
         pm_text = "音乐搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🎮") or inline_query.query.startswith("G "):
-        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=4)
+    elif query.startswith("🎮") or query.startswith("G ") or query.startswith("g "):
+        subject_list = search_subject(query[1:], response_group="large", start=offset, type_=4)
         pm_text = "游戏搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("📺") or inline_query.query.startswith("R "):
-        subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=6)
+    elif query.startswith("📺") or query.startswith("R ") or query.startswith("r "):
+        subject_list = search_subject(query[1:], response_group="large", start=offset, type_=6)
         pm_text = "剧集搜索模式,请直接输入关键词"
     else:
-        subject_list = search_subject(inline_query.query, response_group="large", start=offset)
+        subject_list = search_subject(query, response_group="large", start=offset)
         pm_text = "条目搜索"
     if 'list' in subject_list and subject_list["list"] is not None:
         for subject in subject_list["list"]:
