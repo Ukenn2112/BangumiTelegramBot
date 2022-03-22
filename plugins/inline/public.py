@@ -6,7 +6,7 @@ from telebot.types import InlineQueryResultArticle
 
 from config import BOT_USERNAME
 from plugins.callback.subject_page import gander_page_text
-from plugins.inline.sender import query_subject_characters, query_search_sender
+from plugins.inline.sender import query_subject_characters, query_search_sender, query_mono
 from utils.api import anime_img, search_subject, get_subject_info
 from utils.converts import subject_type_to_emoji, parse_markdown_v2, number_to_week
 
@@ -57,19 +57,19 @@ def query_subject_info(inline_query, bot):
 def query_search(inline_query, bot):
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
-    if inline_query.query.startswith("📚"):
+    if inline_query.query.startswith("📚") or inline_query.query.startswith("B "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=1)
         pm_text = "书籍搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🌸"):
+    elif inline_query.query.startswith("🌸") or inline_query.query.startswith("A "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=2)
         pm_text = "动画搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🎵"):
+    elif inline_query.query.startswith("🎵") or inline_query.query.startswith("M "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=3)
         pm_text = "音乐搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🎮"):
+    elif inline_query.query.startswith("🎮") or inline_query.query.startswith("G "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=4)
         pm_text = "游戏搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("📺"):
+    elif inline_query.query.startswith("📺") or inline_query.query.startswith("R "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=6)
         pm_text = "剧集搜索模式,请直接输入关键词"
     else:
@@ -138,6 +138,10 @@ def query_public_text(inline_query, bot):
     if query.startswith("sc ") and query_param[1].isdecimal():
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
+    elif query.startswith("P "):
+        query_mono(inline_query, bot, 'prsn')
+    elif query.startswith("C "):
+        query_mono(inline_query, bot, 'crt')
     elif query.startswith("S ") and query_param[1].isdecimal():
         # subject_info 条目
         query_subject_info(inline_query, bot)

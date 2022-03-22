@@ -5,7 +5,7 @@ import telebot
 from telebot.types import InlineQueryResultArticle
 
 from config import BOT_USERNAME
-from utils.api import search_subject, get_subject_characters, get_subject_info
+from utils.api import search_subject, get_subject_characters, get_subject_info, get_mono_search
 from utils.converts import subject_type_to_emoji, full_group_by
 
 
@@ -78,19 +78,19 @@ def query_subject_info(inline_query, bot):
 def query_search_sender(inline_query, bot):
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
-    if inline_query.query.startswith("📚"):
+    if inline_query.query.startswith("📚") or inline_query.query.startswith("B "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=1)
         pm_text = "书籍搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🌸"):
+    elif inline_query.query.startswith("🌸") or inline_query.query.startswith("A "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=2)
         pm_text = "动画搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🎵"):
+    elif inline_query.query.startswith("🎵") or inline_query.query.startswith("M "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=3)
         pm_text = "音乐搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("🎮"):
+    elif inline_query.query.startswith("🎮") or inline_query.query.startswith("G "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=4)
         pm_text = "游戏搜索模式,请直接输入关键词"
-    elif inline_query.query.startswith("📺"):
+    elif inline_query.query.startswith("📺") or inline_query.query.startswith("R "):
         subject_list = search_subject(inline_query.query[1:], response_group="large", start=offset, type_=6)
         pm_text = "剧集搜索模式,请直接输入关键词"
     else:
@@ -114,12 +114,58 @@ def query_search_sender(inline_query, bot):
                             switch_pm_text=pm_text, switch_pm_parameter="help", cache_time=0)
 
 
+def query_mono(inline_query, bot, cat):
+    offset = int(inline_query.offset or 1)
+    query_result_list: List[InlineQueryResultArticle] = []
+    query_param = inline_query.query.split(' ')
+    keywords = inline_query.query[len(query_param[0]) + 1:]
+
+    data = get_mono_search(keywords, page=offset, cat=cat)
+    if data['error']:
+        switch_pm_text = data['error']
+    else:
+        if cat == 'person':
+            switch_pm_text = f"现实人物[{keywords}]的搜索结果"
+        elif cat == 'character':
+            switch_pm_text = f"虚拟人物[{keywords}]的搜索结果"
+        else:
+            switch_pm_text = f"人物[{keywords}]的搜索结果"
+    next_offset = str(offset + 1) if len(data['list']) >= 9 else None
+
+    for cop in data['list']:
+        text = f"*{cop['name_cn'] or cop['name']}*\n"
+        text += f"{cop['name']}\n" if cop['name_cn'] else ''
+        description = cop['info']
+        text += (f"\n{description}\n"
+                 f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop['type']}/{cop['id']}"
+                 f"&rhash=48797fd986e111)"
+                 f"\n📖 [详情](https://bgm.tv/{cop['type']}/{cop['id']})")
+        qr = telebot.types.InlineQueryResultArticle(
+            id=f"sc:{cop['id']}",
+            title=cop['name_cn'] or cop['name'],
+            description=description,
+            input_message_content=telebot.types.InputTextMessageContent(
+                text,
+                parse_mode="markdown",
+                disable_web_page_preview=False
+            ),
+            thumb_url=cop['img_url']
+        )
+        query_result_list.append(qr)
+    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=next_offset,
+                            switch_pm_text=switch_pm_text, switch_pm_parameter="search", cache_time=3600)
+
+
 def query_sender_text(inline_query, bot):
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')
     if query.startswith("sc ") and query_param[1].isdecimal():
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
+    elif query.startswith("P "):
+        query_mono(inline_query, bot, 'prsn')
+    elif query.startswith("C "):
+        query_mono(inline_query, bot, 'crt')
     elif query.startswith("S ") and query_param[1].isdecimal():
         # subject_info 条目
         query_subject_info(inline_query, bot)

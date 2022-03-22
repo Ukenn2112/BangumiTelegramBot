@@ -104,7 +104,6 @@ def expiry_data_get(tg_id):
     sql_con.commit()
 
 
-
 # 获取BGM用户信息 TODO 存入数据库
 def bgmuser_data(test_id):
     user = user_data_get(test_id)
@@ -574,3 +573,66 @@ def post_eps_reply(tg_id, ep_id, reply_text):
     data = parse.urlencode(FormData)
     headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
     return requests.post(f'https://bgm.tv/subject/ep/{ep_id}/new_reply', headers=headers, data=data)
+
+
+def removesuffix(self: str, suffix: str, /) -> str:
+    """ This method does the same as Python3.9:func:`builtins.str.removesuffix`"""
+    if self.endswith(suffix):
+        return self[:-len(suffix)]
+    else:
+        return self[:]
+
+
+session = requests.session()
+
+
+def get_mono_search(keywords: str, page: int = 1, cat: Literal['all', 'crt', 'prsn'] = 'all'):
+    """搜索人物"""
+    data = redis_cli.get(f"mono_search:{keywords}:{cat}:{page}")
+    if data:
+        if data == b"None__":
+            raise FileNotFoundError
+        else:
+            return json.loads(data)
+
+    headers = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36 Edg/99.0.1150.46",
+    }
+    cookies = {"chii_searchDateLine": "0"}
+    params = {'cat': cat}
+    if page is not None:
+        params['page'] = page
+    r = session.get(f"http://bgm.tv/mono_search/{keywords}", headers=headers, cookies=cookies, params=params)
+    html = etree.HTML(r.content)
+    error = html.xpath('//*[@id="colunmNotice"]/div/p[1]')
+    if error:
+        data = {'error': error[0].text, 'list': []}
+    else:
+        rows = html.xpath('//*[@id="columnSearchB"]/div[@class="light_odd clearit"]')
+        list = []
+
+        for row in rows:
+            a = row.xpath('div/h2/a')
+            name = removesuffix(a[0].text, ' / ') if a else None
+            b = row.xpath('div/h2/a/span')
+            name_cn = b[0].text if b else None
+            c = row.xpath('a/img')
+            img_url = "https:" + c[0].get('src') if c else None
+            d = row.xpath('div[2]/div/span')
+            info = d[0].text.strip() if d else None
+            e = row.xpath('a')
+            id_ = None
+            type_ = None
+            if e:
+                e = e[0].get('href')
+                if e.startswith('/character/'):
+                    type_ = "character"
+                    id_ = int(e[11:])
+                elif e.startswith('/person/'):
+                    type_ = "person"
+                    id_ = int(e[8:])
+            list.append({'id': id_, 'type': type_, 'name': name, 'name_cn': name_cn, 'img_url': img_url, 'info': info})
+        data = {'error': None, 'list': list}
+    redis_cli.set(f"mono_search:{keywords}:{cat}:{page}", json.dumps(data), ex=3600 * 24)
+    return data
