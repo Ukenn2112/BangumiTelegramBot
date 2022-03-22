@@ -1,4 +1,5 @@
 """类型转换"""
+from collections import defaultdict
 from typing import Literal, List
 
 import telebot.types
@@ -222,3 +223,10 @@ def convert_telegram_message_to_bbcode(text: str, entities: List[telebot.types.M
 def remove_duplicate_newlines(text: str) -> str:
     """删除重行 够用就行 懒的搞正则"""
     return text.translate(str.maketrans({'\n\n': '\n', '\n\n\n': '\n'}))
+
+
+def full_group_by(items, key=lambda x: x):
+    d = defaultdict(list)
+    for item in items:
+        d[key(item)].append(item)
+    return d.items()

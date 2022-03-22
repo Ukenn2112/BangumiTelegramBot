@@ -1,8 +1,12 @@
-"""api 调用"""
+"""api 调用
+
+https://bangumi.github.io/api/"""
+
 import datetime
 import json
 import logging
 import random
+import sqlite3
 import threading
 import time
 from threading import Thread
@@ -19,45 +23,61 @@ from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, RED
 # FIXME 似乎不应该在这里创建对象
 
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
+sql_con = sqlite3.connect("bot.db", check_same_thread=False)
 
 
-def data_seek_get(test_id):
+def create_sql():
+    """创建数据库"""
+
+    sql_con.execute(f"""create table if not exists
+        user(
+        id integer primary key AUTOINCREMENT,
+        tg_id integer,
+        bgm_id integer,
+        access_token varchar(128),
+        refresh_token varchar(128),
+        cookie varchar(128),
+        expiry_time timestamp,
+        create_time timestamp,
+        update_time timestamp)
+        """)
+
+    sql_con.execute(f"""create unique index if not exists tg_id_index on user (tg_id)""")
+
+
+def data_seek_get(tg_id):
     """ 判断是否绑定Bangumi """
-    with open('bgm_data.json') as f:  # 打开文件
-        data_seek = json.loads(f.read())  # 读取
-    data_li = [i['tg_user_id'] for i in data_seek]  # 写入列表
-    return int(test_id) in data_li  # 判断列表内是否有被验证的UID
+    data = sql_con.execute(f"select tg_id from user where tg_id=?", (tg_id,)).fetchone()
+    return bool(data)
 
 
 def user_data_get(tg_id):
     """ 返回用户数据,如果过期则更新 """
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    for i in data_seek:
-        if i.get('tg_user_id') == tg_id:
-            expiry_time = i.get('expiry_time')
-            now_time = datetime.datetime.now().strftime("%Y%m%d")
-            if now_time >= expiry_time:  # 判断密钥是否过期
-                return expiry_data_get(tg_id)
-            else:
-                return i.get('data')
+    data = sql_con.execute(
+        f"select tg_id,bgm_id,access_token,cookie,expiry_time from user where tg_id=?", (tg_id,)).fetchone()
+    if data is None:
+        return False
+    expiry_time = data[4]
+    now_time = datetime.datetime.now().timestamp() // 1000
+    if now_time >= expiry_time:  # 判断密钥是否过期
+        expiry_data_get(tg_id)
+        data = sql_con.execute(f"select bgm_id,access_token,cookie from user where tg_id=?", (tg_id,)).fetchone()
+        return {"user_id": data[0], "access_token": data[1], 'cookie': data[2]}
+    else:
+        return {"user_id": data[1], "access_token": data[2], "cookie": data[3]}
 
 
 def nsfw_token():
     """ 返回可以查看NSFW内容的token"""
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-        return data_seek[0]['data']['access_token']
+    data = sql_con.execute("select access_token from user limit 1").fetchone()
+    return data[0]
 
 
-def expiry_data_get(test_id):
+def expiry_data_get(tg_id):
     """更新过期用户数据"""
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    refresh_token = None
-    for i in data_seek:
-        if i.get('tg_user_id') == test_id:
-            refresh_token = i.get('data', {}).get('refresh_token')
+    cur = sql_con.cursor()
+    refresh_token = cur.execute(
+        f"select refresh_token from user where tg_id=?", (tg_id,)).fetchone()[0]
     callback_url = f'{WEBSITE_BASE}oauth_callback'
     resp = requests.post(
         'https://bgm.tv/oauth/access_token',
@@ -73,32 +93,15 @@ def expiry_data_get(test_id):
         }
     )
     access_token = json.loads(resp.text).get('access_token')  # 更新access_token
-    refresh_token = json.loads(resp.text).get(
-        'refresh_token')  # 更新refresh_token
+    refresh_token = json.loads(resp.text).get('refresh_token')  # 更新refresh_token
     expiry_time = (datetime.datetime.now() +
-                   datetime.timedelta(days=7)).strftime("%Y%m%d")  # 更新过期时间
+                   datetime.timedelta(days=7)).timestamp() // 1000  # 更新过期时间
 
     # 替换数据
-    if access_token or refresh_token is not None:
-        with open("bgm_data.json", 'r+', encoding='utf-8') as f:
-            data = json.load(f)
-            for i in data:
-                if i['tg_user_id'] == test_id:
-                    i['data']['access_token'] = access_token
-                    i['data']['refresh_token'] = refresh_token
-                    i['expiry_time'] = expiry_time
-            f.seek(0)
-            json.dump(data, f, ensure_ascii=False, indent=4)
-            f.truncate()
-
-    # 读取数据
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    user_data = None
-    for i in data_seek:
-        if i.get('tg_user_id') == test_id:
-            user_data = i.get('data', {})
-    return user_data
+    cur.execute(
+        f"update user set access_token=?,refresh_token=?,expiry_time=?,update_time=? where tg_id=?",
+        (access_token, refresh_token, expiry_time, datetime.datetime.now().timestamp() // 1000, tg_id,))
+    sql_con.commit()
 
 
 # 获取BGM用户信息 TODO 存入数据库
@@ -110,16 +113,13 @@ def bgmuser_data(test_id):
     return user_data
 
 
-@schedule.repeat(schedule.every().day)
+@schedule.repeat(schedule.every().day.at("03:00"))
 def check_expiry_user():
     """检查是否有过期用户"""
-    with open('bgm_data.json') as f:
-        data_seek = json.loads(f.read())
-    for i in data_seek:
-        expiry_time = i.get('expiry_time')
-        now_time = datetime.datetime.now().strftime("%Y%m%d")
-        if now_time >= expiry_time:  # 判断密钥是否过期
-            expiry_data_get(i.get('tg_user_id'))
+    data = sql_con.execute("select tg_id, expiry_time from user where ? > expiry_time",
+                           (datetime.datetime.now().timestamp() // 1000,)).fetchall()
+    for i in data:
+        expiry_data_get(i[0])
 
 
 def run_continuously(interval=1):
@@ -509,14 +509,23 @@ def search_subject(keywords: str,
     :param start: 开始条数
     :param max_results: 每页条数 最多 25
     """
+    keywords = keywords.strip()
+    data = redis_cli.get(f"subject_search:{keywords}:{type_}:{response_group}:{max_results}:{start}")
+    if data:
+        if data == b"None__":
+            raise FileNotFoundError
+        else:
+            return json.loads(data)
     params = {"type": type_, "responseGroup": response_group,
               "start": start, "max_results": max_results}
     url = f'https://api.bgm.tv/search/subject/{keywords}'
     try:
-        j = requests_get(url=url, params=params, access_token=nsfw_token())
+        data = requests_get(url=url, params=params, access_token=nsfw_token())
     except:
-        return {"results": 0, 'list': []}
-    return j
+        data = {"results": 0, 'list': []}
+    redis_cli.set(f"subject_search:{keywords}:{type_}:{response_group}:{max_results}:{start}", json.dumps(data),
+                  ex=3600 * 24)
+    return data
 
 
 def get_collection(subject_id: str, token: str = "", tg_id=""):
@@ -554,8 +563,10 @@ def post_eps_reply(tg_id, ep_id, reply_text):
     cookie = user_data_get(tg_id).get('cookie')
     if cookie is None:
         raise RuntimeError("未添加Cookie")
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
-               'Cookie': cookie}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
+        'Cookie': cookie
+    }
     result = requests.get(f'https://bgm.tv/ep/{ep_id}', headers=headers)
     html = etree.HTML(result.text.encode('utf-8'))
     formhash = html.xpath('//input[@name="formhash"]/@value')[0]
@@ -571,3 +582,67 @@ def post_eps_reply(tg_id, ep_id, reply_text):
     data = parse.urlencode(FormData)
     headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
     return requests.post(f'https://bgm.tv/subject/ep/{ep_id}/new_reply', headers=headers, data=data)
+
+
+def removesuffix(self: str, suffix: str, /) -> str:
+    """ This method does the same as Python3.9:func:`builtins.str.removesuffix`"""
+    if self.endswith(suffix):
+        return self[:-len(suffix)]
+    else:
+        return self[:]
+
+
+session = requests.session()
+
+
+def get_mono_search(keywords: str, page: int = 1, cat: Literal['all', 'crt', 'prsn'] = 'all'):
+    """搜索人物"""
+    keywords = keywords.strip()
+    data = redis_cli.get(f"mono_search:{keywords}:{cat}:{page}")
+    if data:
+        if data == b"None__":
+            raise FileNotFoundError
+        else:
+            return json.loads(data)
+
+    headers = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36 Edg/99.0.1150.46",
+    }
+    cookies = {"chii_searchDateLine": "0"}
+    params = {'cat': cat}
+    if page is not None:
+        params['page'] = page
+    r = session.get(f"http://bgm.tv/mono_search/{keywords}", headers=headers, cookies=cookies, params=params)
+    html = etree.HTML(r.content)
+    error = html.xpath('//*[@id="colunmNotice"]/div/p[1]')
+    if error:
+        data = {'error': error[0].text, 'list': []}
+    else:
+        rows = html.xpath('//*[@id="columnSearchB"]/div[@class="light_odd clearit"]')
+        list = []
+
+        for row in rows:
+            a = row.xpath('div/h2/a')
+            name = removesuffix(a[0].text, ' / ') if a else None
+            b = row.xpath('div/h2/a/span')
+            name_cn = b[0].text if b else None
+            c = row.xpath('a/img')
+            img_url = "https:" + c[0].get('src') if c else None
+            d = row.xpath('div[2]/div/span')
+            info = d[0].text.strip() if d else None
+            e = row.xpath('a')
+            id_ = None
+            type_ = None
+            if e:
+                e = e[0].get('href')
+                if e.startswith('/character/'):
+                    type_ = "character"
+                    id_ = int(e[11:])
+                elif e.startswith('/person/'):
+                    type_ = "person"
+                    id_ = int(e[8:])
+            list.append({'id': id_, 'type': type_, 'name': name, 'name_cn': name_cn, 'img_url': img_url, 'info': info})
+        data = {'error': None, 'list': list}
+    redis_cli.set(f"mono_search:{keywords}:{cat}:{page}", json.dumps(data), ex=3600 * 24)
+    return data

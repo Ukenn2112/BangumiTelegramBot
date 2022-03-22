@@ -6,7 +6,8 @@ from utils.api import post_eps_status, get_subject_episode, get_episode_info
 from utils.converts import number_to_episode_type
 
 
-def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRequest:
+def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
+    session_uuid = request.session.uuid
     episode_id = request.episode_id
     episode_info = request.episode_info
     if not episode_info:
@@ -30,24 +31,24 @@ def generate_page(request: EditEpsPageRequest, stack_uuid: str) -> EditEpsPageRe
         text += "\n*回复此消息即可对此章节进行评论 (灰度试验功能)*"
         button_list = []
         if request.before_status != 2:
-            button_list.append(telebot.types.InlineKeyboardButton(text="看过", callback_data=f'{stack_uuid}|watched'))
+            button_list.append(telebot.types.InlineKeyboardButton(text="看过", callback_data=f'{session_uuid}|watched'))
             request.possible_request['watched'] = DoEditEpisodeRequest(request.session, request.episode_id, 'watched')
 
-        button_list.append(telebot.types.InlineKeyboardButton(text="看到", callback_data=f'{stack_uuid}|watched_batch'))
+        button_list.append(telebot.types.InlineKeyboardButton(text="看到", callback_data=f'{session_uuid}|watched_batch'))
         request.possible_request['watched_batch'] = DoEditEpisodeRequest(request.session, request.episode_id,
                                                                          'watched_batch')
         if request.before_status != 1:
-            button_list.append(telebot.types.InlineKeyboardButton(text="想看", callback_data=f'{stack_uuid}|queue'))
+            button_list.append(telebot.types.InlineKeyboardButton(text="想看", callback_data=f'{session_uuid}|queue'))
             request.possible_request['queue'] = DoEditEpisodeRequest(request.session, request.episode_id, 'queue')
         if request.before_status != 3:
-            button_list.append(telebot.types.InlineKeyboardButton(text="抛弃", callback_data=f'{stack_uuid}|drop'))
+            button_list.append(telebot.types.InlineKeyboardButton(text="抛弃", callback_data=f'{session_uuid}|drop'))
             request.possible_request['drop'] = DoEditEpisodeRequest(request.session, request.episode_id, 'drop')
         if request.before_status != 0:
-            button_list.append(telebot.types.InlineKeyboardButton(text="撤销", callback_data=f'{stack_uuid}|remove'))
+            button_list.append(telebot.types.InlineKeyboardButton(text="撤销", callback_data=f'{session_uuid}|remove'))
             request.possible_request['remove'] = DoEditEpisodeRequest(request.session, request.episode_id, 'remove')
         markup.add(*button_list, row_width=5)
 
-    markup.add(telebot.types.InlineKeyboardButton(text="返回", callback_data=f'{stack_uuid}|back'))
+    markup.add(telebot.types.InlineKeyboardButton(text="返回", callback_data=f'{session_uuid}|back'))
     request.page_markup = markup
     request.page_text = text
     return request

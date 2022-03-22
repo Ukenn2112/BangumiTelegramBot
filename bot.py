@@ -1,6 +1,9 @@
 #!/usr/bin/python
 """
-https://bangumi.github.io/api/
+BangumiTelegramBot 在 Telegram 上简单操作 Bangumi
+
+https://github.com/Ukenn2112/BangumiTelegramBot
+
 """
 import logging
 import pickle
@@ -20,7 +23,7 @@ from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
     subject_relations_page
 from plugins.inline import sender, public, mybgm
-from utils.api import post_eps_reply, run_continuously, redis_cli
+from utils.api import create_sql, post_eps_reply, run_continuously, redis_cli
 from utils.converts import convert_telegram_message_to_bbcode
 
 logger = telebot.logger
@@ -153,16 +156,13 @@ def test_chosen(chosen_inline_result):
 
 
 # inline 方式私聊搜索或者在任何位置搜索前使用@ ./plugins/inline/sender
-@bot.inline_handler(lambda query: query.query and (
-        query.chat_type == 'sender' or str.startswith(query.query, '@')) and not str.startswith(query.query, 'mybgm'))
+@bot.inline_handler(lambda query: query.query and query.chat_type == 'sender' and not query.query.startswith('mybgm'))
 def sender_query_text(inline_query):
     sender.query_sender_text(inline_query, bot)
 
 
 # inline 方式公共搜索 ./plugins/inline/public
-@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not str.startswith(query.query,
-                                                                                                     '@') and not str.startswith(
-    query.query, 'mybgm'))
+@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not query.query.startswith('mybgm'))
 def public_query_text(inline_query):
     public.query_public_text(inline_query, bot)
 
@@ -272,7 +272,7 @@ def consumption_request(session: RequestSession):
             )
     stack_call = session.call
     session.call = None
-    redis_cli.set(session.uuid, pickle.dumps(session), ex=3600)
+    redis_cli.set(session.uuid, pickle.dumps(session), ex=3600 * 24)
     if stack_call:
         bot.answer_callback_query(stack_call.id, text=callback_text)
 
@@ -281,25 +281,25 @@ def request_handler(session: RequestSession):
     callback_text = None
     top = session.stack[-1]
     if isinstance(top, WeekRequest):
-        week_page.generate_page(top, session.uuid)
+        week_page.generate_page(top)
     elif isinstance(top, CollectionsRequest):
-        collection_list_page.generate_page(top, session.uuid)
+        collection_list_page.generate_page(top)
     elif isinstance(top, SubjectRequest):
-        subject_page.generate_page(top, session.uuid)
+        subject_page.generate_page(top)
     elif isinstance(top, SummaryRequest):
-        summary_page.generate_page(top, session.uuid)
+        summary_page.generate_page(top)
     elif isinstance(top, EditCollectionTypePageRequest):
-        edit_collection_type_page.generate_page(top, session.uuid)
+        edit_collection_type_page.generate_page(top)
     elif isinstance(top, EditRatingPageRequest):
-        edit_rating_page.generate_page(top, session.uuid)
+        edit_rating_page.generate_page(top)
     elif isinstance(top, SubjectEpsPageRequest):
-        subject_eps_page.generate_page(top, session.uuid)
+        subject_eps_page.generate_page(top)
         if len(session.stack) > 2 and isinstance(session.stack[-2], SubjectEpsPageRequest):
             del session.stack[-2]
     elif isinstance(top, SubjectRelationsPageRequest):
         subject_relations_page.generate_page(top)
     elif isinstance(top, EditEpsPageRequest):
-        edit_eps_page.generate_page(top, session.uuid)
+        edit_eps_page.generate_page(top)
     elif isinstance(top, DoEditCollectionTypeRequest):
         edit_collection_type_page.do(top, session.request_message.from_user.id)
         callback_text = top.callback_text
@@ -336,6 +336,7 @@ def request_handler(session: RequestSession):
 
 # 开始启动
 if __name__ == '__main__':
+    create_sql()
     set_bot_command(bot)
     stop_run_continuously = run_continuously()
     bot.infinity_polling()

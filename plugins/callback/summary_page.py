@@ -6,7 +6,8 @@ from utils.api import get_subject_info, anime_img
 from utils.converts import subject_type_to_emoji
 
 
-def generate_page(request: SummaryRequest, stack_uuid: str) -> SummaryRequest:
+def generate_page(request: SummaryRequest) -> SummaryRequest:
+    session_uuid = request.session.uuid
     """简介页"""
     subject_info = get_subject_info(request.subject_id)
     if not request.page_image:
@@ -18,7 +19,7 @@ def generate_page(request: SummaryRequest, stack_uuid: str) -> SummaryRequest:
             f"\n📖 [详情](https://bgm.tv/subject/{request.subject_id})"
             f"\n💬 [吐槽箱](https://bgm.tv/subject/{request.subject_id}/comments)")
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
+    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"))
     request.page_text = text
     request.page_markup = markup
     request.possible_request['back'] = BackRequest(request.session)

@@ -11,7 +11,8 @@ from utils.api import requests_get, get_subject_info, get_user
 from utils.converts import subject_type_to_str, collection_type_subject_type_str
 
 
-def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRequest:
+def generate_page(request: CollectionsRequest) -> CollectionsRequest:
+    session_uuid = request.session.uuid
     if request.user_data is None:
         try:
             request.user_data = get_user(request.session.bgm_auth['user_id'])
@@ -73,7 +74,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
         text_data += f'*{nums_unicode}* {info["subject_info"]["name_cn"] or info["subject_info"]["name"]}' \
                      f' `[{info["ep_status"]}/{epssssss}]`\n\n'
         button_list.append(telebot.types.InlineKeyboardButton(
-            text=num, callback_data=f"{stack_uuid}|{nums_unicode}"))
+            text=num, callback_data=f"{session_uuid}|{nums_unicode}"))
         request.possible_request[nums_unicode] = SubjectRequest(request.session, info['subject_id'])
     text = f'*{nickname} {collection_type_subject_type_str(subject_type, request.collection_type)}' \
            f'的{subject_type_to_str(subject_type)}*\n\n{text_data}' \
@@ -84,7 +85,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
         button_list2 = []
         if offset - limit >= 0:
             button_list2.append(
-                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|back'))
+                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{session_uuid}|back'))
             request.possible_request["back"] = BackRequest(request.session)
         else:
             button_list2.append(telebot.types.InlineKeyboardButton(
@@ -93,7 +94,7 @@ def generate_page(request: CollectionsRequest, stack_uuid: str) -> CollectionsRe
             text=f'{int(offset / limit) + 1}/{math.ceil(count / limit)}', callback_data="None"))
         if offset + limit < count:
             button_list2.append(
-                telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'{stack_uuid}|{offset + limit}'))
+                telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'{session_uuid}|{offset + limit}'))
             next_request = CollectionsRequest(request.session, subject_type, offset=offset + limit,
                                               collection_type=request.collection_type, limit=limit)
             request.possible_request[str(offset + limit)] = next_request

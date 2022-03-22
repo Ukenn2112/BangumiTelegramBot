@@ -1,4 +1,5 @@
 config.py
+bot.db
 bgm_data.json
 test_data.json
 run.log
