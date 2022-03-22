@@ -272,7 +272,7 @@ def consumption_request(session: RequestSession):
             )
     stack_call = session.call
     session.call = None
-    redis_cli.set(session.uuid, pickle.dumps(session), ex=3600)
+    redis_cli.set(session.uuid, pickle.dumps(session), ex=3600 * 24)
     if stack_call:
         bot.answer_callback_query(stack_call.id, text=callback_text)
 
@@ -281,25 +281,25 @@ def request_handler(session: RequestSession):
     callback_text = None
     top = session.stack[-1]
     if isinstance(top, WeekRequest):
-        week_page.generate_page(top, session.uuid)
+        week_page.generate_page(top)
     elif isinstance(top, CollectionsRequest):
-        collection_list_page.generate_page(top, session.uuid)
+        collection_list_page.generate_page(top)
     elif isinstance(top, SubjectRequest):
-        subject_page.generate_page(top, session.uuid)
+        subject_page.generate_page(top)
     elif isinstance(top, SummaryRequest):
-        summary_page.generate_page(top, session.uuid)
+        summary_page.generate_page(top)
     elif isinstance(top, EditCollectionTypePageRequest):
-        edit_collection_type_page.generate_page(top, session.uuid)
+        edit_collection_type_page.generate_page(top)
     elif isinstance(top, EditRatingPageRequest):
-        edit_rating_page.generate_page(top, session.uuid)
+        edit_rating_page.generate_page(top)
     elif isinstance(top, SubjectEpsPageRequest):
-        subject_eps_page.generate_page(top, session.uuid)
+        subject_eps_page.generate_page(top)
         if len(session.stack) > 2 and isinstance(session.stack[-2], SubjectEpsPageRequest):
             del session.stack[-2]
     elif isinstance(top, SubjectRelationsPageRequest):
         subject_relations_page.generate_page(top)
     elif isinstance(top, EditEpsPageRequest):
-        edit_eps_page.generate_page(top, session.uuid)
+        edit_eps_page.generate_page(top)
     elif isinstance(top, DoEditCollectionTypeRequest):
         edit_collection_type_page.do(top, session.request_message.from_user.id)
         callback_text = top.callback_text

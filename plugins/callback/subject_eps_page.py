@@ -7,7 +7,8 @@ from utils.api import get_subject_episode, anime_img, get_subject_info, user_col
 from utils.converts import subject_type_to_emoji, number_to_episode_type
 
 
-def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEpsPageRequest:
+def generate_page(request: SubjectEpsPageRequest) -> SubjectEpsPageRequest:
+    session_uuid = request.session.uuid
     if not request.page_image:
         request.page_image = anime_img(request.subject_id)
     if not request.subject_info:
@@ -32,7 +33,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     for i in eps['data']:
         ep = str(i['ep'])
 
-        button_list.append(telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{stack_uuid}|{i["id"]}'))
+        button_list.append(telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{session_uuid}|{i["id"]}'))
         page_request = EditEpsPageRequest(request.session, i['id'], episode_info=i)
         request.possible_request[str(i['id'])] = page_request
 
@@ -50,7 +51,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     if total > limit:
         if offset - limit >= 0:
             button_list2.append(
-                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{stack_uuid}|pre'))
+                telebot.types.InlineKeyboardButton(text='上一页', callback_data=f'{session_uuid}|pre'))
             pre_request = SubjectEpsPageRequest(request.session, request.subject_id, limit=limit, type_=request.type_,
                                                 offset=offset - limit)
             pre_request.user_collection = request.user_collection
@@ -62,7 +63,7 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
             text=f'{int(offset / limit) + 1}/{math.ceil(total / limit)}', callback_data="None"))
         if offset + limit < total:
             button_list2.append(
-                telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'{stack_uuid}|next'))
+                telebot.types.InlineKeyboardButton(text='下一页', callback_data=f'{session_uuid}|next'))
             next_request = SubjectEpsPageRequest(request.session, request.subject_id, limit=limit, type_=request.type_,
                                                  offset=offset + limit)
             next_request.user_collection = request.user_collection
@@ -73,28 +74,28 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
         button_list3 = []
         if request.type_ != 0:
             button_list3.append(
-                telebot.types.InlineKeyboardButton(text='本篇', callback_data=f"{stack_uuid}|eps"))
+                telebot.types.InlineKeyboardButton(text='本篇', callback_data=f"{session_uuid}|eps"))
             subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
                                                              limit=12, type_=0)
             subject_eps_page_request.user_collection = request.user_collection
             request.possible_request['eps'] = subject_eps_page_request
         if request.type_ != 1:
             button_list3.append(
-                telebot.types.InlineKeyboardButton(text='SP', callback_data=f"{stack_uuid}|eps1"))
+                telebot.types.InlineKeyboardButton(text='SP', callback_data=f"{session_uuid}|eps1"))
             subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
                                                              limit=12, type_=1)
             subject_eps_page_request.user_collection = request.user_collection
             request.possible_request['eps1'] = subject_eps_page_request
         if request.type_ != 2:
             button_list3.append(
-                telebot.types.InlineKeyboardButton(text='OP', callback_data=f"{stack_uuid}|eps2"))
+                telebot.types.InlineKeyboardButton(text='OP', callback_data=f"{session_uuid}|eps2"))
             subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
                                                              limit=12, type_=2)
             subject_eps_page_request.user_collection = request.user_collection
             request.possible_request['eps2'] = subject_eps_page_request
         if request.type_ != 3:
             button_list3.append(
-                telebot.types.InlineKeyboardButton(text='ED', callback_data=f"{stack_uuid}|eps3"))
+                telebot.types.InlineKeyboardButton(text='ED', callback_data=f"{session_uuid}|eps3"))
             subject_eps_page_request = SubjectEpsPageRequest(request.session, subject_id=request.subject_id,
                                                              limit=12, type_=3)
             subject_eps_page_request.user_collection = request.user_collection
@@ -103,9 +104,9 @@ def generate_page(request: SubjectEpsPageRequest, stack_uuid: str) -> SubjectEps
     markup.add(*button_list, row_width=6)
     markup.add(*button_list2)
     if len(user_eps) == total and len(user_eps) != 0 and request.user_collection['status']['name'] != '看过':
-        markup.add(telebot.types.InlineKeyboardButton(text='将此章节收藏改为看过？', callback_data=f"{stack_uuid}|collect"))
+        markup.add(telebot.types.InlineKeyboardButton(text='将此章节收藏改为看过？', callback_data=f"{session_uuid}|collect"))
         request.possible_request['collect'] = DoEditCollectionTypeRequest(request.session, request.subject_id, 'collect')
-    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{stack_uuid}|back"))
+    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"))
     request.possible_request['back'] = BackRequest(request.session, needs_refresh=True)
 
     request.page_text = text

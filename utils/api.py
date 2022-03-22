@@ -60,7 +60,9 @@ def user_data_get(tg_id):
     expiry_time = data[4]
     now_time = datetime.datetime.now().timestamp() // 1000
     if now_time >= expiry_time:  # 判断密钥是否过期
-        return expiry_data_get(tg_id)
+        expiry_data_get(tg_id)
+        data = sql_con.execute(f"select bgm_id,access_token,cookie from user where tg_id=?", (tg_id,)).fetchone()
+        return {"user_id": data[0], "access_token": data[1], 'cookie': data[2]}
     else:
         return {"user_id": data[1], "access_token": data[2], "cookie": data[3]}
 
@@ -101,9 +103,6 @@ def expiry_data_get(tg_id):
         (access_token, refresh_token, expiry_time, datetime.datetime.now().timestamp() // 1000, tg_id,))
     sql_con.commit()
 
-    # 读取数据
-    data = sql_con.execute(f"select bgm_id,access_token,cookie from user where tg_id=?", (tg_id,)).fetchone()
-    return {"user_id": data[0], "access_token": data[1], 'cookie': data[2]}
 
 
 # 获取BGM用户信息 TODO 存入数据库
