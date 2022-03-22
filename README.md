@@ -1,3 +1,5 @@
+> *从此版本开始我们将用户数据 `bgm_data.json` 改用SQLite存储，您可以使用 `json_to db.py` 进行数据转换*
+
 [![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/BangumiTelegramBot.png)](https://github.com/Ukenn2112/BangumiTelegramBot/)
 
 
@@ -70,7 +72,7 @@ close - 关闭此对话
 ```txt
 BangumiTelegramBot   # 主目录
 │
-│  user_data.db      # Bangumi 用户密钥
+│  bot.db            # Bangumi 用户密钥
 │  bot.py            # Bangumi Bot 模块
 │  config.py         # 配置文件
 │  oauth.py          # Bangumi Oauth 绑定验证模块
