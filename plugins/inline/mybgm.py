@@ -17,7 +17,7 @@ def query_mybgm_text(inline_query, bot):
         if user_data is None:
             # 如果未绑定 直接报错
             bot.answer_inline_query(inline_query.id, query_result_list,
-                                    switch_pm_text="您未绑定Bangumi，请点击此条文字进行绑定", switch_pm_parameter="help", cache_time=0)
+                                    switch_pm_text="您未绑定Bangumi，请点击此条文字进行绑定", switch_pm_parameter="start", cache_time=0)
             return
         bgm_id = user_data.get('user_id')
         access_token = user_data.get('access_token')

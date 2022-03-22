@@ -56,7 +56,7 @@ def user_data_get(tg_id):
     data = sql_con.execute(
         f"select tg_id,bgm_id,access_token,cookie,expiry_time from user where tg_id=?", (tg_id,)).fetchone()
     if data is None:
-        return False
+        return None
     expiry_time = data[4]
     now_time = datetime.datetime.now().timestamp() // 1000
     if now_time >= expiry_time:  # 判断密钥是否过期
