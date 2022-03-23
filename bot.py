@@ -110,7 +110,7 @@ def close_message(message):
             return bot.delete_message(message.chat.id, message_id=msg.id)
 
 
-# 章节评论 （试验功能）
+# 章节评论
 @bot.message_handler()
 def send_reply(message):
     if message.chat.type != 'private':
@@ -131,8 +131,8 @@ def send_reply(message):
 
                 post_eps_reply(message.from_user.id, ep_id, text)
             except:
-                bot.send_message(message.chat.id, "发送评论失败(这是灰度测试功能,还未正式上线哦",
-                                 reply_to_message_id=message.message_id)
+                bot.send_message(message.chat.id, "*发送评论失败\n(可能未添加 Cookie 或者 Cookie 已过期)* \n请使用 `/start <Cookie>` 来添加或更新 Cookie",
+                                 parse_mode='Markdown', reply_to_message_id=message.message_id)
                 raise
             bot.send_message(message.chat.id, "发送评论成功",
                              reply_to_message_id=message.message_id)

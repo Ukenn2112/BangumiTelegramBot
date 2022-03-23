@@ -28,7 +28,7 @@ def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
     markup = telebot.types.InlineKeyboardMarkup()
     request.possible_request['back'] = BackRequest(request.session)
     if request.session.bot_message.chat.type == 'private' and request.before_status is not None:
-        text += "\n*回复此消息即可对此章节进行评论 (灰度试验功能)*"
+        text += "\n*回复此消息即可对此章节进行评论*"
         button_list = []
         if request.before_status != 2:
             button_list.append(telebot.types.InlineKeyboardButton(text="看过", callback_data=f'{session_uuid}|watched'))

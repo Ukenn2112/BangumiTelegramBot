@@ -1,5 +1,7 @@
 """查询/绑定 Bangumi"""
+import datetime
 import json
+import sqlite3
 import uuid
 
 import telebot
@@ -38,6 +40,17 @@ def send(message, bot):
         elif len(data) > 1 and data[1] == "help":
             help.send(message, bot)
             return
+        elif len(data) > 1 and 'chii_sid=' in message.text:
+            if 'chii_sec_id=' in message.text and 'chii_auth=' in message.text:
+                sql_con = sqlite3.connect("bot.db", check_same_thread=False)
+                sql_con.execute("update user set cookie=?,update_time=? where tg_id=?",
+                               (message.text.replace('/start ', ''), datetime.datetime.now().timestamp() // 1000, tg_id,))
+                sql_con.commit()
+                bot.send_message(message.chat.id, "添加 Cookie 成功")
+                return
+            else:
+                bot.send_message(message.chat.id, "请输入正确的 Cookie")
+                return
         else:
             bot.send_message(message.chat.id, "已绑定", timeout=20)
             return
