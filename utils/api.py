@@ -628,7 +628,7 @@ def get_mono_search(keywords: str, page: int = 1, cat: Literal['all', 'crt', 'pr
             b = row.xpath('div/h2/a/span')
             name_cn = b[0].text if b else None
             c = row.xpath('a/img')
-            img_url = "https:" + c[0].get('src') if c else None
+            img_url = "https:" + c[0].get('src') if c and c[0].get('src') != '/img/info_only.png' else None
             d = row.xpath('div[2]/div/span')
             info = d[0].text.strip() if d else None
             e = row.xpath('a')

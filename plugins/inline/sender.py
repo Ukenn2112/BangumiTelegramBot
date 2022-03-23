@@ -125,9 +125,9 @@ def query_mono(inline_query, bot, cat):
     if data['error']:
         switch_pm_text = data['error']
     else:
-        if cat == 'person':
+        if cat == 'prsn':
             switch_pm_text = f"现实人物[{keywords}]的搜索结果"
-        elif cat == 'character':
+        elif cat == 'crt':
             switch_pm_text = f"虚拟人物[{keywords}]的搜索结果"
         else:
             switch_pm_text = f"人物[{keywords}]的搜索结果"
