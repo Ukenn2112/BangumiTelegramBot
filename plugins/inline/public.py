@@ -7,7 +7,7 @@ from telebot.types import InlineQueryResultArticle
 from config import BOT_USERNAME
 from plugins.callback.subject_page import gander_page_text
 from plugins.inline.sender import query_subject_characters, query_search_sender, query_mono
-from utils.api import anime_img, search_subject, get_subject_info
+from utils.api import anime_img, get_person_info, get_person_related_subjects, search_subject, get_subject_info
 from utils.converts import subject_type_to_emoji, parse_markdown_v2, number_to_week
 
 
@@ -52,6 +52,48 @@ def query_subject_info(inline_query, bot):
         bot.answer_inline_query(inline_query.id, [qr],
                                 switch_pm_text=subject_info['name_cn'] or subject_info['name'],
                                 switch_pm_parameter=f"{subject_info['id']}", cache_time=0)
+
+
+def query_person_related_subjects(inline_query, bot):
+    offset = int(inline_query.offset or 0)
+    query_result_list: List[InlineQueryResultArticle] = []
+    query_param = inline_query.query.split(' ')
+    person_id = query_param[1]
+
+    person_related_subjects = get_person_related_subjects(person_id)
+    person_info = get_person_info(person_id)
+
+    switch_pm_text = person_info['name'] + " 人物关联列表"
+    for subject in person_related_subjects[offset: offset + 25]:
+        text = f"*{subject['name_cn'] or subject['name']}*\n"
+        text += f"{subject['name']}\n" if subject['name_cn'] else ''
+
+        text += f"\n*BGM ID：*`{subject['id']}`"
+        text += f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)" \
+                f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
+                f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
+
+        button_list = [telebot.types.InlineKeyboardButton(
+                text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}")]
+        button_list.append(telebot.types.InlineKeyboardButton(
+            text="角色", switch_inline_query_current_chat=f"{subject['id']} 角色"))
+        button_list.append(telebot.types.InlineKeyboardButton(
+            text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"))
+        qr = telebot.types.InlineQueryResultArticle(
+            id=subject['id'],
+            title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
+            input_message_content=telebot.types.InputTextMessageContent(
+                text,
+                parse_mode="markdown",
+                disable_web_page_preview=False
+            ),
+            description=subject["name"] if subject["name_cn"] else None,
+            thumb_url=subject["image"] if subject["image"] else None,
+            reply_markup=telebot.types.InlineKeyboardMarkup().add(*button_list)
+        )
+        query_result_list.append(qr)
+    bot.answer_inline_query(inline_query.id, query_result_list, next_offset=str(offset + 25),
+                            switch_pm_text=switch_pm_text, switch_pm_parameter="help", cache_time=3600)
 
 
 def query_search(inline_query, bot):
@@ -140,7 +182,10 @@ def query_public_text(inline_query, bot):
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
     elif query.startswith("P "):
-        query_mono(inline_query, bot, 'prsn')
+        if query.endswith(" 关联") and query_param[1].isdecimal():
+            query_person_related_subjects(inline_query, bot)
+        else:
+            query_mono(inline_query, bot, 'prsn')
     elif query.startswith("C "):
         query_mono(inline_query, bot, 'crt')
     elif query.startswith("S ") and query_param[1].isdecimal():

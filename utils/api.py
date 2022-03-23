@@ -338,6 +338,25 @@ def get_subject_info(subject_id, t_dict=None):
     return loads
 
 
+def get_person_info(person_id):
+    """获取人物信息 并使用Redis缓存"""
+    person_info = redis_cli.get(f"person_info:{person_id}")
+    if person_info:
+        if person_info == b"None__":
+            raise FileNotFoundError(f"person_id:{person_id}获取人物信息失败_缓存")
+        loads = json.loads(person_info)
+    else:
+        url = f'https://api.bgm.tv/v0/persons/{person_id}'
+        loads = requests_get(url=url, access_token=nsfw_token())
+        if loads is None:
+            redis_cli.set(f"person_info:{person_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError(f"person_id:{person_id}获取人物信息失败")
+        redis_cli.set(f"person_info:{person_id}", json.dumps(
+            loads), ex=60 * 60 * 24 * 7 + random.randint(-3600, 3600))
+    return loads
+
+
 def get_subject_characters(subject_id):
     """获取指定条目角色信息 并使用Redis缓存"""
     subject_characters = redis_cli.get(f"subject_characters:{subject_id}")
@@ -358,11 +377,11 @@ def get_subject_characters(subject_id):
 
 
 def get_subject_relations(subject_id):
-    """获取关联条目信息 并使用Redis缓存"""
+    """获取章节关联条目信息 并使用Redis缓存"""
     subject_relations = redis_cli.get(f"subject_relations:{subject_id}")
     if subject_relations:
         if subject_relations == b"None__":
-            raise FileNotFoundError(f"subject_id:{subject_id}获取关联条目信息失败_缓存")
+            raise FileNotFoundError(f"subject_id:{subject_id}获取章节关联条目信息失败_缓存")
         loads = json.loads(subject_relations)
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}/subjects'
@@ -370,8 +389,27 @@ def get_subject_relations(subject_id):
         if loads is None:
             redis_cli.set(f"subject_relations:{subject_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
-            raise FileNotFoundError(f"subject_id:{subject_id}获取关联条目信息失败")
+            raise FileNotFoundError(f"subject_id:{subject_id}获取章节关联条目信息失败")
         redis_cli.set(f"subject_relations:{subject_id}", json.dumps(
+            loads), ex=60 * 60 * 24 * 7 + random.randint(-3600, 3600))
+    return loads
+
+
+def get_person_related_subjects(person_id):
+    """获取人物关联条目信息 并使用Redis缓存"""
+    person_related_subjects = redis_cli.get(f"person_related_subjects:{person_id}")
+    if person_related_subjects:
+        if person_related_subjects == b"None__":
+            raise FileNotFoundError(f"person_id:{person_id}获取人物关联条目信息失败_缓存")
+        loads = json.loads(person_related_subjects)
+    else:
+        url = f'https://api.bgm.tv/v0/persons/{person_id}/subjects'
+        loads = requests_get(url=url, access_token=nsfw_token())
+        if loads is None:
+            redis_cli.set(f"person_related_subjects:{person_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError(f"person_id:{person_id}获取人物关联条目信息失败")
+        redis_cli.set(f"person_related_subjects:{person_id}", json.dumps(
             loads), ex=60 * 60 * 24 * 7 + random.randint(-3600, 3600))
     return loads
 
