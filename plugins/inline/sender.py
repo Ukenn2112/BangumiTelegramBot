@@ -18,15 +18,15 @@ def query_subject_characters(inline_query, bot):
     subject_characters = get_subject_characters(subject_id)
     new_subject_characters = []
     group = full_group_by(subject_characters, lambda c: c['relation'])
-    if '主角' in group.mapping:
-        new_subject_characters.extend(group.mapping['主角'])
-    if '配角' in group.mapping:
-        new_subject_characters.extend(group.mapping['配角'])
-    if '客串' in group.mapping:
-        new_subject_characters.extend(group.mapping['客串'])
-    for k, v in group:
+    if '主角' in group:
+        new_subject_characters.extend(group['主角'])
+    if '配角' in group:
+        new_subject_characters.extend(group['配角'])
+    if '客串' in group:
+        new_subject_characters.extend(group['客串'])
+    for k in group:
         if k != '主角' and k != '配角' and k != '客串':
-            new_subject_characters.extend(v)
+            new_subject_characters.extend(group[k])
 
     subject_info = get_subject_info(subject_id)
     switch_pm_text = (subject_info['name_cn'] or subject_info['name']) + " 角色列表"
