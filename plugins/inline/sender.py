@@ -13,7 +13,7 @@ def query_subject_characters(inline_query, bot):
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(' ')
-    subject_id = query_param[1]
+    subject_id = query_param[0]
 
     subject_characters = get_subject_characters(subject_id)
     new_subject_characters = []
@@ -160,7 +160,7 @@ def query_mono(inline_query, bot, cat):
 def query_sender_text(inline_query, bot):
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')
-    if query.startswith("sc ") and query_param[1].isdecimal():
+    if query.endswith(" 角色") and query_param[0].isdecimal():
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
     elif query.startswith("P "):

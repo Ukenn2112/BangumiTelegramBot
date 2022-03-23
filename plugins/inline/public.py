@@ -111,7 +111,7 @@ def query_search(inline_query, bot):
                 text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}")]
             if subject["type"] != 3:  # 当类型为anime或real时
                 button_list.append(telebot.types.InlineKeyboardButton(
-                    text="角色", switch_inline_query_current_chat=f"sc {subject['id']}"))
+                    text="角色", switch_inline_query_current_chat=f"{subject['id']} 角色"))
             button_list.append(telebot.types.InlineKeyboardButton(
                 text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"))
             qr = telebot.types.InlineQueryResultArticle(
@@ -136,7 +136,7 @@ def query_search(inline_query, bot):
 def query_public_text(inline_query, bot):
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')
-    if query.startswith("sc ") and query_param[1].isdecimal():
+    if query.endswith(" 角色") and query_param[0].isdecimal():
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
     elif query.startswith("P "):
