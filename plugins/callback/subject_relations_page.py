@@ -21,9 +21,9 @@ def generate_page(request: SubjectRelationsPageRequest) -> SubjectRelationsPageR
 
         relation_group = full_group_by(relations, lambda a: a['relation'])
         num: int = 1
-        for key, relationss in relation_group:
+        for key in relation_group:
             text += f"*➤ {key}:*\n"
-            for relation in relationss:
+            for relation in relation_group[key]:
                 text += f"`{str(num).zfill(2)}`. {subject_type_to_emoji(relation['type'])}" \
                         f"{relation['name_cn'] or relation['name']}\n"
                 button_list.append(
