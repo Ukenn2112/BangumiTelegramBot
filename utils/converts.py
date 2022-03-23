@@ -229,4 +229,4 @@ def full_group_by(items, key=lambda x: x):
     d = defaultdict(list)
     for item in items:
         d[key(item)].append(item)
-    return d.items()
+    return d
