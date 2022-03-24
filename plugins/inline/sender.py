@@ -13,8 +13,17 @@ def query_subject_characters(inline_query, bot):
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(' ')
-    subject_id = query_param[0]
-
+    if query_param[0].isdecimal():
+        subject_id = query_param[0]
+        subject_info = get_subject_info(subject_id)
+        subject_name = subject_info['name_cn'] or subject_info['name']
+    else:
+        search_subject_data = search_subject(query_param[0], response_group="large", start=0, max_results=1, type_=2)
+        if len(search_subject_data) != 0 and search_subject_data['list'] is not None:
+            subject_id = search_subject_data['list'][0]['id']
+            subject_name = search_subject_data['list'][0]['name_cn'] or search_subject_data['list'][0]['name']
+        else:
+            return bot.answer_inline_query(inline_query.id, [], switch_pm_text="无结果, 请输入完整关键字", switch_pm_parameter="search", cache_time=0)
     subject_characters = get_subject_characters(subject_id)
     new_subject_characters = []
     group = full_group_by(subject_characters, lambda c: c['relation'])
@@ -28,8 +37,7 @@ def query_subject_characters(inline_query, bot):
         if k != '主角' and k != '配角' and k != '客串':
             new_subject_characters.extend(group[k])
 
-    subject_info = get_subject_info(subject_id)
-    switch_pm_text = (subject_info['name_cn'] or subject_info['name']) + " 角色列表"
+    switch_pm_text = subject_name + " 角色列表"
     for character in new_subject_characters[offset: offset + 50]:
         text = f"*{character['name']}*"
         description = character['relation']
@@ -192,7 +200,7 @@ def query_mono(inline_query, bot, cat):
 def query_sender_text(inline_query, bot):
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')
-    if query.endswith(" 角色") and query_param[0].isdecimal():
+    if query.endswith(" 角色"):
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
     elif query.startswith("P "):

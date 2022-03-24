@@ -65,9 +65,11 @@ def query_person_related_subjects(inline_query, bot):
         person_name = get_person_info(person_id)['name']
     else:
         mono_search_data = get_mono_search(query_param[1], page=1, cat='prsn')
-        person_id = mono_search_data['list'][0]['id']
-        person_name = mono_search_data['list'][0]['name']
-
+        if len(mono_search_data) != 0 and mono_search_data['list'] is not None:
+            person_id = mono_search_data['list'][0]['id']
+            person_name = mono_search_data['list'][0]['name']
+        else:
+            return bot.answer_inline_query(inline_query.id, [], switch_pm_text="无结果, 请输入完整关键字", switch_pm_parameter="search", cache_time=0)
     person_related_subjects = get_person_related_subjects(person_id)
     switch_pm_text = person_name + " 人物关联列表"
     for subject in person_related_subjects[offset: offset + 25]:
@@ -184,7 +186,7 @@ def query_search(inline_query, bot):
 def query_public_text(inline_query, bot):
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')
-    if query.endswith(" 角色") and query_param[0].isdecimal():
+    if query.endswith(" 角色"):
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
     elif query.startswith("P "):
