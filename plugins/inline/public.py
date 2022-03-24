@@ -1,6 +1,4 @@
 """inline 方式公共搜索"""
-from smtpd import PureProxy
-from turtle import pu
 from typing import List
 
 import telebot
