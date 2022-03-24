@@ -67,6 +67,10 @@ search - 搜索条目
 close - 关闭此对话
 ```
 
+# Bangumi Telegram Bot inline 内联搜索使用方法
+
+![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/inline_query.png)
+
 # 文件树
 
 ```txt
