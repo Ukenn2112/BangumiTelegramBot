@@ -1,4 +1,6 @@
 """inline 方式公共搜索"""
+from smtpd import PureProxy
+from turtle import pu
 from typing import List
 
 import telebot
@@ -7,7 +9,7 @@ from telebot.types import InlineQueryResultArticle
 from config import BOT_USERNAME
 from plugins.callback.subject_page import gander_page_text
 from plugins.inline.sender import query_subject_characters, query_search_sender, query_mono
-from utils.api import anime_img, get_person_info, get_person_related_subjects, search_subject, get_subject_info
+from utils.api import anime_img, get_mono_search, get_person_info, get_person_related_subjects, search_subject, get_subject_info
 from utils.converts import subject_type_to_emoji, parse_markdown_v2, number_to_week
 
 
@@ -58,12 +60,16 @@ def query_person_related_subjects(inline_query, bot):
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(' ')
-    person_id = query_param[1]
+    if query_param[1].isdecimal():
+        person_id = query_param[1]
+        person_name = get_person_info(person_id)['name']
+    else:
+        mono_search_data = get_mono_search(query_param[1], page=1, cat='prsn')
+        person_id = mono_search_data['list'][0]['id']
+        person_name = mono_search_data['list'][0]['name']
 
     person_related_subjects = get_person_related_subjects(person_id)
-    person_info = get_person_info(person_id)
-
-    switch_pm_text = person_info['name'] + " 人物关联列表"
+    switch_pm_text = person_name + " 人物关联列表"
     for subject in person_related_subjects[offset: offset + 25]:
         text = f"*{subject['name_cn'] or subject['name']}*\n"
         text += f"{subject['name']}\n" if subject['name_cn'] else ''
@@ -182,9 +188,11 @@ def query_public_text(inline_query, bot):
         # subject_characters 条目角色
         query_subject_characters(inline_query, bot)
     elif query.startswith("P "):
-        if query.endswith(" 关联") and query_param[1].isdecimal():
+        if query.endswith(" 关联"):
+            # person_related_subjects 人物关联条目
             query_person_related_subjects(inline_query, bot)
         else:
+            # mono 人物搜索
             query_mono(inline_query, bot, 'prsn')
     elif query.startswith("C "):
         query_mono(inline_query, bot, 'crt')
