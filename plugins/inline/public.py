@@ -151,7 +151,7 @@ def query_search(inline_query):
                 text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}")]
             if subject["type"] != 3:  # 当类型为anime或real时
                 button_list.append(telebot.types.InlineKeyboardButton(
-                    text="角色", switch_inline_query_current_chat=f"{subject['id']} 角色"))
+                    text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"))
             button_list.append(telebot.types.InlineKeyboardButton(
                 text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"))
             qr = telebot.types.InlineQueryResultArticle(
