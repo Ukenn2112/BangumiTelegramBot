@@ -78,14 +78,14 @@ def query_person_related_subjects(inline_query):
             telebot.types.InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"),
             telebot.types.InlineKeyboardButton(text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}")]
         qr = telebot.types.InlineQueryResultArticle(
-            id=subject['id'],
+            id=f"{subject['staff']}:{subject['id']}",
             title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
             input_message_content=telebot.types.InputTextMessageContent(
                 text,
                 parse_mode="markdown",
                 disable_web_page_preview=False
             ),
-            description=subject["name"] if subject["name_cn"] else None,
+            description=(f"{subject['name']} | " if subject["name_cn"] else '') + (subject['staff'] if subject["staff"] else ''),
             thumb_url=subject["image"] if subject["image"] else None,
             reply_markup=telebot.types.InlineKeyboardMarkup().add(*button_list)
         )

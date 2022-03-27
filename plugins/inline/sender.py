@@ -102,14 +102,14 @@ def query_person_related_subjects(inline_query):
     switch_pm_text = person_name + " 人物关联列表"
     for subject in person_related_subjects[offset: offset + 50]:
         qr = telebot.types.InlineQueryResultArticle(
-            id=subject['id'],
+            id=f"{subject['staff']}:{subject['id']}",
             title=(subject["name_cn"] if subject["name_cn"]
                    else subject["name"]),
             input_message_content=telebot.types.InputTextMessageContent(
                 message_text=f"/info@{BOT_USERNAME} {subject['id']}",
                 disable_web_page_preview=True
             ),
-            description=subject["name"] if subject["name_cn"] else None,
+            description=(f"{subject['name']} | " if subject["name_cn"] else '') + (subject['staff'] if subject["staff"] else ''),
             thumb_url=subject["image"] if subject["image"] else None,
         )
         query_result_list.append(qr)
