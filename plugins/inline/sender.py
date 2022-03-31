@@ -11,6 +11,7 @@ from utils.converts import subject_type_to_emoji, full_group_by
 
 
 def query_subject_characters(inline_query):
+    """SC + 条目ID 获取条目关联角色"""
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(' ')
@@ -68,6 +69,7 @@ def query_subject_characters(inline_query):
 
 
 def query_subject_info(inline_query):
+    """S + 条目ID 发送命令 获取条目详情"""
     query_param = inline_query.query.split(' ')
     subject_id = query_param[1]
 
@@ -87,6 +89,7 @@ def query_subject_info(inline_query):
 
 
 def query_person_related_subjects(inline_query):
+    """PS + 人物ID 发送命令 获取人物关联条目"""
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(' ')
@@ -118,6 +121,7 @@ def query_person_related_subjects(inline_query):
 
 
 def query_search_sender(inline_query):
+    """私聊或@ 关键词 搜索发送命令"""
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query = inline_query.query
@@ -158,6 +162,7 @@ def query_search_sender(inline_query):
 
 
 def query_search_subject_characters(inline_query):
+    """关键词 + 角色 搜索条目关联角色"""
     split = inline_query.offset.split('|')
     if inline_query.offset:
         subject_num = int(split[0])
@@ -189,6 +194,10 @@ def query_search_subject_characters(inline_query):
 
 
 def query_mono(inline_query, cat):
+    """人物搜索
+    :param inline_query: 查询人物关键词
+    :param cat = prsn -> 查询人物
+    :param cat = crt -> 查询角色"""
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(' ')
@@ -201,7 +210,7 @@ def query_mono(inline_query, cat):
         if cat == 'prsn':
             switch_pm_text = f"现实人物[{keywords}]的搜索结果"
         elif cat == 'crt':
-            switch_pm_text = f"虚拟人物[{keywords}]的搜索结果"
+            switch_pm_text = f"虚拟角色[{keywords}]的搜索结果"
         else:
             switch_pm_text = f"人物[{keywords}]的搜索结果"
     next_offset = str(offset + 1) if len(data['list']) >= 9 else None
@@ -277,8 +286,11 @@ def query_mono(inline_query, cat):
 
 
 def query_sender_text(inline_query, bot):
+    """私聊搜索"""
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')
+
+    # 使用 ID 搜索
     if query.startswith("S ") and query_param[1].isdecimal():  # 条目id 详情
         kwargs = query_subject_info(inline_query)
     elif query.startswith("PS ") and query_param[1].isdecimal():  # 人物出演的条目
@@ -286,6 +298,7 @@ def query_sender_text(inline_query, bot):
     elif query.startswith("SC ") and query_param[1].isdecimal():  # 条目关联的角色
         kwargs = query_subject_characters(inline_query)
 
+    # 使用关键词搜索
     elif query.startswith("p "):  # 现实人物搜索
         if inline_query.query.endswith((" 条目", " 关联")):
             return
@@ -302,13 +315,15 @@ def query_sender_text(inline_query, bot):
         else:
             kwargs = query_mono(inline_query, 'crt')
 
-    elif query.startswith("@"):  # @ 搜索
+    elif query.startswith("@"):  # @ 搜索 转换至公共搜索
         inline_query.query = inline_query.query.lstrip('@')
         from plugins.inline.public import query_public_text
-        return query_public_text(inline_query, bot)
+        return query_public_text(inline_query, bot) # 公共搜索
+
     else:  # search_subject 普通搜索
         if inline_query.query.endswith(" 角色"):
             kwargs = query_search_subject_characters(inline_query)
         else:
             kwargs = query_search_sender(inline_query)  # TODO 后缀为 ' 人物' ' 角色' 查询第一个结果的 ~
+
     return bot.answer_inline_query(inline_query_id=inline_query.id, **kwargs)
