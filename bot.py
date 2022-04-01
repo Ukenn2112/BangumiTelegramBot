@@ -110,11 +110,17 @@ def close_message(message):
             return bot.delete_message(message.chat.id, message_id=msg.id)
 
 
+@bot.message_handler(chat_types=['group', 'supergroup'])
+def link_subject_info(message):
+    if message.text.find('https://bgm.tv/subject/' or 'https://bangumi.tv/subject/') != -1:
+        subject_id = message.text.split('/subject/')[1].split('/')[0]
+        if subject_id.isdigit():
+            info.send(message, bot, subject_id)
+
+
 # 章节评论
-@bot.message_handler()
+@bot.message_handler(chat_types=['private'])
 def send_reply(message):
-    if message.chat.type != 'private':
-        return
     if message.reply_to_message is None:
         return
     if message.reply_to_message.from_user.username != config.BOT_USERNAME:

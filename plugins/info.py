@@ -10,18 +10,21 @@ from utils.api import get_subject_info, get_subject_relations
 from utils.converts import subject_type_to_emoji
 
 
-def send(message, bot):
-    message_data = message.text.split(' ')
-    if len(message_data) != 2 or not message_data[1].isdecimal():
-        bot.send_message(chat_id=message.chat.id, text="错误使用 `/info BGM_Subject_ID`",
-                         parse_mode='Markdown', timeout=20)
-        return
+def send(message, bot, subject_id: Optional[int] = None):
+    if subject_id is not None:
+        subject_id = subject_id
+    else:
+        message_data = message.text.split(' ')
+        if len(message_data) != 2 or not message_data[1].isdecimal():
+            bot.send_message(chat_id=message.chat.id, text="错误使用 `/info BGM_Subject_ID`",
+                            parse_mode='Markdown', timeout=20)
+            return
+        subject_id = int(message_data[1])  # 剧集ID
     msg = bot.send_message(message.chat.id, "正在搜索请稍候...",
-                           reply_to_message_id=message.message_id,
-                           parse_mode='Markdown',
-                           timeout=20)
-    subject_id = int(message_data[1])  # 剧集ID
-
+                            reply_to_message_id=message.message_id,
+                            parse_mode='Markdown',
+                            timeout=20)
+                            
     session = RequestSession(uuid.uuid4().hex, message)
     subject_request = SubjectRequest(session, subject_id, True)
     session.stack = [subject_request]
