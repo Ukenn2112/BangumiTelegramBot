@@ -19,8 +19,8 @@ import schedule
 from lxml import etree
 
 from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, REDIS_DATABASE
-
 # FIXME 似乎不应该在这里创建对象
+from model.exception import TokenExpired
 
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 sql_con = sqlite3.connect("bot.db", check_same_thread=False)
@@ -49,6 +49,11 @@ def data_seek_get(tg_id):
     """ 判断是否绑定Bangumi """
     data = sql_con.execute(f"select tg_id from user where tg_id=?", (tg_id,)).fetchone()
     return bool(data)
+
+
+def user_data_delete(tg_id):
+    sql_con.execute(f"delete from user where tg_id = ?", (tg_id,))
+    sql_con.commit()
 
 
 def user_data_get(tg_id):
@@ -165,6 +170,8 @@ def requests_get(url, params: Optional[dict] = None, access_token: Optional[str]
             else:
                 logging.warning(f'api请求错误，重试中...{str(err)}')
     if r.status_code != 200:
+        if r.status_code == 401:  # and "expired" in r.text:
+            raise TokenExpired()
         raise requests.exceptions.BaseHTTPError(r.status_code)
     else:
         try:

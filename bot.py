@@ -7,23 +7,25 @@ https://github.com/Ukenn2112/BangumiTelegramBot
 """
 import logging
 import pickle
+import re
 import time
 
 import telebot
 
 import config
 from config import BOT_TOKEN
+from model.exception import TokenExpired
 from model.page_model import RequestSession, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, \
     BackRequest, \
     EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
     RefreshRequest, BaseRequest, SubjectEpsPageRequest, EditEpsPageRequest, DoEditEpisodeRequest, \
     SubjectRelationsPageRequest
-from plugins import start, help, week, info, search, collection_list
+from plugins import start, help, week, info, search, collection_list, unbind
 from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
     subject_relations_page
 from plugins.inline import sender, public, mybgm
-from utils.api import create_sql, post_eps_reply, run_continuously, redis_cli
+from utils.api import create_sql, post_eps_reply, run_continuously, redis_cli, user_data_delete
 from utils.converts import convert_telegram_message_to_bbcode
 
 logger = telebot.logger
@@ -43,6 +45,11 @@ bot = telebot.TeleBot(BOT_TOKEN)
 @bot.message_handler(commands=['start'])
 def send_start(message):
     start.send(message, bot)
+
+
+@bot.message_handler(commands=['unbind'])
+def send_unbind(message):
+    unbind.send(message, bot)
 
 
 # 使用帮助 ./plugins/help
@@ -110,12 +117,10 @@ def close_message(message):
             return bot.delete_message(message.chat.id, message_id=msg.id)
 
 
-@bot.message_handler(chat_types=['group', 'supergroup'])
+@bot.message_handler()
 def link_subject_info(message):
-    if message.text.find('https://bgm.tv/subject/' or 'https://bangumi.tv/subject/') != -1:
-        subject_id = message.text.split('/subject/')[1].split('/')[0]
-        if subject_id.isdigit():
-            info.send(message, bot, subject_id)
+    for i in re.findall(r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)', message.text, re.I | re.M):
+        info.send(message, bot, i[1])
 
 
 # 章节评论
@@ -137,7 +142,8 @@ def send_reply(message):
 
                 post_eps_reply(message.from_user.id, ep_id, text)
             except:
-                bot.send_message(message.chat.id, "*发送评论失败\n(可能未添加 Cookie 或者 Cookie 已过期)* \n请使用 `/start <Cookie>` 来添加或更新 Cookie",
+                bot.send_message(message.chat.id,
+                                 "*发送评论失败\n(可能未添加 Cookie 或者 Cookie 已过期)* \n请使用 `/start <Cookie>` 来添加或更新 Cookie",
                                  parse_mode='Markdown', reply_to_message_id=message.message_id)
                 raise
             bot.send_message(message.chat.id, "发送评论成功",
@@ -229,6 +235,11 @@ def consumption_request(session: RequestSession):
     try:
         callback_text = request_handler(session)
         top = session.stack[-1]
+    except TokenExpired:
+        top = BaseRequest(session)
+        top.page_text = "您的Token已过期,请重新绑定"
+        user_data_delete(session.request_message.from_user.id)
+        start.send(session.request_message, bot)
     except Exception as e:
         top = BaseRequest(session)
         top.page_text = "发生了未知异常QAQ"
