@@ -117,7 +117,7 @@ def close_message(message):
             return bot.delete_message(message.chat.id, message_id=msg.id)
 
 
-@bot.message_handler()
+@bot.message_handler(regexp=r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)')
 def link_subject_info(message):
     for i in re.findall(r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)', message.text, re.I | re.M):
         info.send(message, bot, i[1])
