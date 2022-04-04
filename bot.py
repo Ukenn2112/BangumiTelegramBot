@@ -124,30 +124,22 @@ def link_subject_info(message):
 
 
 # 章节评论
-@bot.message_handler(chat_types=['private'])
+@bot.message_handler(chat_types=['private'], func=lambda message: message.reply_to_message is not None)
 def send_reply(message):
-    if message.reply_to_message is None:
-        return
     if message.reply_to_message.from_user.username != config.BOT_USERNAME:
         return
-    if message.reply_to_message.content_type != 'text':
-        return
-    reply_message_data = message.reply_to_message.text.split('\n')
-    if len(reply_message_data) > 1 and 'EP ID' in reply_message_data[2]:
-        ep_id = reply_message_data[2].replace('EP ID： ', '')
-        if ep_id.isdecimal():
-            try:
-                text = message.text
-                text = convert_telegram_message_to_bbcode(text, message.entities)
-
-                post_eps_reply(message.from_user.id, ep_id, text)
-            except:
-                bot.send_message(message.chat.id,
-                                 "*发送评论失败\n(可能未添加 Cookie 或者 Cookie 已过期)* \n请使用 `/start <Cookie>` 来添加或更新 Cookie",
-                                 parse_mode='Markdown', reply_to_message_id=message.message_id)
-                raise
-            bot.send_message(message.chat.id, "发送评论成功",
-                             reply_to_message_id=message.message_id)
+    for i in re.findall(r'(EP ID： )([0-9]+)', str(message.reply_to_message.text), re.I | re.M):
+        try:
+            text = message.text
+            text = convert_telegram_message_to_bbcode(text, message.entities)
+            post_eps_reply(message.from_user.id, i[1], text)
+        except:
+            bot.send_message(message.chat.id,
+                             "*发送评论失败\n(可能未添加 Cookie 或者 Cookie 已过期)* \n请使用 `/start <Cookie>` 来添加或更新 Cookie",
+                             parse_mode='Markdown', reply_to_message_id=message.message_id)
+            raise
+        bot.send_message(message.chat.id, "发送评论成功",
+                         reply_to_message_id=message.message_id)
 
 
 # 空按钮回调处理
