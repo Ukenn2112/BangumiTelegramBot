@@ -195,6 +195,7 @@ def set_bot_command(bot_):
         telebot.types.BotCommand("week", "每日放送"),
         telebot.types.BotCommand("search", "搜索条目"),
         telebot.types.BotCommand("close", "关闭此对话"),
+        telebot.types.BotCommand("unbind", "解除 Bangumi 账号绑定"),
     ]
     try:
         return bot_.set_my_commands(commands_list)
