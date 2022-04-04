@@ -9,7 +9,7 @@ def do(request: DoEditRatingRequest, tg_id: int) -> DoEditRatingRequest:  # 返�
     user_status = request.user_collection.get('status', {}).get('type')
     if user_status is None:
         user_status = 'collect'
-    collection_post(tg_id, request.subject_id, user_status, str(request.rating_num))
+    collection_post(tg_id, request.subject_id, status=user_status, rating=str(request.rating_num))
     if request.rating_num == 0:
         request.callback_text = f"已成功撤销评分"
     else:
