@@ -247,13 +247,13 @@ def post_eps_status(tg_id: int, id_: int, status, ep_id: List[int] = None, acces
     return requests.post(url=url, headers=headers, data=params)
 
 
-def post_collection(tg_id, subject_id, status: str, comment: str = None, tag: str = None, rating: str = None, privacy: int = None, access_token: str = None):
+def post_collection(tg_id, subject_id, status: str, comment: str = None, tags: str = None, rating: str = None, privacy: int = None, access_token: str = None):
     r"""收藏管理  token 和 tg_id须传一个
     :param tg_id: Telegram 用户id
     :param subject_id: 条目 ID
     :param status: 收藏类型: wish = 想看 collect = 看过 do = 在看 on_hold = 搁置 dropped = 抛弃
     :param comment: 吐槽 (简评，最多200字)
-    :param tag: 标签 多个以以半角空格分割
+    :param tags: 标签 多个以以半角空格分割
     :param rating: 评分 不填默认重置为未评分
     :param privacy: 收藏私密状态 0 = 公开 1 = 私密 不填默认为0
     :param access_token: 用户密钥"""
@@ -262,8 +262,8 @@ def post_collection(tg_id, subject_id, status: str, comment: str = None, tag: st
     params = {"status": status}
     if comment:
         params["comment"] = comment
-    if tag:
-        params["tag"] = tag
+    if tags:
+        params["tags"] = tags
     if rating:
         params["rating"] = rating
     if privacy:

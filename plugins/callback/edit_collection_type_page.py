@@ -1,10 +1,10 @@
 """收藏页"""
 import telebot
 
-from model.page_model import EditCollectionTypePageRequest, BackRequest, DoEditCollectionTypeRequest, \
+from model.page_model import EditCollectionTagsPageRequest, EditCollectionTypePageRequest, BackRequest, DoEditCollectionTypeRequest, \
     COLLECTION_TYPE_STR
 from utils.api import get_subject_info, user_data_get, user_collection_get, post_collection, anime_img
-from utils.converts import collection_type_markup_text_list
+from utils.converts import collection_type_markup_text_list, subject_type_to_emoji
 
 
 def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
@@ -23,6 +23,10 @@ def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypeP
     request.possible_request['back'] = BackRequest(request.session)
     for i in COLLECTION_TYPE_STR.__args__:
         request.possible_request[i] = DoEditCollectionTypeRequest(request.session, request.subject_id, i)
+    markup.add(telebot.types.InlineKeyboardButton(text='标签管理', callback_data=f'{session_uuid}|tags'))
+    collection_tag_page_request =  EditCollectionTagsPageRequest(request.session, subject_id=request.subject_id)
+    collection_tag_page_request.user_collection = request.user_collection
+    request.possible_request['tags'] = collection_tag_page_request
     markup.add(*button_list, row_width=3)
     request.page_text = text
     request.page_markup = markup
@@ -53,6 +57,41 @@ def do(request: DoEditCollectionTypeRequest, tg_id: int) -> DoEditCollectionType
         post_collection(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
         # request.callback_text = "已将收藏更改为抛弃"
     request.callback_text = "已更改收藏状态"
+    if not request.page_image:
+        request.page_image = anime_img(request.subject_id)
+    return request
+
+
+def collection_tags_page(request: EditCollectionTagsPageRequest, tg_id: int):
+    subject_id = request.subject_id
+    access_token = user_data_get(tg_id).get('access_token')
+    if not access_token:
+        request.callback_text = "您尚未绑定Bangumi账户，请私聊bot绑定"
+        return request
+    subject_info = get_subject_info(subject_id)
+    user_collection = user_collection_get(None, subject_id, access_token)
+    if (user_collection and 'tag' in user_collection and user_collection['tag'] and len(user_collection['tag']) == 1 and user_collection['tag'][0] == ""):
+        user_collection['tag'] = []  # 鬼知道为什么没标签会返回个空字符串
+    text = f"*{subject_type_to_emoji(subject_info['type'])}" \
+           f"『 {subject_info['name_cn'] or subject_info['name']} 』标签管理*\n\n"
+    text += "➤ *常用标签：*"
+    if subject_info['tags']:
+        for tag in subject_info['tags']:
+            text += f"`{tag['name']}` "
+    else:
+        text += "此条目暂无标签"
+    text += "\n\n➤ *我的标签：*"
+    if user_collection['tag']:
+        for tag in user_collection['tag']:
+            text += f"`{tag}` "
+    else:
+        text += "未设置条目标签"
+    text += f"\n\n📖 [详情](https://bgm.tv/subject/{subject_id})\n*回复此消息即可修改标签 (此操作直接对现有设置标签进行覆盖，多标签请用空格隔开)*"
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'{request.session.uuid}|back'))
+    request.possible_request['back'] = BackRequest(request.session)
+    request.page_text = text
+    request.page_markup = markup
     if not request.page_image:
         request.page_image = anime_img(request.subject_id)
     return request

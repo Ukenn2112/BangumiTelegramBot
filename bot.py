@@ -15,18 +15,17 @@ import telebot
 import config
 from config import BOT_TOKEN
 from model.exception import TokenExpired
-from model.page_model import RequestSession, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, \
+from model.page_model import EditCollectionTagsPageRequest, RequestSession, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, \
     BackRequest, \
     EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
     RefreshRequest, BaseRequest, SubjectEpsPageRequest, EditEpsPageRequest, DoEditEpisodeRequest, \
     SubjectRelationsPageRequest
-from plugins import start, help, week, info, search, collection_list, unbind
+from plugins import start, help, week, info, search, collection_list, unbind, reply_handling
 from plugins.callback import edit_rating_page, week_page, subject_page, \
     collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
     subject_relations_page
 from plugins.inline import sender, public, mybgm
-from utils.api import create_sql, post_collection, post_eps_reply, run_continuously, redis_cli, user_collection_get, user_data_delete
-from utils.converts import convert_telegram_message_to_bbcode
+from utils.api import create_sql, run_continuously, redis_cli, user_data_delete
 
 logger = telebot.logger
 if 'LOG_LEVEL' in dir(config):
@@ -123,37 +122,10 @@ def link_subject_info(message):
         info.send(message, bot, i[1])
 
 
-# 章节评论
-@bot.message_handler(chat_types=['private'], func=lambda message: message.reply_to_message is not None)
+# 回复消息处理
+@bot.message_handler(chat_types=['private'], func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.username == config.BOT_USERNAME)
 def send_reply(message):
-    if message.reply_to_message.from_user.username != config.BOT_USERNAME:
-        return
-    if re.search(r'(EP ID： )([0-9]+)', str(message.reply_to_message.text), re.I | re.M):
-        for i in re.findall(r'(EP ID： )([0-9]+)', message.reply_to_message.text, re.I | re.M):
-            try:
-                text = message.text
-                text = convert_telegram_message_to_bbcode(text, message.entities)
-                post_eps_reply(message.from_user.id, i[1], text)
-            except:
-                bot.send_message(message.chat.id,
-                                "*发送评论失败\n(可能未添加 Cookie 或者 Cookie 已过期)* \n请使用 `/start <Cookie>` 来添加或更新 Cookie",
-                                parse_mode='Markdown', reply_to_message_id=message.message_id)
-                raise
-            bot.send_message(message.chat.id, "发送评论成功",
-                             reply_to_message_id=message.message_id)
-    if re.search(r'回复此消息即可对此条目进行吐槽', str(message.reply_to_message.caption), re.I | re.M):
-        for i in re.findall(r'(bgm\.tv)/subject/([0-9]+)', str(message.reply_to_message.html_caption), re.I | re.M):
-            user_collection = user_collection_get(message.from_user.id, i[1])
-            try:
-                post_collection(message.from_user.id, i[1],
-                                status=user_collection['status']['type'] if user_collection['status']['type'] else 'collect',
-                                comment=message.text,
-                                rating=user_collection['rating'] if user_collection['rating'] else None)
-            except:
-                bot.send_message(message.chat.id, "*发送简评失败*", parse_mode='Markdown', reply_to_message_id=message.message_id)
-                raise
-            bot.send_message(message.chat.id, "发送简评成功",
-                             reply_to_message_id=message.message_id)
+    reply_handling.send(message, bot)
 
 
 # 空按钮回调处理
@@ -314,6 +286,8 @@ def request_handler(session: RequestSession):
         summary_page.generate_page(top)
     elif isinstance(top, EditCollectionTypePageRequest):
         edit_collection_type_page.generate_page(top)
+    elif isinstance(top, EditCollectionTagsPageRequest):
+        edit_collection_type_page.collection_tags_page(top, session.request_message.from_user.id)
     elif isinstance(top, EditRatingPageRequest):
         edit_rating_page.generate_page(top)
     elif isinstance(top, SubjectEpsPageRequest):

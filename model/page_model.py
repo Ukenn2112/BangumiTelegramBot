@@ -119,6 +119,7 @@ class EditCollectionTypePageRequest(BaseRequest):
         """
         super().__init__(session)
         self.subject_id: int = subject_id
+        self.user_collection = None
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
@@ -250,6 +251,22 @@ class DoEditEpisodeRequest(BaseRequest):
         super().__init__(session)
         self.episode_id: int = episode_id
         self.status: EpStatusType = status
+
+        self.possible_request: Dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.callback_text: Optional[str] = None
+
+
+class EditCollectionTagsPageRequest(BaseRequest):
+    def __init__(self, session: RequestSession, subject_id: int):
+        """修改收藏标签页
+
+        :param subject_id: 条目ID
+        """
+        super().__init__(session)
+        self.subject_id: int = subject_id
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
