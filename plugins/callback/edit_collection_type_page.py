@@ -10,7 +10,7 @@ from utils.converts import collection_type_markup_text_list
 def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
     session_uuid = request.session.uuid
     subject_data = get_subject_info(request.subject_id)
-    text = f"*您想将 “*`{subject_data['name']}`*” 收藏为*\n\n"
+    text = f"*您想将 “*`{subject_data['name']}`*” 收藏为*\n\n💬 [吐槽箱](https://bgm.tv/subject/{request.subject_id}/comments)\n*回复此消息即可对此条目进行吐槽 (简评，最多200字)*"
     markup_text = collection_type_markup_text_list(subject_data['type'])
     markup = telebot.types.InlineKeyboardMarkup()
     button_list = [

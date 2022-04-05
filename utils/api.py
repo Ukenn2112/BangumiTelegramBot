@@ -252,7 +252,7 @@ def post_collection(tg_id, subject_id, status: str, comment: str = None, tag: st
     :param tg_id: Telegram 用户id
     :param subject_id: 条目 ID
     :param status: 收藏类型: wish = 想看 collect = 看过 do = 在看 on_hold = 搁置 dropped = 抛弃
-    :param comment: 简评
+    :param comment: 吐槽 (简评，最多200字)
     :param tag: 标签 多个以以半角空格分割
     :param rating: 评分 不填默认重置为未评分
     :param privacy: 收藏私密状态 0 = 公开 1 = 私密 不填默认为0
