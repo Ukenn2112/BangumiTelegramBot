@@ -3,7 +3,7 @@ import telebot
 
 from model.page_model import EditCollectionTypePageRequest, BackRequest, DoEditCollectionTypeRequest, \
     COLLECTION_TYPE_STR
-from utils.api import get_subject_info, user_data_get, user_collection_get, collection_post, anime_img
+from utils.api import get_subject_info, user_data_get, user_collection_get, post_collection, anime_img
 from utils.converts import collection_type_markup_text_list
 
 
@@ -38,19 +38,19 @@ def do(request: DoEditCollectionTypeRequest, tg_id: int) -> DoEditCollectionType
         return request
     rating = str(user_collection_get(None, subject_id, access_token).get('rating'))
     if collection_type == 'wish':  # 想看
-        collection_post(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
+        post_collection(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
         # request.callback_text = "已将收藏更改为想看"
     if collection_type == 'collect':  # 看过
-        collection_post(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
+        post_collection(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
         # request.callback_text = "已将收藏更改为看过"
     if collection_type == 'do':  # 在看
-        collection_post(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
+        post_collection(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
         # request.callback_text = "已将收藏更改为在看"
     if collection_type == 'on_hold':  # 搁置
-        collection_post(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
+        post_collection(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
         # request.callback_text = "已将收藏更改为搁置"
     if collection_type == 'dropped':  # 抛弃
-        collection_post(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
+        post_collection(None, subject_id, status=collection_type, rating=rating, access_token=access_token)
         # request.callback_text = "已将收藏更改为抛弃"
     request.callback_text = "已更改收藏状态"
     if not request.page_image:

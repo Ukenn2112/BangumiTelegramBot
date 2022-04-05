@@ -2,14 +2,14 @@
 import telebot
 
 from model.page_model import EditRatingPageRequest, BackRequest, DoEditRatingRequest
-from utils.api import collection_post, get_subject_info, anime_img, user_collection_get
+from utils.api import post_collection, get_subject_info, anime_img, user_collection_get
 
 
 def do(request: DoEditRatingRequest, tg_id: int) -> DoEditRatingRequest:  # 返回在看列表页数
     user_status = request.user_collection.get('status', {}).get('type')
     if user_status is None:
         user_status = 'collect'
-    collection_post(tg_id, request.subject_id, status=user_status, rating=str(request.rating_num))
+    post_collection(tg_id, request.subject_id, status=user_status, rating=str(request.rating_num))
     if request.rating_num == 0:
         request.callback_text = f"已成功撤销评分"
     else:

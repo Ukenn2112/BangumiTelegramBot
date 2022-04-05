@@ -247,33 +247,32 @@ def post_eps_status(tg_id: int, id_: int, status, ep_id: List[int] = None, acces
     return requests.post(url=url, headers=headers, data=params)
 
 
-# 更新收藏状态
-def collection_post(tg_id, subject_id, status: str, tag: str = None, rating: str = None, privacy: int = None, access_token: str = None):
-    """更新收藏状态
+def post_collection(tg_id, subject_id, status: str, comment: str = None, tag: str = None, rating: str = None, privacy: int = None, access_token: str = None):
+    r"""收藏管理  token 和 tg_id须传一个
     :param tg_id: Telegram 用户id
-    :param subject_id: 章节 ID
+    :param subject_id: 条目 ID
     :param status: 收藏类型: wish = 想看 collect = 看过 do = 在看 on_hold = 搁置 dropped = 抛弃
+    :param comment: 简评
     :param tag: 标签 多个以以半角空格分割
     :param rating: 评分 不填默认重置为未评分
     :param privacy: 收藏私密状态 0 = 公开 1 = 私密 不填默认为0
     :param access_token: 用户密钥"""
     if not access_token:
         access_token = user_data_get(tg_id).get('access_token')
-    params = {"status": (None, status)}
+    params = {"status": status}
+    if comment:
+        params["comment"] = comment
     if tag:
-        params.update({"tag": (None, tag)})
+        params["tag"] = tag
     if rating:
-        params.update({"rating": (None, rating)})
+        params["rating"] = rating
     if privacy:
-        params.update({"privacy": (None, privacy)})
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
-        'Authorization': 'Bearer ' + access_token}
+        params["privacy"] = privacy
+    headers = {'Authorization': f'Bearer {access_token}'}
     url = f'https://api.bgm.tv/collection/{subject_id}/update'
-    return requests.post(url=url, files=params, headers=headers)
+    return requests.post(url=url, data=params, headers=headers)
 
 
-# 获取指定条目收藏信息
 def user_collection_get(test_id, subject_id, access_token=None):
     """获取指定条目收藏信息"""
     if access_token is None:
@@ -288,33 +287,6 @@ def get_user_progress(tg_id, subject_id):
     access_token = userdata.get('access_token')
     url = f'https://api.bgm.tv/user/{userdata["user_id"]}/progress'
     return requests_get(url=url, access_token=access_token, params={'subject_id': subject_id})
-
-
-def post_collection(tg_id, subject_id, status, comment=None, tags=None, rating=None, private=None):
-    r"""管理收藏 token 和 tg_id须传一个
-
-    :param tg_id: Telegram 用户id
-    :param subject_id: 条目id
-    :param status: 状态 wish collect do on_hold dropped
-    :param comment: 简评
-    :param tags: 标签 以半角空格分割
-    :param rating: 评分 1-10 不填默认重置为未评分
-    :param private: 收藏隐私 0 = 公开 1 = 私密 不填默认为0
-    :return 请求结果
-    """
-    access_token = user_data_get(tg_id).get('access_token')
-    params = {"status": status}  #
-    if comment is not None:
-        params['comment'] = comment
-    if tags is not None:
-        params['tags'] = tags
-    if rating is not None:
-        params['rating'] = rating
-    if private is not None:
-        params['private'] = private
-    headers = {'Authorization': f'Bearer {access_token}'}
-    url = f'https://api.bgm.tv/collection/{subject_id}/update'
-    return requests.post(url=url, data=params, headers=headers)
 
 
 def get_calendar() -> dict:
