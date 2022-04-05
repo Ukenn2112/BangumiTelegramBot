@@ -597,7 +597,7 @@ def post_eps_reply(tg_id, ep_id, reply_text):
     html = etree.HTML(result.text.encode('utf-8'))
     formhash = html.xpath('//input[@name="formhash"]/@value')[0]
     lastview = html.xpath('//input[@name="lastview"]/@value')[0]
-    reply_text += '\n[i]# 此消息由 [url=https://github.com/Ukenn2112/BangumiTelegramBot]BangumiTelegramBot[/url] 发送 [i](bgm24)'
+    reply_text += '\n[size=11][来自[url=https://bgm.tv/group/topic/366880]Bangumi for TelegramBot[/url]][/size]'
     FormData = {
         'content': reply_text,
         'related_photo': 0,
