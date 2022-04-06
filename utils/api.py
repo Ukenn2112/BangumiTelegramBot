@@ -3,6 +3,7 @@
 https://bangumi.github.io/api/"""
 
 import datetime
+import html
 import json
 import logging
 import random
@@ -310,6 +311,7 @@ def get_subject_info(subject_id, t_dict=None):
     else:
         url = f'https://api.bgm.tv/v0/subjects/{subject_id}'
         loads = requests_get(url=url, access_token=nsfw_token())
+        loads['name_cn'] = html.unescape(loads['name_cn'])
         if loads is None:
             redis_cli.set(f"subject:{subject_id}",
                           "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
