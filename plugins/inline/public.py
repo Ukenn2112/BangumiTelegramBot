@@ -240,7 +240,7 @@ def query_public_text(inline_query, bot):
 
     elif query.startswith("@"):  # @ 搜索 转换至私聊搜索
         inline_query.query = inline_query.query.lstrip('@')
-        from plugins.inline.public import query_sender_text
+        from plugins.inline.sender import query_sender_text
         return query_sender_text(inline_query, bot)
 
     else:  # search_subject 普通搜索
