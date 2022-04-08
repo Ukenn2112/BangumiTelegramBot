@@ -30,12 +30,13 @@ def generate_page(request: WeekRequest) -> WeekRequest:
             markup.add(*button_list, row_width=5)
             week_button_list = []
             for week_day in range(1, 8):
-                day_str = number_to_week(week_day)[-1]
-                request.possible_request[day_str] = WeekRequest(request.session, week_day=week_day)
-                week_button_list.append(telebot.types.InlineKeyboardButton(
-                    text=day_str,
-                    callback_data=f"{session_uuid}|{day_str}"))
-            markup.add(*week_button_list, row_width=7)
+                if week_day != int(request.week_day):
+                    day_str = number_to_week(week_day)[-1]
+                    request.possible_request[day_str] = WeekRequest(request.session, week_day=week_day)
+                    week_button_list.append(telebot.types.InlineKeyboardButton(
+                        text=day_str,
+                        callback_data=f"{session_uuid}|{day_str}"))
+            markup.add(*week_button_list, row_width=6)
             request.page_text = text
             request.page_markup = markup
     return request
