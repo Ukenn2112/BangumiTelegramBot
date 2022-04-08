@@ -6,8 +6,13 @@ from utils.converts import convert_telegram_message_to_bbcode, subject_type_to_e
 
 
 def send(message, bot):
-    if re.search(r'回复此消息即可对此章节进行评论', str(message.reply_to_message.text), re.I | re.M):
-        for i in re.findall(r'(EP ID： )([0-9]+)', message.reply_to_message.text, re.I | re.M):
+    if message.reply_to_message.text is not None:
+        reply_message = message.reply_to_message.text
+    else:
+        reply_message = message.reply_to_message.html_caption
+
+    if re.search(r'回复此消息即可对此章节进行评论', reply_message, re.I | re.M):
+        for i in re.findall(r'(EP ID： )([0-9]+)', reply_message, re.I | re.M):
             try:
                 text = message.text
                 text = convert_telegram_message_to_bbcode(text, message.entities)
@@ -19,8 +24,8 @@ def send(message, bot):
                 raise
             bot.send_message(message.chat.id, "发送评论成功",
                              reply_to_message_id=message.message_id)
-    if re.search(r'回复此消息即可对此条目进行吐槽', str(message.reply_to_message.caption), re.I | re.M):
-        for i in re.findall(r'(bgm\.tv)/subject/([0-9]+)', str(message.reply_to_message.html_caption), re.I | re.M):
+    if re.search(r'回复此消息即可对此条目进行吐槽', reply_message, re.I | re.M):
+        for i in re.findall(r'(bgm\.tv)/subject/([0-9]+)', reply_message, re.I | re.M):
             user_collection = user_collection_get(message.from_user.id, i[1])
             try:
                 post_collection(message.from_user.id, i[1],
@@ -32,8 +37,8 @@ def send(message, bot):
                 raise
             bot.send_message(message.chat.id, "发送简评成功",
                              reply_to_message_id=message.message_id)
-    if re.search(r'回复此消息即可修改标签', str(message.reply_to_message.caption), re.I | re.M):
-        for i in re.findall(r'(bgm\.tv)/subject/([0-9]+)', str(message.reply_to_message.html_caption), re.I | re.M):
+    if re.search(r'回复此消息即可修改标签', reply_message, re.I | re.M):
+        for i in re.findall(r'(bgm\.tv)/subject/([0-9]+)', reply_message, re.I | re.M):
             subject_id = i[1]
             user_collection = user_collection_get(message.from_user.id, subject_id)
             try:
