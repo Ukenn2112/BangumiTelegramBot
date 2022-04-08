@@ -45,6 +45,8 @@ class WeekRequest(BaseRequest):
         super().__init__(session)
         self.week_day: int = week_day
 
+        self.retain_image = False
+        
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
