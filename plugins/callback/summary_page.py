@@ -19,7 +19,8 @@ def generate_page(request: SummaryRequest) -> SummaryRequest:
             f"\n📖 [详情](https://bgm.tv/subject/{request.subject_id})"
             f"\n💬 [吐槽箱](https://bgm.tv/subject/{request.subject_id}/comments)")
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"))
+    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"),
+               telebot.types.InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {request.subject_id}"))
     request.page_text = text
     request.page_markup = markup
     request.possible_request['back'] = BackRequest(request.session)
