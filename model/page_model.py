@@ -16,6 +16,7 @@ class BaseRequest:
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
+        self.retain_image: Optional[bool] = True # 是否保留页面图片
         self.session: RequestSession = session
 
 
@@ -69,6 +70,7 @@ class CollectionsRequest(BaseRequest):
         self.limit: int = limit
 
         self.user_data = None
+        self.retain_image = False
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
@@ -87,6 +89,7 @@ class SubjectRequest(BaseRequest):
         super().__init__(session)
         self.subject_id: int = subject_id
         self.is_root: bool = is_root
+        self.retain_image = False
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

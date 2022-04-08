@@ -254,6 +254,14 @@ def consumption_request(session: RequestSession):
                 message_id=session.bot_message.message_id,
                 chat_id=session.request_message.chat.id
             )
+        elif top.retain_image and session.bot_message.content_type == 'photo':
+            session.bot_message = bot.edit_message_caption(
+                caption=top.page_text,
+                reply_markup=top.page_markup,
+                parse_mode='markdown',
+                message_id=session.bot_message.message_id,
+                chat_id=session.request_message.chat.id
+            )
         else:
             bot.delete_message(
                 message_id=session.bot_message.message_id,
