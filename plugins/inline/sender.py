@@ -82,13 +82,14 @@ def query_subject_person(inline_query):
         subject_persons = []
     new_subject_persons = []
     group = full_group_by(subject_persons, lambda c: c['relation'])
-    new_subject_persons.extend(group.pop('原作', []))
+    new_subject_persons.extend(group.pop('原作', []))  # TODO 补充排序顺序
     new_subject_persons.extend(group.pop('导演', []))
     new_subject_persons.extend(group.pop('监督', []))
+    new_subject_persons.extend(group.pop('原画', []))
     for k in group:
         new_subject_persons.extend(group[k])
     switch_pm_text = subject_name + " STAFF列表"
-    for person in new_subject_persons[offset: offset + 49]:
+    for num, person in enumerate(new_subject_persons[offset: offset + 49]):
         text = f"*{person['name']}*"
         description = person['relation']
         text += (f"\n{description}\n"
@@ -96,7 +97,7 @@ def query_subject_person(inline_query):
                  f"&rhash=48797fd986e111)"
                  f"\n📖 [详情](https://bgm.tv/character/{person['id']})")
         qr = telebot.types.InlineQueryResultArticle(
-            id=f"sp:{person['id']}",
+            id=f"sp:{person['id']}:{num}",
             title=person['name'],
             description=description,
             input_message_content=telebot.types.InputTextMessageContent(
@@ -171,7 +172,8 @@ def query_person_related_subjects(inline_query):
                 message_text=f"/info@{BOT_USERNAME} {subject['id']}",
                 disable_web_page_preview=True
             ),
-            description=(f"{subject['name']} | " if subject["name_cn"] else '') + (subject['staff'] if subject["staff"] else ''),
+            description=(f"{subject['name']} | " if subject["name_cn"] else '') + (
+                subject['staff'] if subject["staff"] else ''),
             thumb_url=subject["image"] if subject["image"] else None,
         )
         query_result_list.append(qr)
@@ -378,7 +380,7 @@ def query_sender_text(inline_query, bot):
     elif query.startswith("@"):  # @ 搜索 转换至公共搜索
         inline_query.query = inline_query.query.lstrip('@')
         from plugins.inline.public import query_public_text
-        return query_public_text(inline_query, bot) # 公共搜索
+        return query_public_text(inline_query, bot)  # 公共搜索
 
     else:  # search_subject 普通搜索
         if inline_query.query.endswith(" 角色"):
