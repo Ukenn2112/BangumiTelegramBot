@@ -110,6 +110,17 @@ def expiry_data_get(tg_id):
     sql_con.commit()
 
 
+def update_user_cookie(tg_id, cookie):
+    """更新用户Token"""
+    if 'chii_sec_id=' in cookie and 'chii_auth=' in cookie and 'chii_sid=' in cookie:
+        sql_con.execute("update user set cookie=?,update_time=? where tg_id=?",
+                        (cookie, datetime.datetime.now().timestamp() // 1000, tg_id,))
+        sql_con.commit()
+        return True
+    else:
+        return False
+
+
 # 获取BGM用户信息 TODO 存入数据库
 def bgmuser_data(test_id):
     user = user_data_get(test_id)
@@ -248,7 +259,8 @@ def post_eps_status(tg_id: int, id_: int, status, ep_id: List[int] = None, acces
     return requests.post(url=url, headers=headers, data=params)
 
 
-def post_collection(tg_id, subject_id, status: str, comment: str = None, tags: str = None, rating: str = None, privacy: int = None, access_token: str = None):
+def post_collection(tg_id, subject_id, status: str, comment: str = None, tags: str = None, rating: str = None,
+                    privacy: int = None, access_token: str = None):
     r"""收藏管理  token 和 tg_id须传一个
     :param tg_id: Telegram 用户id
     :param subject_id: 条目 ID

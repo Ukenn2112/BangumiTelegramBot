@@ -10,6 +10,45 @@ from utils.api import get_person_info, get_person_related_subjects, search_subje
 from utils.converts import subject_type_to_emoji, full_group_by
 
 
+def query_subject_info(inline_query):
+    """S + 条目ID 发送命令 获取条目详情"""
+    query_param = inline_query.query.split(' ')
+    subject_id = query_param[1]
+
+    subject_info = get_subject_info(subject_id)
+    switch_pm_text = (subject_info['name_cn'] or subject_info['name'])
+    qr = telebot.types.InlineQueryResultArticle(
+        id=f"S:{subject_id}", title=subject_type_to_emoji(subject_info['type']) +
+                                    (subject_info["name_cn"] or subject_info["name"]),
+        input_message_content=telebot.types.InputTextMessageContent(
+            message_text=f"/info@{BOT_USERNAME} {subject_id}",
+            disable_web_page_preview=True
+        ), description=subject_info["name"] if subject_info["name_cn"] else None,
+        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+    )
+    return {'results': [qr], 'switch_pm_text': switch_pm_text,
+            'switch_pm_parameter': f"{subject_info['id']}", 'cache_time': 0}
+
+
+def query_person_info(inline_query):
+    """P + 人物ID 获取人物详情"""
+    query_param = inline_query.query.split(' ')
+    person = query_param[1]
+
+    person_info = get_person_info(person)
+    switch_pm_text = "人物:" + person_info['name']
+    qr = telebot.types.InlineQueryResultArticle(
+        id=f"P:{person_info['id']}", title=person_info['name'],
+        input_message_content=telebot.types.InputTextMessageContent(
+            message_text=f"/info@{BOT_USERNAME} P {person_info['id']}",  # TODO /info P PersonID
+            disable_web_page_preview=True
+        ),  # description=person_info["name"]
+        thumb_url=person_info["images"]["medium"] if person_info["images"] else person_info['img']
+    )
+    return {'results': [qr], 'switch_pm_text': switch_pm_text,
+            'switch_pm_parameter': f"P_{person_info['id']}", 'cache_time': 0}
+
+
 def query_subject_characters(inline_query):
     """SC + 条目ID 获取条目关联角色"""
     offset = int(inline_query.offset or 0)
@@ -29,9 +68,14 @@ def query_subject_characters(inline_query):
     switch_pm_text = subject_name + " 角色列表"
     for character in new_subject_characters[offset: offset + 49]:
         text = f"*{character['name']}*"
+        markup = telebot.types.InlineKeyboardMarkup()
         description = character['relation']
         if character['actors']:
-            description += f" | CV: {[cv['name'] for cv in character['actors']][0]}"
+            for actor in character['actors']:
+                description += f" | CV: {actor['name']}"
+                markup.add(
+                    telebot.types.InlineKeyboardButton(text="CV:" + actor['name'],
+                                                       switch_inline_query_current_chat=f"P {actor['id']}"))
         text += (f"\n{description}\n"
                  f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}"
                  f"&rhash=48797fd986e111)"
@@ -45,6 +89,7 @@ def query_subject_characters(inline_query):
                 parse_mode="markdown",
                 disable_web_page_preview=False
             ),
+            reply_markup=markup,
             thumb_url=character['images']['grid'] if character['images'] else None
         )
         query_result_list.append(qr)
@@ -126,26 +171,6 @@ def query_subject_person(inline_query):
         next_offset = offset + 49
     return {'results': query_result_list, 'next_offset': next_offset,
             'switch_pm_text': switch_pm_text, 'switch_pm_parameter': subject_id, 'cache_time': 3600}
-
-
-def query_subject_info(inline_query):
-    """S + 条目ID 发送命令 获取条目详情"""
-    query_param = inline_query.query.split(' ')
-    subject_id = query_param[1]
-
-    subject_info = get_subject_info(subject_id)
-    switch_pm_text = (subject_info['name_cn'] or subject_info['name'])
-    qr = telebot.types.InlineQueryResultArticle(
-        id=f"S:{subject_id}", title=subject_type_to_emoji(subject_info['type']) +
-                                    (subject_info["name_cn"] or subject_info["name"]),
-        input_message_content=telebot.types.InputTextMessageContent(
-            message_text=f"/info@{BOT_USERNAME} {subject_id}",
-            disable_web_page_preview=True
-        ), description=subject_info["name"] if subject_info["name_cn"] else None,
-        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
-    )
-    return {'query_result_list': [qr], 'switch_pm_text': switch_pm_text,
-            'switch_pm_parameter': f"{subject_info['id']}", 'cache_time': 0}
 
 
 def query_person_related_subjects(inline_query):
@@ -354,6 +379,8 @@ def query_sender_text(inline_query, bot):
     # 使用 ID 搜索
     if query.startswith("S ") and query_param[1].isdecimal():  # 条目id 详情
         kwargs = query_subject_info(inline_query)
+    elif query.startswith("P ") and query_param[1].isdecimal():  # 角色id 详情
+        kwargs = query_person_info(inline_query)
     elif query.startswith("PS ") and query_param[1].isdecimal():  # 人物出演的条目
         kwargs = query_person_related_subjects(inline_query)
     elif query.startswith("SC ") and query_param[1].isdecimal():  # 条目关联的角色
