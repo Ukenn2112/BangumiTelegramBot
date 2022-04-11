@@ -6,7 +6,7 @@ from telebot.types import InlineQueryResultArticle
 
 from config import BOT_USERNAME
 from plugins.callback.subject_page import gander_page_text
-from plugins.inline.sender import query_subject_characters, query_mono
+from plugins.inline.sender import query_subject_characters, query_mono, query_subject_person
 from utils.api import anime_img, get_person_info, get_person_related_subjects, search_subject, \
     get_subject_info
 from utils.converts import subject_type_to_emoji, parse_markdown_v2, number_to_week
@@ -220,6 +220,8 @@ def query_public_text(inline_query, bot):
         kwargs = query_person_related_subjects(inline_query)
     elif query.startswith("SC ") and query_param[1].isdecimal():  # 条目关联的角色
         kwargs = query_subject_characters(inline_query)
+    elif query.startswith("SP ") and query_param[1].isdecimal():  # 条目关联的STAF
+        kwargs = query_subject_person(inline_query)
 
     # 使用关键词搜索
     elif query.startswith("p "):  # 现实人物搜索

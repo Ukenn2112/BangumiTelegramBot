@@ -366,6 +366,25 @@ def get_subject_characters(subject_id):
     return loads
 
 
+def get_subject_persons(subject_id):
+    """获取指定条目STAFF信息 并使用Redis缓存"""
+    subject_characters = redis_cli.get(f"subject_persons:{subject_id}")
+    if subject_characters:
+        if subject_characters == b"None__":
+            raise FileNotFoundError(f"subject_persons:{subject_id}人物数据获取失败_缓存")
+        loads = json.loads(subject_characters)
+    else:
+        url = f'https://api.bgm.tv/v0/subjects/{subject_id}/persons'
+        loads = requests_get(url=url, access_token=nsfw_token())
+        if loads is None or type(loads) == dict:
+            redis_cli.set(f"subject_persons:{subject_id}",
+                          "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError(f"subject_persons:{subject_id}角色数据获取失败")
+        redis_cli.set(f"subject_persons:{subject_id}", json.dumps(
+            loads), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+    return loads
+
+
 def get_subject_relations(subject_id):
     """获取章节关联条目信息 并使用Redis缓存"""
     subject_relations = redis_cli.get(f"subject_relations:{subject_id}")

@@ -6,7 +6,7 @@ from telebot.types import InlineQueryResultArticle
 
 from config import BOT_USERNAME
 from utils.api import get_person_info, get_person_related_subjects, search_subject, get_subject_characters, \
-    get_subject_info, get_mono_search
+    get_subject_info, get_mono_search, get_subject_persons
 from utils.converts import subject_type_to_emoji, full_group_by
 
 
@@ -61,6 +61,65 @@ def query_subject_characters(inline_query):
         )
         query_result_list.append(qr)
     if len(new_subject_characters) <= offset + 49:
+        next_offset = None
+    else:
+        next_offset = offset + 49
+    return {'results': query_result_list, 'next_offset': next_offset,
+            'switch_pm_text': switch_pm_text, 'switch_pm_parameter': subject_id, 'cache_time': 3600}
+
+
+def query_subject_person(inline_query):
+    """SP + 条目ID 获取条目关联STAFF"""
+    offset = int(inline_query.offset or 0)
+    query_result_list: List[InlineQueryResultArticle] = []
+    query_param = inline_query.query.split(' ')
+    subject_id = query_param[1]
+    subject_info = get_subject_info(subject_id)
+    subject_name = subject_info['name_cn'] or subject_info['name']
+    try:
+        subject_persons = get_subject_persons(subject_id)
+    except FileNotFoundError:
+        subject_persons = []
+    new_subject_persons = []
+    group = full_group_by(subject_persons, lambda c: c['relation'])
+    new_subject_persons.extend(group.pop('原作', []))
+    new_subject_persons.extend(group.pop('导演', []))
+    new_subject_persons.extend(group.pop('监督', []))
+    for k in group:
+        new_subject_persons.extend(group[k])
+    switch_pm_text = subject_name + " STAFF列表"
+    for person in new_subject_persons[offset: offset + 49]:
+        text = f"*{person['name']}*"
+        description = person['relation']
+        text += (f"\n{description}\n"
+                 f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/person/{person['id']}"
+                 f"&rhash=48797fd986e111)"
+                 f"\n📖 [详情](https://bgm.tv/character/{person['id']})")
+        qr = telebot.types.InlineQueryResultArticle(
+            id=f"sp:{person['id']}",
+            title=person['name'],
+            description=description,
+            input_message_content=telebot.types.InputTextMessageContent(
+                text,
+                parse_mode="markdown",
+                disable_web_page_preview=False
+            ),
+            thumb_url=person['images']['grid'] if person['images'] else None
+        )
+        query_result_list.append(qr)
+    if len(new_subject_persons) == 0:
+        qr = telebot.types.InlineQueryResultArticle(
+            id=f"-1",
+            title="这个条目没有staff QAQ",
+            input_message_content=telebot.types.InputTextMessageContent(
+                "点我干嘛!😡",
+                parse_mode="markdown",
+                disable_web_page_preview=False
+            ),
+            thumb_url=None
+        )
+        query_result_list.append(qr)
+    if len(new_subject_persons) <= offset + 49:
         next_offset = None
     else:
         next_offset = offset + 49
@@ -297,7 +356,8 @@ def query_sender_text(inline_query, bot):
         kwargs = query_person_related_subjects(inline_query)
     elif query.startswith("SC ") and query_param[1].isdecimal():  # 条目关联的角色
         kwargs = query_subject_characters(inline_query)
-
+    elif query.startswith("SP ") and query_param[1].isdecimal():  # 条目关联的STAF
+        kwargs = query_subject_person(inline_query)
     # 使用关键词搜索
     elif query.startswith("p "):  # 现实人物搜索
         if inline_query.query.endswith((" 条目", " 关联")):
