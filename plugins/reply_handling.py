@@ -8,14 +8,15 @@ from utils.converts import convert_telegram_message_to_bbcode, subject_type_to_e
 def send(message, bot):
     if message.reply_to_message.text is not None:
         reply_message = message.reply_to_message.text
+        reply_message_text = reply_message
     else:
         reply_message = message.reply_to_message.html_caption
+        reply_message_text = message.reply_to_message.caption
 
     if re.search(r'回复此消息即可对此章节进行评论', reply_message, re.I | re.M):
-        for i in re.findall(r'(EP ID： )([0-9]+)', reply_message, re.I | re.M):
+        for i in re.findall(r'(EP ID： )([0-9]+)', reply_message_text, re.I | re.M):
             try:
-                text = message.text
-                text = convert_telegram_message_to_bbcode(text, message.entities)
+                text = convert_telegram_message_to_bbcode(message.text, message.entities)
                 post_eps_reply(message.from_user.id, i[1], text)
             except:
                 bot.send_message(message.chat.id,
