@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = ">=2.26.0"
+redis = "~=4.1.1"
+schedule = "~=1.1.0"
+lxml = "~=4.8.0"
+Flask = ">=2.0.2"
+pyTelegramBotAPI = ">=4.4.0"
+
+[dev-packages]
+flake8 = "*"
+black = "*"
+
+[requires]
+python_version = "3.9"
