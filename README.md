@@ -39,7 +39,7 @@
   ```
   python3 oauth.py
   ```
-  
+
   - 如遇无法访问请检查服务器防火墙
   - 如果您想后续仅自己个人使用，您可以在验证绑定完成后关闭此模块运行
 
@@ -81,7 +81,7 @@ BangumiTelegramBot   # 主目录
 │  config.py         # 配置文件
 │  oauth.py          # Bangumi Oauth 绑定验证模块
 │  requirements.txt  # Python 依赖
-│  
+│
 ├─plugins  # 功能
 │  │  collection_list.py  # 查询 Bangumi 用户在看
 │  │  help.py             # 使用帮助
@@ -89,7 +89,7 @@ BangumiTelegramBot   # 主目录
 │  │  search.py           # 搜索引导
 │  │  start.py            # 查询/绑定 Bangumi
 │  │  week.py             # 每日放送查询
-│  │  
+│  │
 │  ├─callback  # 按钮查询
 │  │      collection_list_page.py       # 用户在看
 │  │      edit_collection_type_page.py  # 收藏
@@ -99,23 +99,27 @@ BangumiTelegramBot   # 主目录
 │  │      subject_page.py               # 章节
 |  |      summary_page.py               # 简介
 │  │      week_back.py                  # 每日放送查询返回
-│  │      
+│  │
 │  └─inline  # 消息框内联查询
 │          mybgm.py   # 查询 Bangumi 用户收藏统计
 │          public.py  # 公共内联搜索
 │          sender.py  # 私聊搜索或者在任何位置搜索前使用@内联搜索
-│          
+│
 ├─templates  # Oauth 认证提示页面模板
 │      error.html     # 绑定出错
 |      expired.html   # 请求过期
 │      verified.html  # 重复验证
-│      
+│
 ├─utils  # 通用
 |      api.py       # API 调用
 |      converts.py  # 数据转换
 │
-└─model  # 模型
-      page_model.py # 页面模型
+├─model  # 模型
+│     page_model.py # 页面模型
+│
+└─misc  # 杂项
+      Dockerfile           # docker 镜像构建文件
+      docker-compose.yaml  # docker compose 部署文件
 ```
 
 # 其它

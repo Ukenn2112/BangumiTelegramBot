@@ -1,0 +1,59 @@
+version: '3'
+services:
+  bot:
+    image: ghcr.io/Ukenn2112/BangumiTelegramBot
+    container_name: BangumiTelegramBot-bot
+    restart: always
+    command: pipenv run python3 bot.py
+    networks:
+      - external_network
+      - internal_network
+    depends_on:
+      - redis
+    volumes:
+      - /data/BangumiTelegramBot/config.py:/app/config.py:ro
+      - /data/BangumiTelegramBot/data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  oauth:
+    image: ghcr.io/Ukenn2112/BangumiTelegramBot
+    container_name: BangumiTelegramBot-oauth
+    restart: always
+    command: pipenv run python3 oauth.py
+    networks:
+      - external_network
+      - internal_network
+    depends_on:
+      - redis
+    volumes:
+      - /data/BangumiTelegramBot/config.py:/app/config.py:ro
+      - /data/BangumiTelegramBot/data:/app/data
+    healthcheck:
+      test: curl --silent --fail localhost:8000/health || exit 1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  redis:
+    image: redis:7-alpine
+    container_name: BangumiTelegramBot-redis
+    restart: always
+    networks:
+      - internal_network
+    volumes:
+      - /data/BangumiTelegramBot/redis:/data
+    healthcheck:
+      test: redis-cli ping
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+networks:
+  external_network:
+  internal_network:
+    internal: true
