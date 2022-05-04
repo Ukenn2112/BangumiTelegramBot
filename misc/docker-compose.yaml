@@ -31,8 +31,10 @@ services:
     volumes:
       - /data/BangumiTelegramBot/config.py:/app/config.py:ro
       - /data/BangumiTelegramBot/data:/app/data
+    ports:
+      - "127.0.0.1:6008:6008"
     healthcheck:
-      test: curl --silent --fail localhost:8000/health || exit 1
+      test: curl --silent --fail localhost:6008/health || exit 1
     logging:
       driver: "json-file"
       options:

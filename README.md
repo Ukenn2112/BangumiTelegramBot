@@ -53,6 +53,27 @@
 
   `/mybots` -> `选择 bot` -> `Bot Settings` -> `Inline Mode` -> 按下 `Turn on` (画面显示 Inline mode is currently enabled for xxxx 就表示启用了)
 
+## 使用 docker compose 运行 (Optional)
+
+- 安装 [docker compose](https://docs.docker.com/compose/)
+
+  您可以参考 [Docker Compose 安装教程](https://docs.docker.com/compose/install/)
+
+- 准备数据目录
+
+  `/data/BangumiTelegramBot`
+
+- 修改文件后缀 `config.py.example` 为 `config.py`
+
+  根据文件内提示修改 `config.py` 配置文件，并放置到 `/data/BangumiTelegramBot/config.py`
+
+  `REDIS_HOST` 请设置为 `redis`
+
+- 使用 docker compose 运行
+
+  `cd misc && docker compose up -d`
+
+
 # 命令列表
 
 ```
