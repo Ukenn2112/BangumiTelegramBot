@@ -45,6 +45,11 @@ def index():
     return render_template('error.html')  # 发生错误
 
 
+@app.route('/health')
+def health():
+    return 'OK'  # 健康检查
+
+
 # 获取code
 @app.route('/oauth_index')
 def oauth_index():
