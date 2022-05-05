@@ -7,14 +7,18 @@ import json
 import sqlite3
 import time
 
-sql_con = sqlite3.connect("bot.db", check_same_thread=False,
-                          detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+sql_con = sqlite3.connect(
+    "data/bot.db",
+    check_same_thread=False,
+    detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+)
 
 
 def create_sql():
     """创建数据库"""
 
-    sql_con.execute(f"""create table if not exists
+    sql_con.execute(
+        """create table if not exists
         user(
         id integer primary key AUTOINCREMENT,
         tg_id integer,
@@ -25,10 +29,10 @@ def create_sql():
         expiry_time timestamp,
         create_time timestamp,
         update_time timestamp)
-        """)
+        """
+    )
 
-    sql_con.execute(
-        f"""create unique index if not exists tg_id_index on user (tg_id)""")
+    sql_con.execute("""create unique index if not exists tg_id_index on user (tg_id)""")
 
 
 def add_data():
@@ -41,12 +45,20 @@ def add_data():
         access_token = data['data']['access_token']
         refresh_token = data['data']['refresh_token']
         cookie = data['data'].get('cookie')
-        expiry_time = int(time.mktime(time.strptime(
-            data['expiry_time'], "%Y%m%d"))) // 1000
+        expiry_time = int(time.mktime(time.strptime(data['expiry_time'], "%Y%m%d"))) // 1000
         sql_con.execute(
             "insert into user(tg_id,bgm_id,access_token,refresh_token,cookie,expiry_time,create_time) "
             "values(?,?,?,?,?,?,?)",
-            (tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time, datetime.datetime.now().timestamp() // 1000,))
+            (
+                tg_id,
+                bgm_id,
+                access_token,
+                refresh_token,
+                cookie,
+                expiry_time,
+                datetime.datetime.now().timestamp() // 1000,
+            ),
+        )
         sql_con.commit()
     return print("转换成功")
 

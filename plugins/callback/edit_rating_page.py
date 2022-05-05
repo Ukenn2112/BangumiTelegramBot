@@ -11,7 +11,7 @@ def do(request: DoEditRatingRequest, tg_id: int) -> DoEditRatingRequest:  # 返�
         user_status = 'collect'
     post_collection(tg_id, request.subject_id, status=user_status, rating=str(request.rating_num))
     if request.rating_num == 0:
-        request.callback_text = f"已成功撤销评分"
+        request.callback_text = "已成功撤销评分"
     else:
         request.callback_text = f"已成功更新评分为{request.rating_num}分"
     return request
@@ -20,8 +20,9 @@ def do(request: DoEditRatingRequest, tg_id: int) -> DoEditRatingRequest:  # 返�
 def generate_page(request: EditRatingPageRequest) -> EditRatingPageRequest:
     session_uuid = request.session.uuid
     if request.user_collection is None:
-        request.user_collection = user_collection_get(None, request.subject_id,
-                                                      request.session.bgm_auth['access_token'])
+        request.user_collection = user_collection_get(
+            None, request.subject_id, request.session.bgm_auth['access_token']
+        )
 
     if request.page_image is None:
         request.page_image = anime_img(request.subject_id)
@@ -35,7 +36,7 @@ def generate_page(request: EditRatingPageRequest) -> EditRatingPageRequest:
     )
 
     if request.user_collection['rating'] == 0:
-        text += f"*➤ 您的评分：*暂未评分\n"
+        text += "*➤ 您的评分：*暂未评分\n"
     else:
         text += f"*➤ 您的评分：*`{request.user_collection['rating']}`🌟\n"
     if request.user_collection is not None:
@@ -48,13 +49,21 @@ def generate_page(request: EditRatingPageRequest) -> EditRatingPageRequest:
     nums = range(1, 11)
     button_list = []
     for num in nums:
-        button_list.append(telebot.types.InlineKeyboardButton(text=str(num), callback_data=f'{session_uuid}|{num}'))
+        button_list.append(
+            telebot.types.InlineKeyboardButton(
+                text=str(num), callback_data=f'{session_uuid}|{num}'
+            )
+        )
         do_edit_rating_request = DoEditRatingRequest(request.session, request.subject_id, num)
         do_edit_rating_request.user_collection = request.user_collection
         request.possible_request[str(num)] = do_edit_rating_request
     markup.add(*button_list, row_width=5)
-    markup.add(*[telebot.types.InlineKeyboardButton(text='返回', callback_data=f'{session_uuid}|back'),
-                 telebot.types.InlineKeyboardButton(text='删除评分', callback_data=f"{session_uuid}|0")])
+    markup.add(
+        *[
+            telebot.types.InlineKeyboardButton(text='返回', callback_data=f'{session_uuid}|back'),
+            telebot.types.InlineKeyboardButton(text='删除评分', callback_data=f"{session_uuid}|0"),
+        ]
+    )
     request.possible_request['back'] = BackRequest(request.session)
     do_edit_rating_request = DoEditRatingRequest(request.session, request.subject_id, 0)
     do_edit_rating_request.user_collection = request.user_collection

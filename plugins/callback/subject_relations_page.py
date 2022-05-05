@@ -25,7 +25,7 @@ order = {
     '插入歌': 18,
     '音乐': 19,
     '广播剧': 20,
-    '其他': 100
+    '其他': 100,
 }
 
 
@@ -37,29 +37,42 @@ def generate_page(request: SubjectRelationsPageRequest) -> SubjectRelationsPageR
     subject_info = request.subject_info
     button_list = []
     if not relations:
-        text = f"*{subject_type_to_emoji(subject_info['type'])}" \
-               f"『 {subject_info['name_cn'] or subject_info['name']} 』无关联条目*\n\n"
+        text = (
+            f"*{subject_type_to_emoji(subject_info['type'])}"
+            f"『 {subject_info['name_cn'] or subject_info['name']} 』无关联条目*\n\n"
+        )
     else:
-        text = f"*{subject_type_to_emoji(subject_info['type'])}" \
-               f"『 {subject_info['name_cn'] or subject_info['name']} 』关联条目:*\n\n"
+        text = (
+            f"*{subject_type_to_emoji(subject_info['type'])}"
+            f"『 {subject_info['name_cn'] or subject_info['name']} 』关联条目:*\n\n"
+        )
         relations = sorted(relations, key=lambda a: order.get(a['relation'], 99))
         relation_group = full_group_by(relations, lambda a: a['relation'])
         num: int = 1
         for key in relation_group:
             text += f"*➤ {key}:*\n"
             for relation in relation_group[key]:
-                text += f"`{str(num).zfill(2)}`. {subject_type_to_emoji(relation['type'])}" \
-                        f"{relation['name_cn'] or relation['name']}\n"
+                text += (
+                    f"`{str(num).zfill(2)}`. {subject_type_to_emoji(relation['type'])}"
+                    f"{relation['name_cn'] or relation['name']}\n"
+                )
                 button_list.append(
-                    telebot.types.InlineKeyboardButton(text=str(num), callback_data=f'{request.session.uuid}|{num}'))
-                request.possible_request[str(num)] = SubjectRequest(request.session, relation['id'])
+                    telebot.types.InlineKeyboardButton(
+                        text=str(num), callback_data=f'{request.session.uuid}|{num}'
+                    )
+                )
+                request.possible_request[str(num)] = SubjectRequest(
+                    request.session, relation['id']
+                )
 
                 num += 1
 
     markup = telebot.types.InlineKeyboardMarkup()
 
     markup.add(*button_list, row_width=6)
-    markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{request.session.uuid}|back"))
+    markup.add(
+        telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{request.session.uuid}|back")
+    )
     request.possible_request['back'] = BackRequest(request.session)
 
     request.page_text = text

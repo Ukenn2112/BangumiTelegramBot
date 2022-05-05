@@ -5,3 +5,4 @@ test_data.json
 run.log
 __pycache__/
 *.py[cod]
+data/

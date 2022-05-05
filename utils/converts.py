@@ -41,25 +41,30 @@ def number_to_week(num: int) -> str:
 
 def parse_markdown_v2(text: str) -> str:
     """markdown_v2 转译"""
-    return text.translate(str.maketrans(
-        {'_': '\\_',
-         '*': '\\*',
-         '[': '\\[',
-         ']': '\\]',
-         '(': '\\(',
-         ')': '\\)',
-         '~': '\\~',
-         '`': '\\`',
-         '>': '\\>',
-         '#': '\\#',
-         '+': '\\+',
-         '-': '\\-',
-         '=': '\\=',
-         '|': '\\|',
-         '{': '\\{',
-         '}': '\\}',
-         '.': '\\.',
-         '!': '\\!'}))
+    return text.translate(
+        str.maketrans(
+            {
+                '_': '\\_',
+                '*': '\\*',
+                '[': '\\[',
+                ']': '\\]',
+                '(': '\\(',
+                ')': '\\)',
+                '~': '\\~',
+                '`': '\\`',
+                '>': '\\>',
+                '#': '\\#',
+                '+': '\\+',
+                '-': '\\-',
+                '=': '\\=',
+                '|': '\\|',
+                '{': '\\{',
+                '}': '\\}',
+                '.': '\\.',
+                '!': '\\!',
+            }
+        )
+    )
 
 
 def number_to_episode_type(type_: Literal[0, 1, 2, 3]) -> str:
@@ -73,8 +78,9 @@ def number_to_episode_type(type_: Literal[0, 1, 2, 3]) -> str:
         return "ed"
 
 
-def collection_type_subject_type_str(subject_type: Literal[1, 2, 3, 4, 6],
-                                     collection_type: Literal[1, 2, 3, 4, 5, None]) -> str:
+def collection_type_subject_type_str(
+    subject_type: Literal[1, 2, 3, 4, 6], collection_type: Literal[1, 2, 3, 4, 5, None]
+) -> str:
     if collection_type is None:
         return "收藏"
     if collection_type == 5:
@@ -172,7 +178,9 @@ def score_to_str(score: float) -> str:
     return "???"
 
 
-def convert_telegram_message_to_bbcode(text: str, entities: List[telebot.types.MessageEntity]) -> str:
+def convert_telegram_message_to_bbcode(
+    text: str, entities: List[telebot.types.MessageEntity]
+) -> str:
     if not entities:
         return text
     new_text = bytearray()
@@ -213,10 +221,14 @@ def convert_telegram_message_to_bbcode(text: str, entities: List[telebot.types.M
                 elif entity.type == 'pre':
                     new_text += "[code]".encode('utf-16-le')
                 elif entity.type == 'text_link':
-                    new_text += "[url=".encode('utf-16-le') + entity.url.encode('utf-16-le') + "]".encode('utf-16-le')
+                    new_text += (
+                        "[url=".encode('utf-16-le')
+                        + entity.url.encode('utf-16-le')
+                        + "]".encode('utf-16-le')
+                    )
 
         if i < len(encode) / 2:
-            new_text += encode[i * 2:i * 2 + 2]
+            new_text += encode[i * 2 : i * 2 + 2]
     return new_text.decode('utf-16-le')
 
 

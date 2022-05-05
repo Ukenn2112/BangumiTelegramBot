@@ -15,15 +15,37 @@ import telebot
 import config
 from config import BOT_TOKEN
 from model.exception import TokenExpired
-from model.page_model import EditCollectionTagsPageRequest, RequestSession, WeekRequest, SubjectRequest, CollectionsRequest, SummaryRequest, \
-    BackRequest, \
-    EditCollectionTypePageRequest, DoEditCollectionTypeRequest, EditRatingPageRequest, DoEditRatingRequest, \
-    RefreshRequest, BaseRequest, SubjectEpsPageRequest, EditEpsPageRequest, DoEditEpisodeRequest, \
-    SubjectRelationsPageRequest
+from model.page_model import (
+    EditCollectionTagsPageRequest,
+    RequestSession,
+    WeekRequest,
+    SubjectRequest,
+    CollectionsRequest,
+    SummaryRequest,
+    BackRequest,
+    EditCollectionTypePageRequest,
+    DoEditCollectionTypeRequest,
+    EditRatingPageRequest,
+    DoEditRatingRequest,
+    RefreshRequest,
+    BaseRequest,
+    SubjectEpsPageRequest,
+    EditEpsPageRequest,
+    DoEditEpisodeRequest,
+    SubjectRelationsPageRequest,
+)
 from plugins import start, help, week, info, search, collection_list, unbind, reply_handling
-from plugins.callback import edit_rating_page, week_page, subject_page, \
-    collection_list_page, summary_page, edit_collection_type_page, subject_eps_page, edit_eps_page, \
-    subject_relations_page
+from plugins.callback import (
+    edit_rating_page,
+    week_page,
+    subject_page,
+    collection_list_page,
+    summary_page,
+    edit_collection_type_page,
+    subject_eps_page,
+    edit_eps_page,
+    subject_relations_page,
+)
 from plugins.inline import sender, public, mybgm
 from utils.api import create_sql, run_continuously, redis_cli, user_data_delete
 
@@ -34,8 +56,13 @@ if 'LOG_LEVEL' in dir(config):
 else:
     telebot.logger.setLevel(logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
-logging.basicConfig(format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s',
-                    handlers=[logging.FileHandler("run.log", encoding="UTF-8"), logging.StreamHandler()])
+logging.basicConfig(
+    format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler("data/run.log", encoding="UTF-8"),
+        logging.StreamHandler(),
+    ],
+)
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -103,14 +130,21 @@ def send_subject_info(message):
 @bot.message_handler(commands=['close'])
 def close_message(message):
     if message.reply_to_message is None:
-        return bot.send_message(message.chat.id, "错误使用, 请回复需要关闭的对话", parse_mode='Markdown',
-                                reply_to_message_id=message.message_id)
+        return bot.send_message(
+            message.chat.id,
+            "错误使用, 请回复需要关闭的对话",
+            parse_mode='Markdown',
+            reply_to_message_id=message.message_id,
+        )
     else:
         if bot.get_me().id == message.reply_to_message.from_user.id:
-            bot.delete_message(
-                message.chat.id, message_id=message.reply_to_message.message_id)
+            bot.delete_message(message.chat.id, message_id=message.reply_to_message.message_id)
             msg = bot.send_message(
-                message.chat.id, "已关闭该对话", parse_mode='Markdown', reply_to_message_id=message.message_id)
+                message.chat.id,
+                "已关闭该对话",
+                parse_mode='Markdown',
+                reply_to_message_id=message.message_id,
+            )
             bot.delete_message(message.chat.id, message_id=message.message_id)
             time.sleep(5)
             return bot.delete_message(message.chat.id, message_id=msg.id)
@@ -118,12 +152,18 @@ def close_message(message):
 
 @bot.message_handler(regexp=r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)')
 def link_subject_info(message):
-    for i in re.findall(r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)', message.text, re.I | re.M):
+    for i in re.findall(
+        r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)', message.text, re.I | re.M
+    ):
         info.send(message, bot, i[1])
 
 
 # 回复消息处理
-@bot.message_handler(chat_types=['private'], func=lambda message: message.reply_to_message is not None and message.reply_to_message.from_user.username == config.BOT_USERNAME)
+@bot.message_handler(
+    chat_types=['private'],
+    func=lambda message: message.reply_to_message is not None
+    and message.reply_to_message.from_user.username == config.BOT_USERNAME,
+)
 def send_reply(message):
     reply_handling.send(message, bot)
 
@@ -146,13 +186,21 @@ def test_chosen(chosen_inline_result):
 
 
 # inline 方式私聊搜索或者在任何位置搜索前使用@ ./plugins/inline/sender
-@bot.inline_handler(lambda query: query.query and query.chat_type == 'sender' and not query.query.startswith('mybgm'))
+@bot.inline_handler(
+    lambda query: query.query
+    and query.chat_type == 'sender'
+    and not query.query.startswith('mybgm')
+)
 def sender_query_text(inline_query):
     sender.query_sender_text(inline_query, bot)
 
 
 # inline 方式公共搜索 ./plugins/inline/public
-@bot.inline_handler(lambda query: query.query and query.chat_type != 'sender' and not query.query.startswith('mybgm'))
+@bot.inline_handler(
+    lambda query: query.query
+    and query.chat_type != 'sender'
+    and not query.query.startswith('mybgm')
+)
 def public_query_text(inline_query):
     public.query_public_text(inline_query, bot)
 
@@ -166,7 +214,12 @@ def mybgm_query_text(inline_query):
 @bot.inline_handler(lambda query: not query.query)
 def query_empty(inline_query):
     bot.answer_inline_query(
-        inline_query.id, [], switch_pm_text="@BGM条目ID或关键字搜索或使用mybgm查询数据", switch_pm_parameter="None", cache_time=0)
+        inline_query.id,
+        [],
+        switch_pm_text="@BGM条目ID或关键字搜索或使用mybgm查询数据",
+        switch_pm_parameter="None",
+        cache_time=0,
+    )
 
 
 def set_bot_command(bot_):
@@ -185,7 +238,7 @@ def set_bot_command(bot_):
     ]
     try:
         return bot_.set_my_commands(commands_list)
-    except:
+    except Exception:
         pass
 
 
@@ -219,15 +272,14 @@ def consumption_request(session: RequestSession):
         top.page_text = "您的Token已过期,请重新绑定"
         user_data_delete(session.request_message.from_user.id)
         start.send(session.request_message, bot)
-    except Exception as e:
+    except Exception:
         top = BaseRequest(session)
         top.page_text = "发生了未知异常QAQ"
         logging.exception(f"发生异常 session:{session.uuid}")
     if top.page_image:
         if session.bot_message.content_type == 'text':
             bot.delete_message(
-                message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id
+                message_id=session.bot_message.message_id, chat_id=session.request_message.chat.id
             )
             session.bot_message = bot.send_photo(
                 photo=top.page_image,
@@ -235,15 +287,19 @@ def consumption_request(session: RequestSession):
                 parse_mode='markdown',
                 reply_markup=top.page_markup,
                 chat_id=session.request_message.chat.id,
-                reply_to_message_id=session.request_message.message_id
+                reply_to_message_id=session.request_message.message_id,
             )
         else:
             session.bot_message = bot.edit_message_media(
-                media=telebot.types.InputMedia(type='photo', media=top.page_image,
-                                               caption=top.page_text, parse_mode="markdown"),
+                media=telebot.types.InputMedia(
+                    type='photo',
+                    media=top.page_image,
+                    caption=top.page_text,
+                    parse_mode="markdown",
+                ),
                 reply_markup=top.page_markup,
                 message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id
+                chat_id=session.request_message.chat.id,
             )
     else:
         if session.bot_message.content_type == 'text':
@@ -252,7 +308,7 @@ def consumption_request(session: RequestSession):
                 reply_markup=top.page_markup,
                 parse_mode='markdown',
                 message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id
+                chat_id=session.request_message.chat.id,
             )
         elif top.retain_image and session.bot_message.content_type == 'photo':
             session.bot_message = bot.edit_message_caption(
@@ -260,19 +316,18 @@ def consumption_request(session: RequestSession):
                 reply_markup=top.page_markup,
                 parse_mode='markdown',
                 message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id
+                chat_id=session.request_message.chat.id,
             )
         else:
             bot.delete_message(
-                message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id
+                message_id=session.bot_message.message_id, chat_id=session.request_message.chat.id
             )
             session.bot_message = bot.send_message(
                 text=top.page_text,
                 reply_markup=top.page_markup,
                 parse_mode='markdown',
                 chat_id=session.request_message.chat.id,
-                reply_to_message_id=session.request_message.message_id
+                reply_to_message_id=session.request_message.message_id,
             )
     stack_call = session.call
     session.call = None

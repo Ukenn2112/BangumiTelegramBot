@@ -24,6 +24,10 @@
 
   您可以参考 [Redis 安装教程](https://www.google.com/search?q=Redis%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B)
 
+- 安装 [Pipenv](https://pipenv.pypa.io/)
+
+  您可以参考 [Pipenv 安装教程](https://pipenv.pypa.io/en/latest/#install-pipenv-today)
+
 - 修改文件后缀 `config.py.example` 为 `config.py`
 
   根据文件内提示修改 `config.py` 配置文件
@@ -31,13 +35,13 @@
 - 安装依赖 **注意：Python >= 3.8**
 
   ```
-  pip3 install -r requirements.txt
+  pipenv install --dev
   ```
 
 - 运行Oauth验证绑定模块
 
   ```
-  python3 oauth.py
+  pipenv run python3 oauth.py
   ```
 
   - 如遇无法访问请检查服务器防火墙
@@ -46,12 +50,18 @@
 - 运行 Telegram Bot 模块
 
   ```
-  python3 bot.py
+  pipenv run python3 bot.py
   ```
 
 - 通过 [@BotFather](https://t.me/botfather) 将inline功能开启
 
   `/mybots` -> `选择 bot` -> `Bot Settings` -> `Inline Mode` -> 按下 `Turn on` (画面显示 Inline mode is currently enabled for xxxx 就表示启用了)
+
+- 格式化代码(Optional)
+
+  ```
+  pipenv run black .
+  ```
 
 ## 使用 docker compose 运行 (Optional)
 
@@ -97,11 +107,14 @@ close - 关闭此对话
 ```txt
 BangumiTelegramBot   # 主目录
 │
-│  bot.db            # Bangumi Bot 用户数据
-│  bot.py            # Bangumi Bot 模块
-│  config.py         # 配置文件
-│  oauth.py          # Bangumi Oauth 绑定验证模块
-│  requirements.txt  # Python 依赖
+│  bot.py     # Bangumi Bot 模块
+│  config.py  # 配置文件
+│  oauth.py   # Bangumi Oauth 绑定验证模块
+│  Pipfile    # Python 依赖
+│
+├─data  # 数据目录
+│     bot.db   # Bangumi Bot 用户数据
+│     run.log  # Bot 运行日志
 │
 ├─plugins  # 功能
 │  │  collection_list.py  # 查询 Bangumi 用户在看
