@@ -25,7 +25,7 @@ from config import APP_ID, APP_SECRET, WEBSITE_BASE, REDIS_HOST, REDIS_PORT, RED
 from model.exception import TokenExpired
 
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
-sql_con = sqlite3.connect("bot.db", check_same_thread=False)
+sql_con = sqlite3.connect("data/bot.db", check_same_thread=False)
 user_agent = (
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
     'Chrome/99.0.4844.51 Safari/537.36'

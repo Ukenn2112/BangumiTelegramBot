@@ -33,7 +33,7 @@ app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 sql_con = sqlite3.connect(
-    "bot.db",
+    "data/bot.db",
     check_same_thread=False,
     detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
 )

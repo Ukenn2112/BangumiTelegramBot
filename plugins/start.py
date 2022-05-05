@@ -45,7 +45,7 @@ def send(message, bot):
             return
         elif len(data) > 1 and 'chii_sid=' in message.text:
             if 'chii_sec_id=' in message.text and 'chii_auth=' in message.text:
-                sql_con = sqlite3.connect("bot.db", check_same_thread=False)
+                sql_con = sqlite3.connect("data/bot.db", check_same_thread=False)
                 sql_con.execute(
                     "update user set cookie=?,update_time=? where tg_id=?",
                     (

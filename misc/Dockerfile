@@ -19,6 +19,5 @@ COPY bot.py /app/bot.py
 COPY oauth.py /app/oauth.py
 
 VOLUME ["/app/config.py", "/app/data"]
-WORKDIR /app/data
 
 CMD pipenv run

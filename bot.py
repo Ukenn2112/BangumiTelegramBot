@@ -58,7 +58,10 @@ else:
     logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(
     format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s',
-    handlers=[logging.FileHandler("run.log", encoding="UTF-8"), logging.StreamHandler()],
+    handlers=[
+        logging.FileHandler("data/run.log", encoding="UTF-8"),
+        logging.StreamHandler(),
+    ],
 )
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)

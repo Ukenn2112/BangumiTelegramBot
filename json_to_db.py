@@ -8,7 +8,7 @@ import sqlite3
 import time
 
 sql_con = sqlite3.connect(
-    "bot.db",
+    "data/bot.db",
     check_same_thread=False,
     detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
 )
