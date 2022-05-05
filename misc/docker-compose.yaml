@@ -1,7 +1,7 @@
 version: '3'
 services:
   bot:
-    image: ghcr.io/Ukenn2112/BangumiTelegramBot
+    image: ghcr.io/ukenn2112/bangumi-telegram-bot
     container_name: BangumiTelegramBot-bot
     restart: always
     command: pipenv run python3 bot.py
@@ -19,7 +19,7 @@ services:
         max-size: "10m"
 
   oauth:
-    image: ghcr.io/Ukenn2112/BangumiTelegramBot
+    image: ghcr.io/ukenn2112/bangumi-telegram-bot
     container_name: BangumiTelegramBot-oauth
     restart: always
     command: pipenv run python3 oauth.py
