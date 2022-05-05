@@ -130,7 +130,7 @@ def query_mybgm_text(inline_query, bot):
             thumb_url=img_url,
         )
         query_result_list.append(qr)
-    except:
+    except Exception:
         bot.answer_inline_query(
             inline_query.id,
             query_result_list,

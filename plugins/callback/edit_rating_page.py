@@ -11,7 +11,7 @@ def do(request: DoEditRatingRequest, tg_id: int) -> DoEditRatingRequest:  # 返�
         user_status = 'collect'
     post_collection(tg_id, request.subject_id, status=user_status, rating=str(request.rating_num))
     if request.rating_num == 0:
-        request.callback_text = f"已成功撤销评分"
+        request.callback_text = "已成功撤销评分"
     else:
         request.callback_text = f"已成功更新评分为{request.rating_num}分"
     return request
@@ -36,7 +36,7 @@ def generate_page(request: EditRatingPageRequest) -> EditRatingPageRequest:
     )
 
     if request.user_collection['rating'] == 0:
-        text += f"*➤ 您的评分：*暂未评分\n"
+        text += "*➤ 您的评分：*暂未评分\n"
     else:
         text += f"*➤ 您的评分：*`{request.user_collection['rating']}`🌟\n"
     if request.user_collection is not None:

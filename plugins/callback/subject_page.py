@@ -192,14 +192,14 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
             f"{score_to_str(subject_info['rating']['score'])}\n"
         )
     else:
-        text += f"*➤ BGM 平均评分：*暂无评分\n"
+        text += "*➤ BGM 平均评分：*暂无评分\n"
     epssssss = subject_info["eps"]
     if not epssssss:
         epssssss = subject_info["total_episodes"]
     if user_collection:
         if 'rating' in user_collection:
             if user_collection['rating'] == 0:
-                text += f"*➤ 您的评分：*暂未评分\n"
+                text += "*➤ 您的评分：*暂未评分\n"
             else:
                 text += f"*➤ 您的评分：*`{user_collection['rating']}`🌟\n"
     else:
@@ -224,7 +224,7 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
                 text += f"*➤ 作者：*`{box['value']}`\n"
             if box.get('key') == '出版社':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 出版社：*"
+                    text += "*➤ 出版社：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
@@ -249,7 +249,7 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
                 text += f"*➤ 播放时长：*`{box['value']}`\n"
             if box.get('key') == '价格':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 价格：*"
+                    text += "*➤ 价格：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
@@ -264,17 +264,17 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
                 text += f"*➤ 游玩人数：*`{box['value']}`\n"
             if box.get('key') == '平台':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 平台：*"
+                    text += "*➤ 平台：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
                 else:
                     text += f"*➤ 平台：*`{box['value']}`\n"
             if box.get('key') == '发行':
-                text += f"*➤ 发行：*`{box['value']}`\n"
+                text += "*➤ 发行：*`{box['value']}`\n"
             if box.get('key') == '售价':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 售价：*"
+                    text += "*➤ 售价：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
@@ -294,7 +294,7 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
     if (user_collection and 'tag' in user_collection and user_collection['tag']) or (
         subject_info['tags']
     ):
-        text += f"*➤ 标签：*"
+        text += "*➤ 标签：*"
     if user_collection and 'tag' in user_collection and user_collection['tag']:
         for tag in user_collection['tag'][:10]:
             text += f"#{'x' if tag.isdecimal() else ''}{tag} "

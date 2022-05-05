@@ -56,7 +56,7 @@ def query_subject_characters(inline_query):
         query_result_list.append(qr)
     if len(new_subject_characters) == 0:
         qr = telebot.types.InlineQueryResultArticle(
-            id=f"-1",
+            id="-1",
             title="这个条目没有角色QAQ",
             input_message_content=telebot.types.InputTextMessageContent(
                 "点我干嘛!😡", parse_mode="markdown", disable_web_page_preview=False

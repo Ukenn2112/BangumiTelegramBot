@@ -38,6 +38,7 @@ sql_con = sqlite3.connect(
     detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
 )
 
+
 # 错误访问
 @app.route('/')
 def index():
@@ -69,7 +70,7 @@ def oauth_index():
                 'state': state,
             }
         )
-    except Exception as e:
+    except Exception:
         return render_template('error.html')
     return redirect(USER_AUTH_URL)
 
@@ -86,7 +87,7 @@ def oauth_callback():
         return render_template('expired.html')  # 发生错误
     try:
         params = json.loads(json_str)
-    except:
+    except Exception:
         return render_template('error.html')
     resp = requests.post(
         'https://bgm.tv/oauth/access_token',
@@ -138,8 +139,8 @@ def oauth_callback():
   "access_token": "xxxxxxxxxxxxxxxx", api请求密钥
   "expires_in": 604800, 有效期7天
   "refresh_token": "xxxxxxxxxxxxxxxxxxx",  续期密钥
-  "scope": null, 
-  "token_type": "Bearer", 
+  "scope": null,
+  "token_type": "Bearer",
   "user_id": xxxxxx  bgm用户uid
 }
 '''

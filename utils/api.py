@@ -26,13 +26,17 @@ from model.exception import TokenExpired
 
 redis_cli = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DATABASE)
 sql_con = sqlite3.connect("bot.db", check_same_thread=False)
+user_agent = (
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+    'Chrome/99.0.4844.51 Safari/537.36'
+)
 
 
 def create_sql():
     """创建数据库"""
 
     sql_con.execute(
-        f"""create table if not exists
+        """create table if not exists
         user(
         id integer primary key AUTOINCREMENT,
         tg_id integer,
@@ -46,24 +50,24 @@ def create_sql():
         """
     )
 
-    sql_con.execute(f"""create unique index if not exists tg_id_index on user (tg_id)""")
+    sql_con.execute("""create unique index if not exists tg_id_index on user (tg_id)""")
 
 
 def data_seek_get(tg_id):
     """判断是否绑定Bangumi"""
-    data = sql_con.execute(f"select tg_id from user where tg_id=?", (tg_id,)).fetchone()
+    data = sql_con.execute("select tg_id from user where tg_id=?", (tg_id,)).fetchone()
     return bool(data)
 
 
 def user_data_delete(tg_id):
-    sql_con.execute(f"delete from user where tg_id = ?", (tg_id,))
+    sql_con.execute("delete from user where tg_id = ?", (tg_id,))
     sql_con.commit()
 
 
 def user_data_get(tg_id):
     """返回用户数据,如果过期则更新"""
     data = sql_con.execute(
-        f"select tg_id,bgm_id,access_token,cookie,expiry_time from user where tg_id=?", (tg_id,)
+        "select tg_id,bgm_id,access_token,cookie,expiry_time from user where tg_id=?", (tg_id,)
     ).fetchone()
     if data is None:
         return None
@@ -72,7 +76,7 @@ def user_data_get(tg_id):
     if now_time >= expiry_time:  # 判断密钥是否过期
         expiry_data_get(tg_id)
         data = sql_con.execute(
-            f"select bgm_id,access_token,cookie from user where tg_id=?", (tg_id,)
+            "select bgm_id,access_token,cookie from user where tg_id=?", (tg_id,)
         ).fetchone()
         return {"user_id": data[0], "access_token": data[1], 'cookie': data[2]}
     else:
@@ -89,7 +93,7 @@ def expiry_data_get(tg_id):
     """更新过期用户数据"""
     cur = sql_con.cursor()
     refresh_token = cur.execute(
-        f"select refresh_token from user where tg_id=?", (tg_id,)
+        "select refresh_token from user where tg_id=?", (tg_id,)
     ).fetchone()[0]
     callback_url = f'{WEBSITE_BASE}oauth_callback'
     resp = requests.post(
@@ -113,7 +117,7 @@ def expiry_data_get(tg_id):
 
     # 替换数据
     cur.execute(
-        f"update user set access_token=?,refresh_token=?,expiry_time=?,update_time=? where tg_id=?",
+        "update user set access_token=?,refresh_token=?,expiry_time=?,update_time=? where tg_id=?",
         (
             access_token,
             refresh_token,
@@ -179,9 +183,7 @@ def requests_get(
 ):
     """requests_get 请求"""
     r = None
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
-    }
+    headers = {'User-Agent': user_agent}
     if access_token is not None:
         headers.update({'Authorization': 'Bearer ' + access_token})
     for num in range(max_retry_times):  # 如api请求错误 重试3次
@@ -464,7 +466,7 @@ def get_subject_episode(
             raise FileNotFoundError(f"subject_id:{subject_id}获取失败_缓存")
         loads = json.loads(episode)
     else:
-        url = f'https://api.bgm.tv/v0/episodes'
+        url = 'https://api.bgm.tv/v0/episodes'
         params = {'subject_id': subject_id, 'type': type_, 'limit': limit, 'offset': offset}
         loads = requests_get(url=url, params=params, access_token=nsfw_token())
         Thread(target=cache_subject_episode, args=[limit, loads, offset, subject_id, type_])
@@ -603,7 +605,7 @@ def search_subject(
     url = f'https://api.bgm.tv/search/subject/{keywords}'
     try:
         data = requests_get(url=url, params=params, access_token=nsfw_token())
-    except:
+    except Exception:
         data = {"results": 0, 'list': []}
     redis_cli.set(
         f"subject_search:{keywords}:{type_}:{response_group}:{max_results}:{start}",
@@ -648,7 +650,7 @@ def post_eps_reply(tg_id, ep_id, reply_text):
     if cookie is None:
         raise RuntimeError("未添加Cookie")
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
+        'User-Agent': user_agent,
         'Cookie': cookie,
     }
     result = requests.get(f'https://bgm.tv/ep/{ep_id}', headers=headers)

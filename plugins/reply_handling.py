@@ -18,7 +18,7 @@ def send(message, bot):
             try:
                 text = convert_telegram_message_to_bbcode(message.text, message.entities)
                 post_eps_reply(message.from_user.id, i[1], text)
-            except:
+            except Exception:
                 bot.send_message(
                     message.chat.id,
                     "*发送评论失败\n(可能未添加 Cookie 或者 Cookie 已过期)* \n请使用 `/start <Cookie>` 来添加或更新 Cookie",
@@ -40,7 +40,7 @@ def send(message, bot):
                     comment=message.text,
                     rating=user_collection['rating'] if user_collection['rating'] else None,
                 )
-            except:
+            except Exception:
                 bot.send_message(
                     message.chat.id,
                     "*发送简评失败*",
@@ -63,7 +63,7 @@ def send(message, bot):
                     tags=message.text,
                     rating=user_collection['rating'] if user_collection['rating'] else None,
                 )
-            except:
+            except Exception:
                 bot.send_message(
                     message.chat.id,
                     "*修改标签失败*",
@@ -98,7 +98,10 @@ def send(message, bot):
                     text += f"`{tag}` "
             else:
                 text += "未设置条目标签"
-            text += f"\n\n📖 [详情](https://bgm.tv/subject/{subject_id})\n*回复此消息即可修改标签 (此操作直接对现有设置标签进行覆盖，多标签请用空格隔开)*"
+            text += (
+                f"\n\n📖 [详情](https://bgm.tv/subject/{subject_id})\n"
+                "*回复此消息即可修改标签 (此操作直接对现有设置标签进行覆盖，多标签请用空格隔开)*"
+            )
             markup = telebot.types.InlineKeyboardMarkup()
             markup.add(
                 telebot.types.InlineKeyboardButton(

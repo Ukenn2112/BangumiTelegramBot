@@ -63,11 +63,11 @@ def gander_info_message(
     if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
         text += f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟\n"
     else:
-        text += f"*➤ BGM 平均评分：*暂无评分\n"
+        text += "*➤ BGM 平均评分：*暂无评分\n"
     if user_rating:
         if 'rating' in user_rating:
             if user_rating['rating'] == 0:
-                text += f"*➤ 您的评分：*暂未评分\n"
+                text += "*➤ 您的评分：*暂未评分\n"
             else:
                 text += f"*➤ 您的评分：*`{user_rating['rating']}`🌟\n"
     else:
@@ -92,7 +92,7 @@ def gander_info_message(
                 text += f"*➤ 作者：*`{box['value']}`\n"
             if box.get('key') == '出版社':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 出版社：*"
+                    text += "*➤ 出版社：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
@@ -117,7 +117,7 @@ def gander_info_message(
                 text += f"*➤ 播放时长：*`{box['value']}`\n"
             if box.get('key') == '价格':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 价格：*"
+                    text += "*➤ 价格：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
@@ -132,7 +132,7 @@ def gander_info_message(
                 text += f"*➤ 游玩人数：*`{box['value']}`\n"
             if box.get('key') == '平台':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 平台：*"
+                    text += "*➤ 平台：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
@@ -142,7 +142,7 @@ def gander_info_message(
                 text += f"*➤ 发行：*`{box['value']}`\n"
             if box.get('key') == '售价':
                 if isinstance(box['value'], list):
-                    text += f"*➤ 售价：*"
+                    text += "*➤ 售价：*"
                     for price in box['value']:
                         text += f" `{price['v']}`"
                     text += "\n"
@@ -159,7 +159,7 @@ def gander_info_message(
     if subject_info['tags'] and len(subject_info['tags']) == 1 and subject_info['tags'][0] == "":
         subject_info['tags'] = []
     if (user_rating and user_rating['tag']) or (subject_info['tags']):
-        text += f"*➤ 标签：*"
+        text += "*➤ 标签：*"
     if user_rating and user_rating['tag']:
         for tag in user_rating['tag'][:10]:
             text += f"#{'x' if tag.isdecimal() else ''}{tag} "
@@ -191,10 +191,11 @@ def gander_info_message(
     subject_relations = get_subject_relations(subject_id)
     if subject_relations != "None__":
         for relation in subject_relations:
+            rname = relation['name_cn'] or relation['name']
             if relation['relation'] == '前传':
-                text += f"\n*前传：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
+                text += f"\n*前传：*[{rname}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
             if relation['relation'] == '续集':
-                text += f"\n*续集：*[{relation['name_cn'] or relation['name']}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
+                text += f"\n*续集：*[{rname}](https://t.me/{BOT_USERNAME}?start={relation['id']})"
     markup = telebot.types.InlineKeyboardMarkup()
     if eps_data is not None:
         unwatched_id = eps_data['unwatched_id']

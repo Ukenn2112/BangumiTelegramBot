@@ -21,7 +21,11 @@ from utils.converts import collection_type_markup_text_list, subject_type_to_emo
 def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
     session_uuid = request.session.uuid
     subject_data = get_subject_info(request.subject_id)
-    text = f"*您想将 “*`{subject_data['name']}`*” 收藏为*\n\n💬 [吐槽箱](https://bgm.tv/subject/{request.subject_id}/comments)\n*回复此消息即可对此条目进行吐槽 (简评，最多200字)*"
+    text = (
+        f"*您想将 “*`{subject_data['name']}`*” 收藏为*\n\n"
+        f"💬 [吐槽箱](https://bgm.tv/subject/{request.subject_id}/comments)\n"
+        "*回复此消息即可对此条目进行吐槽 (简评，最多200字)*"
+    )
     markup_text = collection_type_markup_text_list(subject_data['type'])
     markup = telebot.types.InlineKeyboardMarkup()
     button_list = [
@@ -128,7 +132,10 @@ def collection_tags_page(request: EditCollectionTagsPageRequest, tg_id: int):
             text += f"`{tag}` "
     else:
         text += "未设置条目标签"
-    text += f"\n\n📖 [详情](https://bgm.tv/subject/{subject_id})\n*回复此消息即可修改标签 (此操作直接对现有设置标签进行覆盖，多标签请用空格隔开)*"
+    text += (
+        f"\n\n📖 [详情](https://bgm.tv/subject/{subject_id})\n"
+        "*回复此消息即可修改标签 (此操作直接对现有设置标签进行覆盖，多标签请用空格隔开)*"
+    )
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(
         telebot.types.InlineKeyboardButton(text='返回', callback_data=f'{request.session.uuid}|back')

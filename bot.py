@@ -235,7 +235,7 @@ def set_bot_command(bot_):
     ]
     try:
         return bot_.set_my_commands(commands_list)
-    except:
+    except Exception:
         pass
 
 
@@ -269,7 +269,7 @@ def consumption_request(session: RequestSession):
         top.page_text = "您的Token已过期,请重新绑定"
         user_data_delete(session.request_message.from_user.id)
         start.send(session.request_message, bot)
-    except Exception as e:
+    except Exception:
         top = BaseRequest(session)
         top.page_text = "发生了未知异常QAQ"
         logging.exception(f"发生异常 session:{session.uuid}")

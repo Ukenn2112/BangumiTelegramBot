@@ -18,7 +18,7 @@ def create_sql():
     """创建数据库"""
 
     sql_con.execute(
-        f"""create table if not exists
+        """create table if not exists
         user(
         id integer primary key AUTOINCREMENT,
         tg_id integer,
@@ -32,7 +32,7 @@ def create_sql():
         """
     )
 
-    sql_con.execute(f"""create unique index if not exists tg_id_index on user (tg_id)""")
+    sql_con.execute("""create unique index if not exists tg_id_index on user (tg_id)""")
 
 
 def add_data():
