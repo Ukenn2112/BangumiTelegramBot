@@ -30,6 +30,6 @@ jobs:
         file: misc/Dockerfile
         push: true
         pull: true
-        tags: ghcr.io/${{ env.REPO }}/BangumiTelegramBot
-        cache-from: type=registry,ref=ghcr.io/${{ env.REPO }}/BangumiTelegramBot
+        tags: ghcr.io/${{ env.REPO }}/bangumi-telegram-bot
+        cache-from: type=registry,ref=ghcr.io/${{ env.REPO }}/bangumi-telegram-bot
         cache-to: type=inline
