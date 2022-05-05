@@ -5,8 +5,14 @@ import telebot
 from telebot.types import InlineQueryResultArticle
 
 from config import BOT_USERNAME
-from utils.api import get_person_info, get_person_related_subjects, search_subject, get_subject_characters, \
-    get_subject_info, get_mono_search
+from utils.api import (
+    get_person_info,
+    get_person_related_subjects,
+    search_subject,
+    get_subject_characters,
+    get_subject_info,
+    get_mono_search,
+)
 from utils.converts import subject_type_to_emoji, full_group_by
 
 
@@ -27,25 +33,25 @@ def query_subject_characters(inline_query):
     for k in group:
         new_subject_characters.extend(group[k])
     switch_pm_text = subject_name + " 角色列表"
-    for character in new_subject_characters[offset: offset + 49]:
+    for character in new_subject_characters[offset : offset + 49]:
         text = f"*{character['name']}*"
         description = character['relation']
         if character['actors']:
             description += f" | CV: {[cv['name'] for cv in character['actors']][0]}"
-        text += (f"\n{description}\n"
-                 f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}"
-                 f"&rhash=48797fd986e111)"
-                 f"\n📖 [详情](https://bgm.tv/character/{character['id']})")
+        text += (
+            f"\n{description}\n"
+            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}"
+            f"&rhash=48797fd986e111)"
+            f"\n📖 [详情](https://bgm.tv/character/{character['id']})"
+        )
         qr = telebot.types.InlineQueryResultArticle(
             id=f"sc:{character['id']}",
             title=character['name'],
             description=description,
             input_message_content=telebot.types.InputTextMessageContent(
-                text,
-                parse_mode="markdown",
-                disable_web_page_preview=False
+                text, parse_mode="markdown", disable_web_page_preview=False
             ),
-            thumb_url=character['images']['grid'] if character['images'] else None
+            thumb_url=character['images']['grid'] if character['images'] else None,
         )
         query_result_list.append(qr)
     if len(new_subject_characters) == 0:
@@ -53,19 +59,22 @@ def query_subject_characters(inline_query):
             id=f"-1",
             title="这个条目没有角色QAQ",
             input_message_content=telebot.types.InputTextMessageContent(
-                "点我干嘛!😡",
-                parse_mode="markdown",
-                disable_web_page_preview=False
+                "点我干嘛!😡", parse_mode="markdown", disable_web_page_preview=False
             ),
-            thumb_url=None
+            thumb_url=None,
         )
         query_result_list.append(qr)
     if len(new_subject_characters) <= offset + 49:
         next_offset = None
     else:
         next_offset = offset + 49
-    return {'results': query_result_list, 'next_offset': next_offset,
-            'switch_pm_text': switch_pm_text, 'switch_pm_parameter': subject_id, 'cache_time': 3600}
+    return {
+        'results': query_result_list,
+        'next_offset': next_offset,
+        'switch_pm_text': switch_pm_text,
+        'switch_pm_parameter': subject_id,
+        'cache_time': 3600,
+    }
 
 
 def query_subject_info(inline_query):
@@ -74,18 +83,23 @@ def query_subject_info(inline_query):
     subject_id = query_param[1]
 
     subject_info = get_subject_info(subject_id)
-    switch_pm_text = (subject_info['name_cn'] or subject_info['name'])
+    switch_pm_text = subject_info['name_cn'] or subject_info['name']
     qr = telebot.types.InlineQueryResultArticle(
-        id=f"S:{subject_id}", title=subject_type_to_emoji(subject_info['type']) +
-                                    (subject_info["name_cn"] or subject_info["name"]),
+        id=f"S:{subject_id}",
+        title=subject_type_to_emoji(subject_info['type'])
+        + (subject_info["name_cn"] or subject_info["name"]),
         input_message_content=telebot.types.InputTextMessageContent(
-            message_text=f"/info@{BOT_USERNAME} {subject_id}",
-            disable_web_page_preview=True
-        ), description=subject_info["name"] if subject_info["name_cn"] else None,
-        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None
+            message_text=f"/info@{BOT_USERNAME} {subject_id}", disable_web_page_preview=True
+        ),
+        description=subject_info["name"] if subject_info["name_cn"] else None,
+        thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
     )
-    return {'query_result_list': [qr], 'switch_pm_text': switch_pm_text,
-            'switch_pm_parameter': f"{subject_info['id']}", 'cache_time': 0}
+    return {
+        'query_result_list': [qr],
+        'switch_pm_text': switch_pm_text,
+        'switch_pm_parameter': f"{subject_info['id']}",
+        'cache_time': 0,
+    }
 
 
 def query_person_related_subjects(inline_query):
@@ -103,21 +117,25 @@ def query_person_related_subjects(inline_query):
 
     person_related_subjects = get_person_related_subjects(person_id)
     switch_pm_text = person_name + " 人物关联列表"
-    for subject in person_related_subjects[offset: offset + 50]:
+    for subject in person_related_subjects[offset : offset + 50]:
         qr = telebot.types.InlineQueryResultArticle(
             id=f"{subject['staff']}:{subject['id']}",
-            title=(subject["name_cn"] if subject["name_cn"]
-                   else subject["name"]),
+            title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
             input_message_content=telebot.types.InputTextMessageContent(
-                message_text=f"/info@{BOT_USERNAME} {subject['id']}",
-                disable_web_page_preview=True
+                message_text=f"/info@{BOT_USERNAME} {subject['id']}", disable_web_page_preview=True
             ),
-            description=(f"{subject['name']} | " if subject["name_cn"] else '') + (subject['staff'] if subject["staff"] else ''),
+            description=(f"{subject['name']} | " if subject["name_cn"] else '')
+            + (subject['staff'] if subject["staff"] else ''),
             thumb_url=subject["image"] if subject["image"] else None,
         )
         query_result_list.append(qr)
-    return {'results': query_result_list, 'next_offset': str(offset + 50),
-            'switch_pm_text': switch_pm_text, 'switch_pm_parameter': "help", 'cache_time': 3600}
+    return {
+        'results': query_result_list,
+        'next_offset': str(offset + 50),
+        'switch_pm_text': switch_pm_text,
+        'switch_pm_parameter': "help",
+        'cache_time': 3600,
+    }
 
 
 def query_search_sender(inline_query):
@@ -147,18 +165,24 @@ def query_search_sender(inline_query):
         for subject in subject_list["list"]:
             emoji = subject_type_to_emoji(subject["type"])
             qr = telebot.types.InlineQueryResultArticle(
-                id=subject['id'], title=emoji + (subject["name_cn"] or subject["name"]),
+                id=subject['id'],
+                title=emoji + (subject["name_cn"] or subject["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
                     message_text=f"/info@{BOT_USERNAME} {subject['id']}",
-                    disable_web_page_preview=True
+                    disable_web_page_preview=True,
                 ),
                 description=subject["name"] if subject["name_cn"] else None,
-                thumb_url=subject["images"]["medium"] if subject["images"] else None
+                thumb_url=subject["images"]["medium"] if subject["images"] else None,
             )
             query_result_list.append(qr)
         pm_text = f"共 {subject_list['results']} 个结果"
-    return {'results': query_result_list, 'next_offset': str(offset + 25),
-            'switch_pm_text': pm_text, 'switch_pm_parameter': "help", 'cache_time': 0}
+    return {
+        'results': query_result_list,
+        'next_offset': str(offset + 25),
+        'switch_pm_text': pm_text,
+        'switch_pm_parameter': "help",
+        'cache_time': 0,
+    }
 
 
 def query_search_subject_characters(inline_query):
@@ -170,11 +194,10 @@ def query_search_subject_characters(inline_query):
         subject_num = 0
     inline_query.offset = subject_num // 25  # 搜索的第几页
     query_param = inline_query.query.split(' ')
-    inline_query.query = inline_query.query[:-len(query_param[-1]) - 1]
+    inline_query.query = inline_query.query[: -len(query_param[-1]) - 1]
     search = query_search_sender(inline_query)
     if len(search['results']) <= subject_num % 25:
-        return {'results': [], 'next_offset': None,
-                'switch_pm_parameter': "help", 'cache_time': 0}
+        return {'results': [], 'next_offset': None, 'switch_pm_parameter': "help", 'cache_time': 0}
     query_result_list: List[InlineQueryResultArticle] = [search['results'][subject_num % 25]]
     subject = search['results'][subject_num % 25].id
     inline_query.query = f"C {subject}"
@@ -189,8 +212,13 @@ def query_search_subject_characters(inline_query):
         next_offset = f"{subject_num + 1}|0"
     query_result_list.extend(subject_characters['results'])
 
-    return {'results': query_result_list, 'next_offset': next_offset,
-            'switch_pm_text': "条目角色模式", 'switch_pm_parameter': "help", 'cache_time': 0}
+    return {
+        'results': query_result_list,
+        'next_offset': next_offset,
+        'switch_pm_text': "条目角色模式",
+        'switch_pm_parameter': "help",
+        'cache_time': 0,
+    }
 
 
 def query_mono(inline_query, cat):
@@ -201,7 +229,7 @@ def query_mono(inline_query, cat):
     offset = int(inline_query.offset or 0)
     query_result_list: List[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(' ')
-    keywords = inline_query.query[len(query_param[0]) + 1:]
+    keywords = inline_query.query[len(query_param[0]) + 1 :]
 
     data = get_mono_search(keywords, page=offset + 1, cat=cat)
     if data['error']:
@@ -219,26 +247,38 @@ def query_mono(inline_query, cat):
         text = f"*{cop['name_cn'] or cop['name']}*\n"
         text += f"{cop['name']}\n" if cop['name_cn'] else ''
         description = cop['info']
-        text += (f"\n{description}\n"
-                 f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop['type']}/{cop['id']}"
-                 f"&rhash=48797fd986e111)"
-                 f"\n📖 [详情](https://bgm.tv/{cop['type']}/{cop['id']})")
+        text += (
+            f"\n{description}\n"
+            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop['type']}/{cop['id']}"
+            f"&rhash=48797fd986e111)"
+            f"\n📖 [详情](https://bgm.tv/{cop['type']}/{cop['id']})"
+        )
         qr = telebot.types.InlineQueryResultArticle(
             id=f"sc:{cop['id']}",
             title=cop['name_cn'] or cop['name'],
             description=description,
             input_message_content=telebot.types.InputTextMessageContent(
-                text,
-                parse_mode="markdown",
-                disable_web_page_preview=False
+                text, parse_mode="markdown", disable_web_page_preview=False
             ),
             thumb_url=cop['img_url'],
-            reply_markup=(telebot.types.InlineKeyboardMarkup().add(telebot.types.InlineKeyboardButton(
-                text="人物关联", switch_inline_query_current_chat=f"PS {cop['id']}"))) if cat == 'prsn' else None
+            reply_markup=(
+                telebot.types.InlineKeyboardMarkup().add(
+                    telebot.types.InlineKeyboardButton(
+                        text="人物关联", switch_inline_query_current_chat=f"PS {cop['id']}"
+                    )
+                )
+            )
+            if cat == 'prsn'
+            else None,
         )
         query_result_list.append(qr)
-    return {'results': query_result_list, 'next_offset': next_offset,
-            'switch_pm_text': switch_pm_text, 'switch_pm_parameter': "search", 'cache_time': 0}
+    return {
+        'results': query_result_list,
+        'next_offset': next_offset,
+        'switch_pm_text': switch_pm_text,
+        'switch_pm_parameter': "search",
+        'cache_time': 0,
+    }
 
 
 # def query_mono_subject(inline_query, cat):
@@ -318,7 +358,8 @@ def query_sender_text(inline_query, bot):
     elif query.startswith("@"):  # @ 搜索 转换至公共搜索
         inline_query.query = inline_query.query.lstrip('@')
         from plugins.inline.public import query_public_text
-        return query_public_text(inline_query, bot) # 公共搜索
+
+        return query_public_text(inline_query, bot)  # 公共搜索
 
     else:  # search_subject 普通搜索
         if inline_query.query.endswith(" 角色"):

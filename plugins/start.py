@@ -22,11 +22,13 @@ def send(message, bot):
     data = message.text.split(' ')
     if user_data:
         if len(data) > 1 and data[1].isdecimal():
-            msg = bot.send_message(message.chat.id,
-                                   "正在搜索请稍候...",
-                                   reply_to_message_id=message.message_id,
-                                   parse_mode='Markdown',
-                                   timeout=20)
+            msg = bot.send_message(
+                message.chat.id,
+                "正在搜索请稍候...",
+                reply_to_message_id=message.message_id,
+                parse_mode='Markdown',
+                timeout=20,
+            )
             subject_id = int(data[1])  # 剧集ID
 
             session = RequestSession(uuid.uuid4().hex, message)
@@ -35,6 +37,7 @@ def send(message, bot):
             session.bot_message = msg
 
             from bot import consumption_request
+
             consumption_request(session)
             return
         elif len(data) > 1 and data[1] == "help":
@@ -43,8 +46,14 @@ def send(message, bot):
         elif len(data) > 1 and 'chii_sid=' in message.text:
             if 'chii_sec_id=' in message.text and 'chii_auth=' in message.text:
                 sql_con = sqlite3.connect("bot.db", check_same_thread=False)
-                sql_con.execute("update user set cookie=?,update_time=? where tg_id=?",
-                               (message.text.replace('/start ', ''), datetime.datetime.now().timestamp() // 1000, tg_id,))
+                sql_con.execute(
+                    "update user set cookie=?,update_time=? where tg_id=?",
+                    (
+                        message.text.replace('/start ', ''),
+                        datetime.datetime.now().timestamp() // 1000,
+                        tg_id,
+                    ),
+                )
                 sql_con.commit()
                 bot.send_message(message.chat.id, "添加 Cookie 成功")
                 return
@@ -62,4 +71,10 @@ def send(message, bot):
     url = f'{WEBSITE_BASE}oauth_index?state={state}'
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(telebot.types.InlineKeyboardButton(text='绑定Bangumi', url=url))
-    bot.send_message(message.chat.id, text='请绑定您的Bangumi', parse_mode='Markdown', reply_markup=markup, timeout=20)
+    bot.send_message(
+        message.chat.id,
+        text='请绑定您的Bangumi',
+        parse_mode='Markdown',
+        reply_markup=markup,
+        timeout=20,
+    )

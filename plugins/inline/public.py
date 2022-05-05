@@ -7,8 +7,13 @@ from telebot.types import InlineQueryResultArticle
 from config import BOT_USERNAME
 from plugins.callback.subject_page import gander_page_text
 from plugins.inline.sender import query_subject_characters, query_mono
-from utils.api import anime_img, get_person_info, get_person_related_subjects, search_subject, \
-    get_subject_info
+from utils.api import (
+    anime_img,
+    get_person_info,
+    get_person_related_subjects,
+    search_subject,
+    get_subject_info,
+)
 from utils.converts import subject_type_to_emoji, parse_markdown_v2, number_to_week
 
 
@@ -22,38 +27,41 @@ def query_subject_info(inline_query):
         if not img_url:
             qr = telebot.types.InlineQueryResultArticle(
                 id=f"S:{subject_id}",
-                title=subject_type_to_emoji(subject_info['type']) + (
-                    subject_info["name_cn"] if subject_info["name_cn"]
-                    else subject_info["name"]),
+                title=subject_type_to_emoji(subject_info['type'])
+                + (subject_info["name_cn"] if subject_info["name_cn"] else subject_info["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
-                    text,
-                    parse_mode="markdown",
-                    disable_web_page_preview=True
+                    text, parse_mode="markdown", disable_web_page_preview=True
                 ),
                 description=subject_info["name"] if subject_info["name_cn"] else None,
                 thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
                 reply_markup=telebot.types.InlineKeyboardMarkup().add(
-                    telebot.types.InlineKeyboardButton(text='去管理',
-                                                       url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
+                    telebot.types.InlineKeyboardButton(
+                        text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"
+                    )
+                ),
             )
         else:
             qr = telebot.types.InlineQueryResultPhoto(
                 id=f"S:{subject_id}",
                 photo_url=img_url,
-                title=subject_type_to_emoji(subject_info['type']) + (
-                    subject_info["name_cn"] if subject_info["name_cn"]
-                    else subject_info["name"]),
+                title=subject_type_to_emoji(subject_info['type'])
+                + (subject_info["name_cn"] if subject_info["name_cn"] else subject_info["name"]),
                 caption=text,
                 parse_mode="markdown",
                 description=subject_info["name"] if subject_info["name_cn"] else None,
                 thumb_url=subject_info["images"]["medium"] if subject_info["images"] else None,
                 reply_markup=telebot.types.InlineKeyboardMarkup().add(
-                    telebot.types.InlineKeyboardButton(text='去管理',
-                                                       url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"))
+                    telebot.types.InlineKeyboardButton(
+                        text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}"
+                    )
+                ),
             )
-        return {'results': [qr],
-                'switch_pm_text': subject_info['name_cn'] or subject_info['name'],
-                'switch_pm_parameter': f"{subject_info['id']}", 'cache_time': 0}
+        return {
+            'results': [qr],
+            'switch_pm_text': subject_info['name_cn'] or subject_info['name'],
+            'switch_pm_parameter': f"{subject_info['id']}",
+            'cache_time': 0,
+        }
 
 
 def query_person_related_subjects(inline_query):
@@ -66,34 +74,47 @@ def query_person_related_subjects(inline_query):
 
     person_related_subjects = get_person_related_subjects(person_id)
     switch_pm_text = person_name + " 人物关联列表"
-    for subject in person_related_subjects[offset: offset + 50]:
+    for subject in person_related_subjects[offset : offset + 50]:
         text = f"*{subject['name_cn'] or subject['name']}*\n"
         text += f"{subject['name']}\n" if subject['name_cn'] else ''
 
         text += f"\n*BGM ID：*`{subject['id']}`"
-        text += f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)" \
-                f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
-                f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
+        text += (
+            f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)"
+            f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})"
+            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
+        )
 
-        button_list = [telebot.types.InlineKeyboardButton(
-            text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}"),
-            telebot.types.InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"),
-            telebot.types.InlineKeyboardButton(text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}")]
+        button_list = [
+            telebot.types.InlineKeyboardButton(
+                text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}"
+            ),
+            telebot.types.InlineKeyboardButton(
+                text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"
+            ),
+            telebot.types.InlineKeyboardButton(
+                text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"
+            ),
+        ]
         qr = telebot.types.InlineQueryResultArticle(
             id=f"{subject['staff']}:{subject['id']}",
             title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
             input_message_content=telebot.types.InputTextMessageContent(
-                text,
-                parse_mode="markdown",
-                disable_web_page_preview=False
+                text, parse_mode="markdown", disable_web_page_preview=False
             ),
-            description=(f"{subject['name']} | " if subject["name_cn"] else '') + (subject['staff'] if subject["staff"] else ''),
+            description=(f"{subject['name']} | " if subject["name_cn"] else '')
+            + (subject['staff'] if subject["staff"] else ''),
             thumb_url=subject["image"] if subject["image"] else None,
-            reply_markup=telebot.types.InlineKeyboardMarkup().add(*button_list)
+            reply_markup=telebot.types.InlineKeyboardMarkup().add(*button_list),
         )
         query_result_list.append(qr)
-    return {'results': query_result_list, 'next_offset': str(offset + 50),
-            'switch_pm_text': switch_pm_text, 'switch_pm_parameter': "help", 'cache_time': 3600}
+    return {
+        'results': query_result_list,
+        'next_offset': str(offset + 50),
+        'switch_pm_text': switch_pm_text,
+        'switch_pm_parameter': "help",
+        'cache_time': 3600,
+    }
 
 
 def query_search(inline_query):
@@ -147,33 +168,46 @@ def query_search(inline_query):
             if subject["type"] == 4:  # 当类型为game时
                 if subject['air_date']:
                     text += f"*➤ 发行日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
-            text += f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)" \
-                    f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})" \
-                    f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
-            button_list = [telebot.types.InlineKeyboardButton(
-                text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}")]
+            text += (
+                f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)"
+                f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})"
+                f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
+            )
+            button_list = [
+                telebot.types.InlineKeyboardButton(
+                    text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}"
+                )
+            ]
             if subject["type"] != 3:  # 当类型为anime或real时
-                button_list.append(telebot.types.InlineKeyboardButton(
-                    text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"))
-            button_list.append(telebot.types.InlineKeyboardButton(
-                text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"))
+                button_list.append(
+                    telebot.types.InlineKeyboardButton(
+                        text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"
+                    )
+                )
+            button_list.append(
+                telebot.types.InlineKeyboardButton(
+                    text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"
+                )
+            )
             qr = telebot.types.InlineQueryResultArticle(
                 id=subject['id'],
-                title=emoji + (subject["name_cn"] if subject["name_cn"]
-                               else subject["name"]),
+                title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"]),
                 input_message_content=telebot.types.InputTextMessageContent(
-                    text,
-                    parse_mode="markdownV2",
-                    disable_web_page_preview=False
+                    text, parse_mode="markdownV2", disable_web_page_preview=False
                 ),
                 description=subject["name"] if subject["name_cn"] else None,
                 thumb_url=subject["images"]["medium"] if subject["images"] else None,
-                reply_markup=telebot.types.InlineKeyboardMarkup().add(*button_list)
+                reply_markup=telebot.types.InlineKeyboardMarkup().add(*button_list),
             )
             query_result_list.append(qr)
         pm_text = f"共 {subject_list['results']} 个结果"
-    return {'results': query_result_list, 'next_offset': str(offset + 25),
-            'switch_pm_text': pm_text, 'switch_pm_parameter': "help", 'cache_time': 0}
+    return {
+        'results': query_result_list,
+        'next_offset': str(offset + 25),
+        'switch_pm_text': pm_text,
+        'switch_pm_parameter': "help",
+        'cache_time': 0,
+    }
 
 
 def query_search_subject_characters(inline_query):
@@ -185,11 +219,10 @@ def query_search_subject_characters(inline_query):
         subject_num = 0
     inline_query.offset = subject_num // 25  # 搜索的第几页
     query_param = inline_query.query.split(' ')
-    inline_query.query = inline_query.query[:-len(query_param[-1]) - 1]
+    inline_query.query = inline_query.query[: -len(query_param[-1]) - 1]
     search = query_search(inline_query)
     if len(search['results']) <= subject_num % 25:
-        return {'results': [], 'next_offset': None,
-                'switch_pm_parameter': "help", 'cache_time': 0}
+        return {'results': [], 'next_offset': None, 'switch_pm_parameter': "help", 'cache_time': 0}
     query_result_list: List[InlineQueryResultArticle] = [search['results'][subject_num % 25]]
     subject = search['results'][subject_num % 25].id
     inline_query.query = f"C {subject}"
@@ -204,8 +237,13 @@ def query_search_subject_characters(inline_query):
         next_offset = f"{subject_num + 1}|0"
     query_result_list.extend(subject_characters['results'])
 
-    return {'results': query_result_list, 'next_offset': next_offset,
-            'switch_pm_text': "条目角色模式", 'switch_pm_parameter': "help", 'cache_time': 0}
+    return {
+        'results': query_result_list,
+        'next_offset': next_offset,
+        'switch_pm_text': "条目角色模式",
+        'switch_pm_parameter': "help",
+        'cache_time': 0,
+    }
 
 
 def query_public_text(inline_query, bot):
@@ -241,6 +279,7 @@ def query_public_text(inline_query, bot):
     elif query.startswith("@"):  # @ 搜索 转换至私聊搜索
         inline_query.query = inline_query.query.lstrip('@')
         from plugins.inline.sender import query_sender_text
+
         return query_sender_text(inline_query, bot)
 
     else:  # search_subject 普通搜索

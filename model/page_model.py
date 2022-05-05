@@ -9,14 +9,13 @@ EpStatusType = Literal['watched', 'queue', 'drop', 'remove', 'watched_batch']
 
 
 class BaseRequest:
-
     def __init__(self, session):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
-        self.retain_image: Optional[bool] = True # 是否保留页面图片
+        self.retain_image: Optional[bool] = True  # 是否保留页面图片
         self.session: RequestSession = session
 
 
@@ -36,7 +35,6 @@ class RequestSession:
 
 
 class WeekRequest(BaseRequest):
-
     def __init__(self, session: RequestSession, week_day: int):
         """周放送
 
@@ -46,7 +44,7 @@ class WeekRequest(BaseRequest):
         self.week_day: int = week_day
 
         self.retain_image = False
-        
+
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
@@ -55,9 +53,14 @@ class WeekRequest(BaseRequest):
 
 
 class CollectionsRequest(BaseRequest):
-
-    def __init__(self, session: RequestSession, subject_type: Literal[1, 2, 3, 4, 6], offset=0,
-                 collection_type: Literal[1, 2, 3, 4, 5, None] = 3, limit=10):
+    def __init__(
+        self,
+        session: RequestSession,
+        subject_type: Literal[1, 2, 3, 4, 6],
+        offset=0,
+        collection_type: Literal[1, 2, 3, 4, 5, None] = 3,
+        limit=10,
+    ):
         """用户收藏
         :param subject_type: 条目类型 1书籍 2动画 3音乐 4游戏 6三次元
         :param offset: 分页页数
@@ -134,7 +137,9 @@ class EditCollectionTypePageRequest(BaseRequest):
 
 
 class DoEditCollectionTypeRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_id: int, collection_type: COLLECTION_TYPE_STR):
+    def __init__(
+        self, session: RequestSession, subject_id: int, collection_type: COLLECTION_TYPE_STR
+    ):
         """修改收藏类型
 
         :param subject_id: 条目ID
@@ -186,9 +191,14 @@ class DoEditRatingRequest(BaseRequest):
 
 
 class SubjectEpsPageRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_id: int,
-                 type_: Literal[0, 1, 2, 3, None] = None, limit=100,
-                 offset=0):
+    def __init__(
+        self,
+        session: RequestSession,
+        subject_id: int,
+        type_: Literal[0, 1, 2, 3, None] = None,
+        limit=100,
+        offset=0,
+    ):
         """展示条目章节页
 
         :param subject_id: 条目ID
@@ -230,10 +240,14 @@ class SubjectRelationsPageRequest(BaseRequest):
 
 
 class EditEpsPageRequest(BaseRequest):
-    def __init__(self, session: RequestSession, episode_id: int, episode_info: dict = None,
-                 before_status=None):
-        """修改评分页
-        """
+    def __init__(
+        self,
+        session: RequestSession,
+        episode_id: int,
+        episode_info: dict = None,
+        before_status=None,
+    ):
+        """修改评分页"""
         super().__init__(session)
         self.episode_id = episode_id
         self.episode_info = episode_info
@@ -282,8 +296,7 @@ class EditCollectionTagsPageRequest(BaseRequest):
 
 class BackRequest(BaseRequest):
     def __init__(self, session: RequestSession, needs_refresh: bool = False):
-        """返回请求
-        """
+        """返回请求"""
         super().__init__(session)
         self.needs_refresh = needs_refresh
 
@@ -295,8 +308,7 @@ class BackRequest(BaseRequest):
 
 class RefreshRequest(BaseRequest):
     def __init__(self, session: RequestSession):
-        """刷新请求
-        """
+        """刷新请求"""
         super().__init__(session)
 
         self.possible_request: Dict[str, BaseRequest] = {}

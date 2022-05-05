@@ -16,33 +16,50 @@ def send(message, bot, subject_id: Optional[int] = None):
     else:
         message_data = message.text.split(' ')
         if len(message_data) != 2 or not message_data[1].isdecimal():
-            bot.send_message(chat_id=message.chat.id, text="错误使用 `/info BGM_Subject_ID`",
-                            parse_mode='Markdown', timeout=20)
+            bot.send_message(
+                chat_id=message.chat.id,
+                text="错误使用 `/info BGM_Subject_ID`",
+                parse_mode='Markdown',
+                timeout=20,
+            )
             return
         subject_id = int(message_data[1])  # 剧集ID
-    msg = bot.send_message(message.chat.id, "正在搜索请稍候...",
-                            reply_to_message_id=message.message_id,
-                            parse_mode='Markdown',
-                            timeout=20)
-                            
+    msg = bot.send_message(
+        message.chat.id,
+        "正在搜索请稍候...",
+        reply_to_message_id=message.message_id,
+        parse_mode='Markdown',
+        timeout=20,
+    )
+
     session = RequestSession(uuid.uuid4().hex, message)
     subject_request = SubjectRequest(session, subject_id, True)
     session.stack = [subject_request]
     session.bot_message = msg
     from bot import consumption_request
+
     consumption_request(session)
 
 
-def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, user_rating: Optional[dict] = None,
-                        eps_data: Optional[dict] = None, back_page: Optional[str] = None,
-                        eps_id: Optional[int] = None, back_week_day: Optional[int] = None,
-                        back_type: Optional[str] = None):
+def gander_info_message(
+    call_tg_id,
+    subject_id,
+    tg_id: Optional[int] = None,
+    user_rating: Optional[dict] = None,
+    eps_data: Optional[dict] = None,
+    back_page: Optional[str] = None,
+    eps_id: Optional[int] = None,
+    back_week_day: Optional[int] = None,
+    back_type: Optional[str] = None,
+):
     """详情页"""
     subject_info = get_subject_info(subject_id)
     subject_type = subject_info['type']
-    text = f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n" \
-           f"{subject_info['name']}\n\n" \
-           f"*BGM ID：*`{subject_id}`\n"
+    text = (
+        f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n"
+        f"{subject_info['name']}\n\n"
+        f"*BGM ID：*`{subject_id}`\n"
+    )
     if subject_info and 'rating' in subject_info and 'score' in subject_info['rating']:
         text += f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟\n"
     else:
@@ -132,7 +149,12 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
                 else:
                     text += f"*➤ 售价：*`{box['value']}`\n"
         text += f"*➤ 发行日期：*`{subject_info['date']}`\n"
-    if user_rating and user_rating['tag'] and len(user_rating['tag']) == 1 and user_rating['tag'][0] == "":
+    if (
+        user_rating
+        and user_rating['tag']
+        and len(user_rating['tag']) == 1
+        and user_rating['tag'][0] == ""
+    ):
         user_rating['tag'] = []  # 鬼知道为什么没标签会返回个空字符串
     if subject_info['tags'] and len(subject_info['tags']) == 1 and subject_info['tags'][0] == "":
         subject_info['tags'] = []
@@ -142,8 +164,9 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
         for tag in user_rating['tag'][:10]:
             text += f"#{'x' if tag.isdecimal() else ''}{tag} "
         if subject_info['tags']:
-            tag_not_click = [i for i in subject_info['tags']
-                             if i['name'] not in user_rating['tag']]
+            tag_not_click = [
+                i for i in subject_info['tags'] if i['name'] not in user_rating['tag']
+            ]
         else:
             tag_not_click = []
     else:
@@ -157,12 +180,14 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
                     text += f"`{tag['name']}` "
         if user_rating and user_rating['tag'] and len(user_rating['tag']) < 10:
             # 有用户标签 但 用户标签数小于10
-            for tag in tag_not_click[:10 - len(user_rating['tag'])]:
+            for tag in tag_not_click[: 10 - len(user_rating['tag'])]:
                 text += f"`{tag['name']}` "
         if (user_rating and user_rating['tag']) or (subject_info['tags']):
             text += "\n"
-    text += f"\n📖 [详情](https://bgm.tv/subject/{subject_id})" \
-            f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
+    text += (
+        f"\n📖 [详情](https://bgm.tv/subject/{subject_id})"
+        f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
+    )
     subject_relations = get_subject_relations(subject_id)
     if subject_relations != "None__":
         for relation in subject_relations:
@@ -174,49 +199,91 @@ def gander_info_message(call_tg_id, subject_id, tg_id: Optional[int] = None, use
     if eps_data is not None:
         unwatched_id = eps_data['unwatched_id']
         if not unwatched_id:
-            markup.add(telebot.types.InlineKeyboardButton(
-                text='返回', callback_data=f'do_page|{tg_id}|{back_page}|{subject_type}'),
+            markup.add(
                 telebot.types.InlineKeyboardButton(
-                    text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'))
+                    text='返回', callback_data=f'do_page|{tg_id}|{back_page}|{subject_type}'
+                ),
+                telebot.types.InlineKeyboardButton(
+                    text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'
+                ),
+            )
             if eps_id is not None:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
-                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'),
-                           telebot.types.InlineKeyboardButton(text='撤销最新观看',
-                                                              callback_data=f'letest_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                markup.add(
+                    telebot.types.InlineKeyboardButton(
+                        text='收藏管理',
+                        callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}',
+                    ),
+                    telebot.types.InlineKeyboardButton(
+                        text='撤销最新观看',
+                        callback_data=f'letest_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove',
+                    ),
+                )
             else:
                 # markup.add(telebot.types.InlineKeyboardButton(text='批量更新收视进度',
                 #                                               callback_data=f'bulk_eps|{subject_id}|'))
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
-                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'))
+                markup.add(
+                    telebot.types.InlineKeyboardButton(
+                        text='收藏管理',
+                        callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}',
+                    )
+                )
         else:
             markup.add(
                 telebot.types.InlineKeyboardButton(
-                    text='返回', callback_data=f'do_page|{tg_id}|{back_page}|{subject_type}'),
-                telebot.types.InlineKeyboardButton(text='评分',
-                                                   callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'),
-                telebot.types.InlineKeyboardButton(text='已看最新',
-                                                   callback_data=f'letest_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}'))
+                    text='返回', callback_data=f'do_page|{tg_id}|{back_page}|{subject_type}'
+                ),
+                telebot.types.InlineKeyboardButton(
+                    text='评分', callback_data=f'rating|{tg_id}|0|{subject_id}|{back_page}'
+                ),
+                telebot.types.InlineKeyboardButton(
+                    text='已看最新',
+                    callback_data=f'letest_eps|{tg_id}|{unwatched_id[0]}|{subject_id}|{back_page}',
+                ),
+            )
             if eps_id is not None and eps_data['watched'] != 1:
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
-                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'),
-                           telebot.types.InlineKeyboardButton(text='撤销最新观看',
-                                                              callback_data=f'letest_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove'))
+                markup.add(
+                    telebot.types.InlineKeyboardButton(
+                        text='收藏管理',
+                        callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}',
+                    ),
+                    telebot.types.InlineKeyboardButton(
+                        text='撤销最新观看',
+                        callback_data=f'letest_eps|{tg_id}|{eps_id}|{subject_id}|{back_page}|remove',
+                    ),
+                )
             else:
                 # markup.add(telebot.types.InlineKeyboardButton(text='批量更新收视进度',
                 #                                               callback_data=f'bulk_eps|{subject_id}'))
-                markup.add(telebot.types.InlineKeyboardButton(text='收藏管理',
-                                                              callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}'))
+                markup.add(
+                    telebot.types.InlineKeyboardButton(
+                        text='收藏管理',
+                        callback_data=f'collection|{call_tg_id}|{subject_id}|now_do|0|null|{back_page}',
+                    )
+                )
         if eps_id is not None:
             text += f"\n📝 [第{eps_data['watched']}话评论](https://bgm.tv/ep/{eps_id})\n"
     elif back_type is not None:
         if back_type == 'week':
-            markup.add(telebot.types.InlineKeyboardButton(text='返回', callback_data=f'back_week|{back_week_day}'),
-                       telebot.types.InlineKeyboardButton(
-                           text='简介', callback_data=f'summary|{subject_id}|{back_week_day}'),
-                       telebot.types.InlineKeyboardButton(text='收藏',
-                                                          callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|null'))
+            markup.add(
+                telebot.types.InlineKeyboardButton(
+                    text='返回', callback_data=f'back_week|{back_week_day}'
+                ),
+                telebot.types.InlineKeyboardButton(
+                    text='简介', callback_data=f'summary|{subject_id}|{back_week_day}'
+                ),
+                telebot.types.InlineKeyboardButton(
+                    text='收藏',
+                    callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|{back_week_day}|null',
+                ),
+            )
         else:
-            markup.add(telebot.types.InlineKeyboardButton(text='收藏',
-                                                          callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|0|null'),
-                       telebot.types.InlineKeyboardButton(text='简介', callback_data=f'summary|{subject_id}'))
+            markup.add(
+                telebot.types.InlineKeyboardButton(
+                    text='收藏',
+                    callback_data=f'collection|{call_tg_id}|{subject_id}|{back_type}|0|null',
+                ),
+                telebot.types.InlineKeyboardButton(
+                    text='简介', callback_data=f'summary|{subject_id}'
+                ),
+            )
     return {'text': text, 'markup': markup, 'subject_info': subject_info}
