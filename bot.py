@@ -13,7 +13,7 @@ import time
 import telebot
 
 import config
-from config import BOT_TOKEN, SESSION_EXPIRES
+from config import BOT_TOKEN
 from model.exception import TokenExpired
 from model.page_model import (
     EditCollectionTagsPageRequest,
@@ -63,6 +63,12 @@ logging.basicConfig(
         logging.StreamHandler(),
     ],
 )
+
+if 'SESSION_EXPIRES' in dir(config):
+    SESSION_EXPIRES = config.SESSION_EXPIRES
+else:
+    SESSION_EXPIRES = 3600 * 24
+
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
