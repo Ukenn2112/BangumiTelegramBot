@@ -16,5 +16,7 @@ REDIS_HOST = 'localhost'
 REDIS_PORT = '6379'
 REDIS_DATABASE = 0
 
+SESSION_EXPIRES = 3600 * 24
+
 # 日志等级 info/debug
 LOG_LEVEL = 'info'

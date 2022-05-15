@@ -63,6 +63,12 @@ logging.basicConfig(
         logging.StreamHandler(),
     ],
 )
+
+if 'SESSION_EXPIRES' in dir(config):
+    SESSION_EXPIRES = config.SESSION_EXPIRES
+else:
+    SESSION_EXPIRES = 3600 * 24
+
 # 请求TG Bot api
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -331,7 +337,7 @@ def consumption_request(session: RequestSession):
             )
     stack_call = session.call
     session.call = None
-    redis_cli.set(session.uuid, pickle.dumps(session), ex=3600 * 24)
+    redis_cli.set(session.uuid, pickle.dumps(session), ex=SESSION_EXPIRES)
     if stack_call:
         bot.answer_callback_query(stack_call.id, text=callback_text)
 
