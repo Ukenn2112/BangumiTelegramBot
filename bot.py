@@ -13,7 +13,7 @@ import time
 import telebot
 
 import config
-from config import BOT_TOKEN
+from config import BOT_TOKEN, SESSION_EXPIRES
 from model.exception import TokenExpired
 from model.page_model import (
     EditCollectionTagsPageRequest,
@@ -331,7 +331,7 @@ def consumption_request(session: RequestSession):
             )
     stack_call = session.call
     session.call = None
-    redis_cli.set(session.uuid, pickle.dumps(session), ex=3600 * 24)
+    redis_cli.set(session.uuid, pickle.dumps(session), ex=SESSION_EXPIRES)
     if stack_call:
         bot.answer_callback_query(stack_call.id, text=callback_text)
 
