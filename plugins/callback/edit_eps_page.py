@@ -6,6 +6,9 @@ from utils.api import post_eps_status, get_subject_episode, get_episode_info
 from utils.converts import number_to_episode_type
 
 
+EPISODE_DESC_LIMIT = 512
+
+
 def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
     session_uuid = request.session.uuid
     episode_id = request.episode_id
@@ -23,7 +26,10 @@ def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
     if episode_info['airdate']:
         text += f"\n*➤ 首播日期：*`{episode_info['airdate']}`"
     if episode_info['desc']:
-        text += f"\n*➤ 章节简介：*\n{episode_info['desc']}"
+        desc = episode_info['desc']
+        if len(desc) > EPISODE_DESC_LIMIT:
+            desc = desc[:EPISODE_DESC_LIMIT] + " ..."
+        text += f"\n*➤ 章节简介：*\n{desc}"
     text += f"\n\n💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
     markup = telebot.types.InlineKeyboardMarkup()
     request.possible_request['back'] = BackRequest(request.session)
