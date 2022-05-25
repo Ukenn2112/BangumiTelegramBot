@@ -24,7 +24,7 @@
 
   您可以参考 [Redis 安装教程](https://www.google.com/search?q=Redis%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B)
 
-- 安装 [Pipenv](https://pipenv.pypa.io/)
+- 安装 [Pipenv](https://pipenv.pypa.io/) (可选｜Optional)
 
   您可以参考 [Pipenv 安装教程](https://pipenv.pypa.io/en/latest/#install-pipenv-today)
 
@@ -33,13 +33,23 @@
   根据文件内提示修改 `config.py` 配置文件
 
 - 安装依赖 **注意：Python >= 3.8**
+  
+  ```
+  pip3 install -r requirements.txt
+  ```
 
+  如使用 Pipenv (可选｜Optional) 
   ```
   pipenv install --dev
   ```
 
 - 运行Oauth验证绑定模块
-
+  
+  ```
+  python3 oauth.py
+  ```
+  
+  如使用 Pipenv (可选｜Optional) 
   ```
   pipenv run python3 oauth.py
   ```
@@ -48,7 +58,12 @@
   - 如果您想后续仅自己个人使用，您可以在验证绑定完成后关闭此模块运行
 
 - 运行 Telegram Bot 模块
+  
+  ```
+  python3 bot.py
+  ```
 
+  如使用 Pipenv (可选｜Optional)
   ```
   pipenv run python3 bot.py
   ```
@@ -57,13 +72,13 @@
 
   `/mybots` -> `选择 bot` -> `Bot Settings` -> `Inline Mode` -> 按下 `Turn on` (画面显示 Inline mode is currently enabled for xxxx 就表示启用了)
 
-- 格式化代码(Optional)
+- 如使用 Pipenv 格式化代码 (可选｜Optional)
 
   ```
   pipenv run black .
   ```
 
-## 使用 docker compose 运行 (Optional)
+## 使用 docker compose 运行 (可选｜Optional)
 
 - 安装 [docker compose](https://docs.docker.com/compose/)
 
@@ -98,7 +113,7 @@ search - 搜索条目
 close - 关闭此对话
 ```
 
-# Bangumi Telegram Bot inline 内联搜索使用方法
+# inline 内联搜索使用方法
 
 ![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image@1.0.0/inline_query.png)
 
@@ -107,10 +122,11 @@ close - 关闭此对话
 ```txt
 BangumiTelegramBot   # 主目录
 │
-│  bot.py     # Bangumi Bot 模块
-│  config.py  # 配置文件
-│  oauth.py   # Bangumi Oauth 绑定验证模块
-│  Pipfile    # Python 依赖
+│  bot.py            # Bangumi Bot 模块
+│  config.py         # 配置文件
+│  oauth.py          # Bangumi Oauth 绑定验证模块
+│  Pipfile           # Pipenv Python 依赖
+│  requirements.txt  # Python 依赖
 │
 ├─data  # 数据目录
 │     bot.db   # Bangumi Bot 用户数据
