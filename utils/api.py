@@ -259,7 +259,7 @@ def post_eps_status(tg_id: int, id_: int, status, ep_id: List[int] = None, acces
     """更新收视进度状态
     :param tg_id:Telegram 用户id
     :param id_: 章节 ID
-    :param status:收视类型
+    :param status:收视类型: watched = 看过 watched_batch = 看到 queue = 想看 drop = 抛弃 remove = 撤销
     :param ep_id:使用 POST 批量更新 将章节以半角逗号分隔，如 3697,3698,3699。请求时 URL 中的 ep_id 为最后一个章节 ID
     :param access_token:
     :return:
