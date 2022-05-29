@@ -10,6 +10,7 @@ import random
 import sqlite3
 import threading
 import time
+import config
 from threading import Thread
 from typing import Optional, Literal, List
 from urllib import parse
@@ -85,7 +86,12 @@ def user_data_get(tg_id):
 
 def nsfw_token():
     """返回可以查看NSFW内容的token"""
-    data = sql_con.execute("select access_token from user limit 1").fetchone()
+    if 'ADMIN_TG_ID' in dir(config):
+        data = sql_con.execute(
+            "select access_token from user where tg_id=?", (config.ADMIN_TG_ID,)
+        ).fetchone()
+    else:
+        data = sql_con.execute("select access_token from user limit 1").fetchone()
     return data[0]
 
 
