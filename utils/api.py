@@ -88,7 +88,7 @@ def nsfw_token():
     """返回可以查看NSFW内容的token"""
     if 'ADMIN_TG_ID' in dir(config):
         data = sql_con.execute(
-            "select access_token from user where tg_id=?", (config.ADMIN_TG_ID,)
+            "select access_token from user where bgm_id=?", (config.ADMIN_TG_ID,)
         ).fetchone()
     else:
         data = sql_con.execute("select access_token from user limit 1").fetchone()
