@@ -33,8 +33,8 @@
 
   根据文件内提示修改 `config.py` 配置文件
 
-- 安装依赖 **注意：Python >= 3.8**
-  
+- 安装依赖
+  > **Warning** 需要 Python >= 3.9
   ```
   pip3 install -r requirements.txt
   ```
