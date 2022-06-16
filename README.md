@@ -1,4 +1,5 @@
-> **从此版本开始我们将用户数据 `bgm_data.json` 改用 SQLite 存储，您可以使用 `json_to_db.py` 进行数据转换**
+> **Note**
+> 现改用 SQLite 存储用户数据 之前使用 `bgm_data.json` ，您可以使用 `json_to_db.py` 进行数据转换
 
 [![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/BangumiTelegramBot.png)](https://github.com/Ukenn2112/BangumiTelegramBot/)
 
@@ -24,7 +25,7 @@
 
   您可以参考 [Redis 安装教程](https://www.google.com/search?q=Redis%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B)
 
-- 安装 [Pipenv](https://pipenv.pypa.io/) (可选｜Optional)
+- 安装 [Pipenv](https://pipenv.pypa.io/)  `可选｜Optional`
 
   您可以参考 [Pipenv 安装教程](https://pipenv.pypa.io/en/latest/#install-pipenv-today)
 
@@ -38,7 +39,7 @@
   pip3 install -r requirements.txt
   ```
 
-  如使用 Pipenv (可选｜Optional) 
+  如使用 Pipenv `可选｜Optional`
   ```
   pipenv install --dev
   ```
@@ -49,7 +50,7 @@
   python3 oauth.py
   ```
   
-  如使用 Pipenv (可选｜Optional) 
+  如使用 Pipenv `可选｜Optional`
   ```
   pipenv run python3 oauth.py
   ```
@@ -63,7 +64,7 @@
   python3 bot.py
   ```
 
-  如使用 Pipenv (可选｜Optional)
+  如使用 Pipenv `可选｜Optional`
   ```
   pipenv run python3 bot.py
   ```
@@ -78,9 +79,9 @@
   pipenv run black .
   ```
 
-## 使用 docker compose 运行 (可选｜Optional)
+## 如使用 Docker Compose 运行
 
-- 安装 [docker compose](https://docs.docker.com/compose/)
+- 安装 [Docker Compose](https://docs.docker.com/compose/)
 
   您可以参考 [Docker Compose 安装教程](https://docs.docker.com/compose/install/)
 
@@ -94,7 +95,7 @@
 
   `REDIS_HOST` 请设置为 `redis`
 
-- 使用 docker compose 运行
+- 使用 Docker Compose 运行
 
   `cd misc && docker compose up -d`
 
