@@ -40,7 +40,7 @@ def create_sql():
         """create table if not exists
         user(
         id integer primary key AUTOINCREMENT,
-        tg_id integer,
+        tg_id integer UNIQUE,
         bgm_id integer,
         access_token varchar(128),
         refresh_token varchar(128),
@@ -51,7 +51,49 @@ def create_sql():
         """
     )
 
-    sql_con.execute("""create unique index if not exists tg_id_index on user (tg_id)""")
+    sql_con.execute(
+        """create table if not exists
+        sub(
+        id integer primary key AUTOINCREMENT,
+        tg_id integer,
+        subject_id integer)
+        """
+    )
+
+
+def sub_add(tg_id, subject_id):
+    """添加订阅"""
+    cur = sql_con.cursor()
+    cur.execute(
+        "insert into sub(tg_id,subject_id) values(?,?)", (tg_id, subject_id)
+    )
+    sql_con.commit()
+
+
+def sub_unadd(tg_id, subject_id):
+    """取消订阅"""
+    cur = sql_con.cursor()
+    cur.execute(
+        "delete from sub where tg_id=? and subject_id=?", (tg_id, subject_id)
+    )
+    sql_con.commit()
+
+
+def sub_repeat(tg_id, subject_id):
+    """判断是否已经订阅"""
+    data = sql_con.execute(
+        "select tg_id,subject_id from sub where tg_id=? and subject_id=?", (tg_id, subject_id)
+    ).fetchone()
+    return bool(data)
+
+
+def sub_user_list(subject_id):
+    """获取订阅用户"""
+    data = sql_con.execute(
+        "select tg_id from sub where subject_id=?", (subject_id,)
+    ).fetchall()
+    user_list = [i[0] for i in data]
+    return [user_list[i:i+30] for i in range(0,len(user_list),30)]
 
 
 def data_seek_get(tg_id):

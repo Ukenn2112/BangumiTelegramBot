@@ -9,7 +9,7 @@ import telebot
 from config import WEBSITE_BASE, BOT_USERNAME
 from model.page_model import SubjectRequest, RequestSession
 from plugins import help
-from utils.api import user_data_get, redis_cli
+from utils.api import get_subject_info, sub_add, sub_repeat, user_data_get, redis_cli
 
 
 def send(message, bot):
@@ -20,6 +20,24 @@ def send(message, bot):
     tg_id = message.from_user.id
     user_data = user_data_get(tg_id)
     data = message.text.split(' ')
+    if len(data) > 1 and data[1].startswith('addsub'):
+        subject_id = data[1].lstrip('addsub')
+        if sub_repeat(tg_id, subject_id):
+            return bot.send_message(message.chat.id, '您已订阅过该番剧')
+        else:
+            sub_add(tg_id, subject_id)
+            subject_info = get_subject_info(subject_id)
+            markup = telebot.types.InlineKeyboardMarkup()
+            markup.add(
+                telebot.types.InlineKeyboardButton(text='取消订阅', callback_data=f'unaddsub|{subject_id}'),
+                telebot.types.InlineKeyboardButton(text='查看详情', url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}")
+            )
+            text = (
+                f'\\[*#番剧成功*]\n\n'
+                f'*{subject_info["name_cn"] or subject_info["name"]}*\n\n'
+                f'*➤ 放送星期：*`{subject_info["_air_weekday"]}`\n'
+            )
+            return bot.send_message(message.chat.id, text, parse_mode='Markdown', reply_markup=markup)
     if user_data:
         if len(data) > 1 and data[1].isdecimal():
             msg = bot.send_message(

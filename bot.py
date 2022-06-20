@@ -47,7 +47,7 @@ from plugins.callback import (
     subject_relations_page,
 )
 from plugins.inline import sender, public, mybgm
-from utils.api import create_sql, run_continuously, redis_cli, user_data_delete
+from utils.api import create_sql, run_continuously, redis_cli, sub_repeat, sub_unadd, user_data_delete
 
 logger = telebot.logger
 if 'LOG_LEVEL' in dir(config):
@@ -251,6 +251,22 @@ def set_bot_command(bot_):
 @bot.callback_query_handler(lambda call: True)
 def global_callback_handler(call):
     data = call.data.split("|")
+    if data[0] == "unaddsub":
+        tg_id = call.from_user.id
+        subject_id = data[1]
+        if sub_repeat(tg_id, subject_id):
+            sub_unadd(tg_id, subject_id)
+            bot.edit_message_text(
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                text="已取消订阅",
+                parse_mode="Markdown",
+            )
+            bot.answer_callback_query(call.id, "已取消订阅")
+            return
+        else:
+            bot.answer_callback_query(call.id, "未找到订阅记录")
+            return
     redis_key = data[0]
     request_key = data[1]
     call_data = redis_cli.get(redis_key)

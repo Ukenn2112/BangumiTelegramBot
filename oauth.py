@@ -8,6 +8,9 @@ import json.decoder
 import pathlib
 import sqlite3
 from os import path
+import threading
+import time
+
 from urllib import parse as url_parse
 
 import redis
@@ -23,11 +26,13 @@ from config import (
     REDIS_PORT,
     REDIS_DATABASE,
 )
-from utils.api import create_sql
+from utils.api import create_sql, get_subject_info, sub_user_list
 
 CALLBACK_URL = f'{WEBSITE_BASE}oauth_callback'
 
 base_dir = pathlib.Path(path.dirname(__file__))
+
+lock = threading.RLock()
 
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
@@ -149,6 +154,41 @@ def oauth_callback():
   "user_id": xxxxxx  bgm用户uid
 }
 '''
+
+# 推送啊 API
+@app.route('/push', methods=['get', 'post'])
+def push():
+    subject_id = request.values.get('subject_id')
+    video_id = request.values.get('video_id')
+    ep = request.values.get('ep')
+    image = request.values.get('image')
+    if subject_id and video_id:
+        userss = sub_user_list(subject_id)
+        if userss:
+            subject_info = get_subject_info(subject_id)
+            text = (
+                f'*🌸 #{subject_info["name_cn"] or subject_info["name"]} [*[{ep}]({image})*] 更新咯～*\n\n'
+                f'[>>🍿 前往观看](https://bangumi.online/watch/{video_id}?s=bgmbot)\n'
+            )
+            from bot import bot, telebot
+            markup = telebot.types.InlineKeyboardMarkup()
+            markup.add(
+                telebot.types.InlineKeyboardButton(text='取消订阅', callback_data=f'unaddsub|{subject_id}'),
+                telebot.types.InlineKeyboardButton(text='查看详情', url=f"t.me/{BOT_USERNAME}?start={subject_id}")
+            )
+        lock.acquire() # 线程加锁
+        for users in userss:
+            for user in users:
+                bot.send_message(chat_id=user, text=text, parse_mode="Markdown", reply_markup=markup)
+            if len(userss) > 1:
+                time.sleep(1)
+        lock.release() # 线程解锁
+        resu = {'code': 200, 'message': f'推送成功'}
+        return json.dumps(resu, ensure_ascii=False), 200
+    else:
+        resu = {'code': 400, 'message': '参数不能为空！'}
+        return json.dumps(resu, ensure_ascii=False), 400
+
 
 if __name__ == '__main__':
     create_sql()
