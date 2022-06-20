@@ -26,7 +26,7 @@ from config import (
     REDIS_PORT,
     REDIS_DATABASE,
 )
-from utils.api import create_sql, get_subject_info, sub_user_list
+from utils.api import create_sql, get_subject_info, sub_repeat, sub_unadd, sub_user_list
 
 CALLBACK_URL = f'{WEBSITE_BASE}oauth_callback'
 
@@ -155,7 +155,32 @@ def oauth_callback():
 }
 '''
 
-# 推送啊 API
+# 查询/取消订阅 API
+@app.route('/sub', methods=['get', 'post'])
+def sub():
+    type = request.values.get('type')
+    subject_id = request.values.get('subject_id')
+    user_id = request.values.get('user_id')
+    if type and subject_id and user_id:
+        if int(type) == 1:
+            if sub_repeat(None, subject_id, user_id):
+                return {'status': 1}, 200
+            else:
+                return {'status': 0}, 200
+        elif int(type) == 2:
+            if sub_repeat(None, subject_id, user_id):
+                sub_unadd(None, subject_id, user_id)
+                resu = {'code': 200, 'message': '已取消订阅'}
+                return json.dumps(resu, ensure_ascii=False), 200
+            else:
+                resu = {'code': 401, 'message': '该用户未订阅此条目'}
+                return json.dumps(resu, ensure_ascii=False), 401
+    else:
+        resu = {'code': 400, 'message': '参数不能为空！'}
+        return json.dumps(resu, ensure_ascii=False), 400
+
+
+# 推送 API
 @app.route('/push', methods=['get', 'post'])
 def push():
     subject_id = request.values.get('subject_id')

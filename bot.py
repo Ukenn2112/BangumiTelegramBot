@@ -254,8 +254,8 @@ def global_callback_handler(call):
     if data[0] == "unaddsub":
         tg_id = call.from_user.id
         subject_id = data[1]
-        if sub_repeat(tg_id, subject_id):
-            sub_unadd(tg_id, subject_id)
+        if sub_repeat(tg_id, subject_id, None):
+            sub_unadd(tg_id, subject_id, None)
             bot.edit_message_text(
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
@@ -265,6 +265,7 @@ def global_callback_handler(call):
             bot.answer_callback_query(call.id, "已取消订阅")
             return
         else:
+            bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.answer_callback_query(call.id, "未找到订阅记录")
             return
     redis_key = data[0]

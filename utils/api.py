@@ -56,33 +56,34 @@ def create_sql():
         sub(
         id integer primary key AUTOINCREMENT,
         tg_id integer,
+        user_id integer,
         subject_id integer)
         """
     )
 
 
-def sub_add(tg_id, subject_id):
+def sub_add(tg_id, subject_id, user_id):
     """添加订阅"""
     cur = sql_con.cursor()
     cur.execute(
-        "insert into sub(tg_id,subject_id) values(?,?)", (tg_id, subject_id)
+        "insert into sub(tg_id,subject_id,user_id) values(?,?,?)", (tg_id, subject_id, user_id)
     )
     sql_con.commit()
 
 
-def sub_unadd(tg_id, subject_id):
+def sub_unadd(tg_id, subject_id, user_id):
     """取消订阅"""
     cur = sql_con.cursor()
     cur.execute(
-        "delete from sub where tg_id=? and subject_id=?", (tg_id, subject_id)
+        "delete from sub where tg_id=? and subject_id=? or user_id=?", (tg_id, subject_id, user_id)
     )
     sql_con.commit()
 
 
-def sub_repeat(tg_id, subject_id):
+def sub_repeat(tg_id, subject_id, user_id):
     """判断是否已经订阅"""
     data = sql_con.execute(
-        "select tg_id,subject_id from sub where tg_id=? and subject_id=?", (tg_id, subject_id)
+        "select tg_id,subject_id from sub where tg_id=? and subject_id=? or user_id=?", (tg_id, subject_id, user_id)
     ).fetchone()
     return bool(data)
 

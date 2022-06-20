@@ -21,11 +21,15 @@ def send(message, bot):
     user_data = user_data_get(tg_id)
     data = message.text.split(' ')
     if len(data) > 1 and data[1].startswith('addsub'):
-        subject_id = data[1].lstrip('addsub')
-        if sub_repeat(tg_id, subject_id):
+        sub_data = data[1].lstrip('addsub').split('user')
+        if len(sub_data) == 1:
+            return
+        subject_id = sub_data[0]
+        user_id = sub_data[1]
+        if sub_repeat(tg_id, subject_id, user_id):
             return bot.send_message(message.chat.id, '您已订阅过该番剧')
         else:
-            sub_add(tg_id, subject_id)
+            sub_add(tg_id, subject_id, user_id)
             subject_info = get_subject_info(subject_id)
             markup = telebot.types.InlineKeyboardMarkup()
             markup.add(
