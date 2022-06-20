@@ -37,7 +37,7 @@ def send(message, bot):
                 telebot.types.InlineKeyboardButton(text='查看详情', url=f"t.me/{BOT_USERNAME}?start={subject_info['id']}")
             )
             text = (
-                f'\\[*#番剧成功*]\n\n'
+                f'\\[*#订阅成功*]\n\n'
                 f'*{subject_info["name_cn"] or subject_info["name"]}*\n\n'
                 f'*➤ 放送星期：*`{subject_info["_air_weekday"]}`\n'
             )
