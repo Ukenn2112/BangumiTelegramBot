@@ -16,6 +16,7 @@
 - [x] 通过 Telegram Inline 功能进行条目搜索
 - [x] 管理收藏
 - [x] 每日放送查询
+- [x] 与 [Bangumi.online](https://bangumi.online/) 联动的番剧更新提醒
 
 ......
 
