@@ -28,6 +28,12 @@ from config import (
 )
 from utils.api import create_sql, get_subject_info, sub_repeat, sub_unadd, sub_user_list
 
+import config
+if 'OAUTH_POST' in dir(config):
+    OAUTH_POST = config.OAUTH_POST
+else:
+    OAUTH_POST = 6008
+
 CALLBACK_URL = f'{WEBSITE_BASE}oauth_callback'
 
 base_dir = pathlib.Path(path.dirname(__file__))
@@ -202,13 +208,19 @@ def push():
                 telebot.types.InlineKeyboardButton(text='查看详情', url=f"t.me/{BOT_USERNAME}?start={subject_id}")
             )
         lock.acquire() # 线程加锁
+        s = 0 # 成功计数器
+        us = 0 # 不成功计数器
         for users in userss:
             for user in users:
-                bot.send_message(chat_id=user, text=text, parse_mode="Markdown", reply_markup=markup)
+                try:
+                    bot.send_message(chat_id=user, text=text, parse_mode="Markdown", reply_markup=markup)
+                    s += 1
+                except:
+                    us += 1
             if len(userss) > 1:
                 time.sleep(1)
+        resu = {'code': 200, 'message': f'推送:成功 {s} 失败 {us}'}
         lock.release() # 线程解锁
-        resu = {'code': 200, 'message': f'推送成功'}
         return json.dumps(resu, ensure_ascii=False), 200
     else:
         resu = {'code': 400, 'message': '参数不能为空！'}
@@ -217,4 +229,4 @@ def push():
 
 if __name__ == '__main__':
     create_sql()
-    app.run('0.0.0.0', 6008)
+    app.run('0.0.0.0', OAUTH_POST)

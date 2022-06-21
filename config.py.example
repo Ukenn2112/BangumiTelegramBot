@@ -4,8 +4,10 @@
 APP_ID = 'bgmxxxxxxxxx'
 APP_SECRET = 'xxxxxxxxxxxxxxxxxx'
 
-## OAuth 回调地址
-WEBSITE_BASE = 'http://localhost:6008/'
+# OAuth 端口
+OAUTH_POST = 6008
+# OAuth 回调地址
+WEBSITE_BASE = f'http://localhost:{OAUTH_POST}/'
 
 ## Telegram Bot Username 不带@
 BOT_USERNAME = 'BangumiBot'
