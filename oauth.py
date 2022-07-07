@@ -161,6 +161,8 @@ def oauth_callback():
 }
 '''
 
+## 以下为联动 Bangumi.online 的 API
+
 # 查询/取消订阅 API
 @app.route('/sub', methods=['get', 'post'])
 def sub():

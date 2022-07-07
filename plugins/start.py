@@ -26,6 +26,8 @@ def send(message, bot):
             return
         subject_id = sub_data[0]
         user_id = sub_data[1]
+        if not subject_id.isdigit() or not user_id.isdigit():
+            return bot.send_message(message.chat.id, '非正常操作')
         if sub_repeat(tg_id, subject_id, user_id):
             return bot.send_message(message.chat.id, '您已订阅过该番剧')
         else:

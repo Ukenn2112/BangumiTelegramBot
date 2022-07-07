@@ -104,6 +104,7 @@ def data_seek_get(tg_id):
 
 
 def user_data_delete(tg_id):
+    """删除用户数据"""
     sql_con.execute("delete from user where tg_id = ?", (tg_id,))
     sql_con.commit()
 
