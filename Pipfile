@@ -10,6 +10,7 @@ schedule = "~=1.1.0"
 lxml = "~=4.8.0"
 Flask = ">=2.0.2"
 pyTelegramBotAPI = ">=4.4.0"
+selenium = "~=4.3.0"
 
 [dev-packages]
 flake8 = "*"
