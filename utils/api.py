@@ -14,9 +14,15 @@ import config
 from threading import Thread
 from typing import Optional, Literal, List
 from urllib import parse
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support import expected_conditions as EC
 
 import redis
 import requests
+from requests_toolbelt import MultipartEncoder
 import schedule
 from lxml import etree
 
@@ -799,3 +805,32 @@ def get_mono_search(keywords: str, page: int = 1, cat: Literal['all', 'crt', 'pr
         data = {'error': None, 'list': list}
     redis_cli.set(f"mono_search:{keywords}:{cat}:{page}", json.dumps(data), ex=3600 * 24)
     return data
+
+def get_netabare_png(bgm_id: str) -> str:
+    """获取netabare上的评分分布"""
+    try:
+        # 初始化一个谷歌浏览器实例
+        from config import CHROMEDRIVER_PATH
+        chrome_driver = Service(CHROMEDRIVER_PATH)
+        driver = webdriver.Chrome(service=chrome_driver)
+        driver.maximize_window()
+        # 访问网站
+        driver.get(f'https://netaba.re/user/{bgm_id}')
+        # 获取评分分布
+        import os
+        dirs = './data/netabare/'
+        if not os.path.exists(dirs):
+            os.makedirs(dirs)
+
+        try:
+            element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@class="info-card"]'))
+            )
+            driver.get_screenshot_as_file(f"./data/netabare/{bgm_id}.png")
+        finally:
+            driver.quit()
+
+        img_url = requests.post('https://telegra.ph/upload', files={'file1':('image', open(f"./data/netabare/{bgm_id}.png", 'rb'), 'image/jpeg')}).json()[0]['src']
+        return f'https://telegra.ph{img_url}'
+    except:
+        return None

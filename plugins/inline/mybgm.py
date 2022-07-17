@@ -4,8 +4,13 @@ import json
 import telebot
 
 from config import APP_ID
-from utils.api import requests_get, get_user, user_data_get
+from utils.api import get_netabare_png, requests_get, get_user, user_data_get
 
+import config
+if 'CHROMEDRIVER_PATH' in dir(config):
+    CHROMEDRIVER_PATH = config.CHROMEDRIVER_PATH
+else:
+    CHROMEDRIVER_PATH = ''
 
 def query_mybgm_text(inline_query, bot):
     message_data = inline_query.query.split(' ')
@@ -130,6 +135,17 @@ def query_mybgm_text(inline_query, bot):
             thumb_url=img_url,
         )
         query_result_list.append(qr)
+        if CHROMEDRIVER_PATH:
+            netabare_img_url = get_netabare_png(bgm_id)
+            if netabare_img_url:
+                qr = telebot.types.InlineQueryResultPhoto(
+                    id=f'{inline_query.query}-netabare',
+                    photo_url=netabare_img_url,
+                    thumb_url=netabare_img_url,
+                    caption=f'_{nickname} 的 Bangumi 评分分布_',
+                    parse_mode="markdown",
+                )
+                query_result_list.append(qr)
     except Exception:
         bot.answer_inline_query(
             inline_query.id,

@@ -23,5 +23,8 @@ REDIS_DATABASE = 0
 
 SESSION_EXPIRES = 3600 * 24
 
+## ChromeDriver https://chromedriver.chromium.org/downloads
+CHROMEDRIVER_PATH = ''
+
 ## 日志等级 info/debug
 LOG_LEVEL = 'info'

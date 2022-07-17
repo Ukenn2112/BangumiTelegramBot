@@ -8,6 +8,7 @@ https://github.com/Ukenn2112/BangumiTelegramBot
 import logging
 import pickle
 import re
+import os
 import time
 
 import telebot
@@ -420,6 +421,9 @@ def request_handler(session: RequestSession):
 
 # 开始启动
 if __name__ == '__main__':
+    dirs = './data/'
+    if not os.path.exists(dirs):
+        os.makedirs(dirs)
     create_sql()
     set_bot_command(bot)
     stop_run_continuously = run_continuously()
