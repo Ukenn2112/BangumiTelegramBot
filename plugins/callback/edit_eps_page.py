@@ -15,22 +15,22 @@ def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
     episode_info = request.episode_info
     if not episode_info:
         episode_info = get_episode_info(request.episode_id)
-    text = f"*{number_to_episode_type(episode_info['Type'])}.{episode_info['Ep']}*"
-    if episode_info['NameCN']:
-        text += f"* | {episode_info['NameCN']}*"
-    if episode_info['Name']:
-        text += f"* / {episode_info['Name']}*"
+    text = f"*{number_to_episode_type(episode_info['type'])}.{episode_info['ep']}*"
+    if episode_info['name_cn']:
+        text += f"* | {episode_info['name_cn']}*"
+    if episode_info['name']:
+        text += f"* / {episode_info['name']}*"
     text += f"\n\n*EP ID：* `{episode_id}`"
-    if episode_info['Duration']:
-        text += f"\n*➤ 时长：*`{episode_info['Duration']}`"
-    if episode_info['Airdate']:
-        text += f"\n*➤ 首播日期：*`{episode_info['Airdate']}`"
-    if episode_info['Description']:
-        desc = episode_info['Description']
+    if episode_info['duration']:
+        text += f"\n*➤ 时长：*`{episode_info['duration']}`"
+    if episode_info['airdate']:
+        text += f"\n*➤ 首播日期：*`{episode_info['airdate']}`"
+    if episode_info['desc']:
+        desc = episode_info['desc']
         if len(desc) > EPISODE_DESC_LIMIT:
             desc = desc[:EPISODE_DESC_LIMIT] + " ..."
         text += f"\n*➤ 章节简介：*\n{desc}"
-    text += f"\n\n💬 [讨论：{episode_info['Comment']}](https://bgm.tv/ep/{episode_id})"
+    text += f"\n\n💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_id})"
     markup = telebot.types.InlineKeyboardMarkup()
     request.possible_request['back'] = BackRequest(request.session)
     if request.session.bot_message.chat.type == 'private' and request.before_status is not None:
@@ -106,8 +106,8 @@ def do(request: DoEditEpisodeRequest, tg_id: int) -> DoEditEpisodeRequest:
             page += 1
             ok = False
             for ep in data['data']:
-                update_eps.append(ep['ID'])
-                if ep['ID'] == request.episode_id:
+                update_eps.append(ep['id'])
+                if ep['id'] == request.episode_id:
                     ok = True
                     break
             if ok or data['total'] < limit or len(data['data']) < limit:

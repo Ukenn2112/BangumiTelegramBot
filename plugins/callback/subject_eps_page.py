@@ -47,19 +47,19 @@ def generate_page(request: SubjectEpsPageRequest) -> SubjectEpsPageRequest:
         f"『 {subject_info['name_cn'] or subject_info['name']} 』{number_to_episode_type(request.type_)}章节列表:*\n\n"
     )
     for i in eps['data']:
-        ep = str(i['Ep'])
+        ep = str(i['ep'])
 
         button_list.append(
-            telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{session_uuid}|{i["ID"]}')
+            telebot.types.InlineKeyboardButton(text=ep, callback_data=f'{session_uuid}|{i["id"]}')
         )
-        page_request = EditEpsPageRequest(request.session, i['ID'], episode_info=i)
-        request.possible_request[str(i['ID'])] = page_request
+        page_request = EditEpsPageRequest(request.session, i['id'], episode_info=i)
+        request.possible_request[str(i['id'])] = page_request
 
         if request.user_collection and 'code' not in request.user_collection:
-            text += id_to_emoji.get(user_eps.get(i['ID'], ''), '⚪')
-            page_request.before_status = user_eps.get(i['ID'], 0)
+            text += id_to_emoji.get(user_eps.get(i['id'], ''), '⚪')
+            page_request.before_status = user_eps.get(i['id'], 0)
         text += f"`{ep.zfill(2)}`*.*"
-        text += f" {i['NameCN'] or i['Name'] or '未公布'} \n"
+        text += f" {i['name_cn'] or i['name'] or '未公布'} \n"
 
     total = eps['total']
     limit = eps['limit']
