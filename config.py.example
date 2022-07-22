@@ -28,3 +28,5 @@ CHROMEDRIVER_PATH = ''
 
 ## 日志等级 info/debug
 LOG_LEVEL = 'info'
+
+SENTRY_DSN = ''
