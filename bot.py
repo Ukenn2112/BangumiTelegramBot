@@ -12,6 +12,7 @@ import os
 import time
 
 import telebot
+import sentry_sdk
 
 import config
 from config import BOT_TOKEN
@@ -64,6 +65,9 @@ logging.basicConfig(
         logging.StreamHandler(),
     ],
 )
+
+if 'SENTRY_DSN' in dir(config):
+    sentry_sdk.init(config.SENTRY_DSN)
 
 if 'SESSION_EXPIRES' in dir(config):
     SESSION_EXPIRES = config.SESSION_EXPIRES
