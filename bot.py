@@ -56,8 +56,8 @@ if 'LOG_LEVEL' in dir(config):
     telebot.logger.setLevel(config.LOG_LEVEL.upper())
     logging.getLogger().setLevel(config.LOG_LEVEL.upper())
 else:
-    telebot.logger.setLevel(logging.INFO)
-    logging.getLogger().setLevel(logging.INFO)
+    telebot.logger.setLevel(logging.ERROR)
+    logging.getLogger().setLevel(logging.ERROR)
 logging.basicConfig(
     format='%(asctime)s - %(filename)s & %(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s',
     handlers=[

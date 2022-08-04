@@ -26,7 +26,7 @@ SESSION_EXPIRES = 3600 * 24
 ## ChromeDriver https://chromedriver.chromium.org/downloads
 CHROMEDRIVER_PATH = ''
 
-## 日志等级 info/debug
-LOG_LEVEL = 'info'
+## 日志等级 INFO/DEBUG/ERROR
+LOG_LEVEL = 'ERROR'
 
 SENTRY_DSN = ''
