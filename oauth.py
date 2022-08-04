@@ -34,6 +34,16 @@ if 'OAUTH_POST' in dir(config):
 else:
     OAUTH_POST = 6008
 
+import logging
+logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s %(message)s',
+    handlers=[
+        logging.FileHandler("data/oauth.log", encoding="UTF-8"),
+        logging.StreamHandler(),
+    ],
+)
+
 CALLBACK_URL = f'{WEBSITE_BASE}oauth_callback'
 
 base_dir = pathlib.Path(path.dirname(__file__))
@@ -195,6 +205,7 @@ def push():
     video_id = request.values.get('video_id')
     ep = request.values.get('ep')
     image = request.values.get('image')
+    logging.info(f'[I] 收到推送请求，subject_id={subject_id}, video_id={video_id}, ep={ep}, image={image}')
     if subject_id and video_id:
         userss = sub_user_list(subject_id)
         if userss:
