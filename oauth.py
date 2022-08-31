@@ -25,6 +25,7 @@ from config import (
     REDIS_HOST,
     REDIS_PORT,
     REDIS_DATABASE,
+    ALLOW_IP,
 )
 from utils.api import create_sql, get_subject_info, sub_repeat, sub_unadd, sub_user_list
 
@@ -176,6 +177,9 @@ def oauth_callback():
 # 查询/取消订阅 API
 @app.route('/sub', methods=['get', 'post'])
 def sub():
+    if request.remote_addr != ALLOW_IP:
+        resu = {'code': 403, 'message': '你没有访问权限！'}
+        return json.dumps(resu, ensure_ascii=False), 403
     type = request.values.get('type')
     subject_id = request.values.get('subject_id')
     user_id = request.values.get('user_id')
@@ -201,6 +205,9 @@ def sub():
 # 推送 API
 @app.route('/push', methods=['get', 'post'])
 def push():
+    if request.remote_addr != ALLOW_IP:
+        resu = {'code': 403, 'message': '你没有访问权限！'}
+        return json.dumps(resu, ensure_ascii=False), 403
     subject_id = request.values.get('subject_id')
     video_id = request.values.get('video_id')
     ep = request.values.get('ep')
