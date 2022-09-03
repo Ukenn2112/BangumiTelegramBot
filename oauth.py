@@ -15,7 +15,7 @@ from urllib import parse as url_parse
 
 import redis
 import requests
-from flask import Flask, jsonify, redirect, request, render_template
+from flask import Flask, jsonify, redirect, request, render_template, current_app
 
 from config import (
     APP_ID,
@@ -177,9 +177,6 @@ def oauth_callback():
 # 查询/取消订阅 API
 @app.route('/sub', methods=['get', 'post'])
 def sub():
-    if request.remote_addr != ALLOW_IP:
-        resu = {'code': 403, 'message': '你没有访问权限！'}
-        return json.dumps(resu, ensure_ascii=False), 403
     type = request.values.get('type')
     subject_id = request.values.get('subject_id')
     user_id = request.values.get('user_id')
@@ -205,9 +202,6 @@ def sub():
 # 推送 API
 @app.route('/push', methods=['get', 'post'])
 def push():
-    if request.remote_addr != ALLOW_IP:
-        resu = {'code': 403, 'message': '你没有访问权限！'}
-        return json.dumps(resu, ensure_ascii=False), 403
     subject_id = request.values.get('subject_id')
     video_id = request.values.get('video_id')
     ep = request.values.get('ep')
@@ -246,6 +240,22 @@ def push():
         resu = {'code': 400, 'message': '参数不能为空！'}
         return json.dumps(resu, ensure_ascii=False), 400
 
+
+@app.before_request
+def before():
+    """中间件拦截器"""
+    url = request.path  # 读取到当前接口的地址
+    if url == '/health':
+        pass
+    elif url == '/oauth_index':
+        pass
+    elif url == '/oauth_callback':
+        pass
+    elif request.remote_addr != ALLOW_IP:
+        resu = {'code': 403, 'message': '你没有访问权限！'}
+        return json.dumps(resu, ensure_ascii=False), 403
+    else:
+        pass
 
 if __name__ == '__main__':
     create_sql()
