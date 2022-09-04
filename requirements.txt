@@ -1,4 +1,5 @@
 Flask>=2.0.2
+waitress>=2.0.0
 pyTelegramBotAPI>=4.4.0
 requests>=2.26.0
 redis~=4.1.1

@@ -7,40 +7,34 @@ import datetime
 import json.decoder
 import pathlib
 import sqlite3
-from os import path
 import threading
 import time
-
+from os import path
 from urllib import parse as url_parse
 
 import redis
 import requests
-from flask import Flask, jsonify, redirect, request, render_template, current_app
-
-from config import (
-    APP_ID,
-    APP_SECRET,
-    WEBSITE_BASE,
-    BOT_USERNAME,
-    REDIS_HOST,
-    REDIS_PORT,
-    REDIS_DATABASE,
-    ALLOW_IP,
-)
-from utils.api import create_sql, get_subject_info, sub_repeat, sub_unadd, sub_user_list
+from flask import Flask, jsonify, redirect, render_template, request
+from waitress import serve
 
 import config
+from config import (ALLOW_IP, APP_ID, APP_SECRET, BOT_USERNAME, REDIS_DATABASE,
+                    REDIS_HOST, REDIS_PORT, WEBSITE_BASE)
+from utils.api import (create_sql, get_subject_info, sub_repeat, sub_unadd,
+                       sub_user_list)
+
 if 'OAUTH_POST' in dir(config):
     OAUTH_POST = config.OAUTH_POST
 else:
     OAUTH_POST = 6008
 
 import logging
+
 logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     handlers=[
-        logging.FileHandler("data/oauth.log", encoding="UTF-8"),
+        logging.FileHandler("data/oauth_log.log", encoding="UTF-8"),
         logging.StreamHandler(),
     ],
 )
@@ -77,17 +71,23 @@ def health():
 def oauth_index():
     try:
         state = request.args.get('state')
+        if not state:
+            logging.error(f"[E] oauth_index: 缺少参数 {state}")
+            return render_template('error.html') # 发生错误
         redis_data = redis_cli.get("oauth:" + state)
         if not redis_data:
+            logging.error(f"[E] oauth_index: 请求过期 {state}")
             return render_template('expired.html')
         params = json.loads(redis_data)
         if 'tg_id' not in params or not params['tg_id']:
+            logging.error(f"[E] oauth_index: 读取缓存库出错 {params}")
             return render_template('error.html')  # 发生错误
         tg_id = params['tg_id']
 
         data = sql_con.execute(f"select * from user where tg_id={tg_id}").fetchone()
         if data is not None:
-            return render_template('verified.html')  # 发生错误
+            logging.info(f"[I] oauth_index: {tg_id} 已经绑定")
+            return render_template('verified.html') # 已经绑定
 
         USER_AUTH_URL = 'https://bgm.tv/oauth/authorize?' + url_parse.urlencode(
             {
@@ -97,8 +97,9 @@ def oauth_index():
                 'state': state,
             }
         )
-    except Exception:
-        return render_template('error.html')
+    except Exception as e:
+        logging.error(f"[E] oauth_index: {e}")
+        return render_template('error.html') # 发生错误
     return redirect(USER_AUTH_URL)
 
 
@@ -108,13 +109,16 @@ def oauth_callback():
     code = request.args.get('code')
     state = request.args.get('state')
     if not code or not state:
+        logging.error(f"[E] oauth_callback: 缺少参数 {code} {state}")
         return render_template('error.html')  # 发生错误
     json_str = redis_cli.get("oauth:" + state)
     if not json_str:
+        logging.error(f"[E] oauth_callback: 请求过期 {state}")
         return render_template('expired.html')  # 发生错误
     try:
         params = json.loads(json_str)
-    except Exception:
+    except Exception as e:
+        logging.error(f"[E] oauth_callback: 读取缓存库出错 {e}")
         return render_template('error.html')
     resp = requests.post(
         'https://bgm.tv/oauth/access_token',
@@ -134,6 +138,7 @@ def oauth_callback():
         if 'error' in r:
             return jsonify(r)
     except json.decoder.JSONDecodeError:
+        logging.error(f"[E] oauth_callback: 换取 access_token 出错 {r}")
         return render_template('error.html')  # 发生错误
     tg_id = int(params['tg_id'])
     bgm_id = r['user_id']
@@ -183,18 +188,23 @@ def sub():
     if type and subject_id and user_id:
         if int(type) == 1:
             if sub_repeat(None, subject_id, user_id):
+                logging.info(f"[I] sub: 查询 用户 {user_id} 已订阅 {subject_id}")
                 return {'status': 1}, 200
             else:
+                logging.info(f"[I] sub: 查询 用户 {user_id} 未订阅 {subject_id}")
                 return {'status': 0}, 200
         elif int(type) == 2:
             if sub_repeat(None, subject_id, user_id):
                 sub_unadd(None, subject_id, user_id)
+                logging.info(f'[I] sub: 用户 {user_id} 取消订阅 {subject_id}')
                 resu = {'code': 200, 'message': '已取消订阅'}
                 return json.dumps(resu, ensure_ascii=False), 200
             else:
+                logging.error(f'[E] sub: 用户 {user_id} 未订阅过 {subject_id}')
                 resu = {'code': 401, 'message': '该用户未订阅此条目'}
                 return json.dumps(resu, ensure_ascii=False), 401
     else:
+        logging.error(f"[E] sub: 缺少参数 {type} {subject_id} {user_id}")
         resu = {'code': 400, 'message': '参数不能为空！'}
         return json.dumps(resu, ensure_ascii=False), 400
 
@@ -206,7 +216,7 @@ def push():
     video_id = request.values.get('video_id')
     ep = request.values.get('ep')
     image = request.values.get('image')
-    logging.info(f'[I] 收到推送请求，subject_id={subject_id}, video_id={video_id}, ep={ep}, image={image}')
+    logging.info(f'[I] push: 推送请求 subject_id={subject_id}, video_id={video_id}, ep={ep}, image={image}')
     if subject_id and video_id:
         userss = sub_user_list(subject_id)
         if userss:
@@ -233,10 +243,12 @@ def push():
                     us += 1
             if len(userss) > 1:
                 time.sleep(1)
+        logging.info(f'[I] push: 推送成功 {s} 条，失败 {us} 条')
         resu = {'code': 200, 'message': f'推送:成功 {s} 失败 {us}'}
         lock.release() # 线程解锁
         return json.dumps(resu, ensure_ascii=False), 200
     else:
+        logging.error(f'[E] push: 缺少参数 {subject_id} {video_id}')
         resu = {'code': 400, 'message': '参数不能为空！'}
         return json.dumps(resu, ensure_ascii=False), 400
 
@@ -252,6 +264,7 @@ def before():
     elif url == '/oauth_callback':
         pass
     elif request.remote_addr != ALLOW_IP:
+        logging.error(f'[E] 拦截访问 {request.remote_addr} -> {url}')
         resu = {'code': 403, 'message': '你没有访问权限！'}
         return json.dumps(resu, ensure_ascii=False), 403
     else:
@@ -259,4 +272,4 @@ def before():
 
 if __name__ == '__main__':
     create_sql()
-    app.run('0.0.0.0', OAUTH_POST)
+    serve(app, host="0.0.0.0", port=OAUTH_POST)
