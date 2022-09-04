@@ -35,7 +35,7 @@ logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     handlers=[
-        logging.FileHandler("data/oauth_log.log", encoding="UTF-8"),
+        logging.FileHandler("data/oauth.log", encoding="UTF-8"),
         logging.StreamHandler(),
     ],
 )
@@ -264,7 +264,7 @@ def before():
         pass
     elif url == '/oauth_callback':
         pass
-    elif re.match(r'/db|/mysql|/phpMyAdmin|/.env', url):
+    elif re.match(r'/pma|/db|/mysql|/phpMyAdmin|/.env', url):
         logging.info(f'[I] before: 拦截到非法请求 {request.remote_addr} -> {url}')
         fuck = {'code': 200, 'message': 'Fack you mather!'}
         return json.dumps(fuck, ensure_ascii=False), 200
