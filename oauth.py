@@ -213,11 +213,11 @@ def sub():
 # 推送 API
 @app.route('/push', methods=['get', 'post'])
 def push():
+    logging.info(f'[I] push: 推送请求 {request.full_path}')
     subject_id = request.values.get('subject_id')
     video_id = request.values.get('video_id')
     ep = request.values.get('ep')
     image = request.values.get('image')
-    logging.info(f'[I] push: 推送请求 subject_id={subject_id}, video_id={video_id}, ep={ep}, image={image}')
     if subject_id and video_id:
         userss = sub_user_list(subject_id)
         if userss:
