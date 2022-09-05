@@ -264,14 +264,14 @@ def before():
         pass
     elif url == '/oauth_callback':
         pass
-    elif re.match(r'/pma|/db|/mysql|/phpMyAdmin|/.env', url):
+    elif re.findall(r'pma|db|mysql|phpMyAdmin|.env|php|admin|config|setup', url):
         logging.info(f'[I] before: 拦截到非法请求 {request.remote_addr} -> {url}')
         fuck = {'code': 200, 'message': 'Fack you mather!'}
         return json.dumps(fuck, ensure_ascii=False), 200
     elif request.remote_addr != ALLOW_IP:
         logging.error(f'[E] before: 拦截访问 {request.remote_addr} -> {url}')
         resu = {'code': 403, 'message': '你没有访问权限！'}
-        return json.dumps(resu, ensure_ascii=False), 403
+        return json.dumps(resu, ensure_ascii=False), 200
     else:
         pass
 
