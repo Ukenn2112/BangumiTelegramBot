@@ -805,6 +805,7 @@ def get_mono_search(keywords: str, page: int = 1, cat: Literal['all', 'crt', 'pr
     redis_cli.set(f"mono_search:{keywords}:{cat}:{page}", json.dumps(data), ex=3600 * 24)
     return data
 
+
 def get_netabare_png(bgm_id: str) -> str:
     """获取netabare上的评分分布"""
     try:

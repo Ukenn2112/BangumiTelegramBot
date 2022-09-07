@@ -232,6 +232,10 @@ def push():
                 telebot.types.InlineKeyboardButton(text='取消订阅', callback_data=f'unaddsub|{subject_id}'),
                 telebot.types.InlineKeyboardButton(text='查看详情', url=f"t.me/{BOT_USERNAME}?start={subject_id}")
             )
+        else:
+            logging.info(f'[I] push: {subject_id} 无订阅用户')
+            resu = {'code': 200, 'message': f'{subject_id} 无订阅用户'}
+            return json.dumps(resu, ensure_ascii=False), 200
         lock.acquire() # 线程加锁
         s = 0 # 成功计数器
         us = 0 # 不成功计数器
