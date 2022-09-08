@@ -223,7 +223,7 @@ def push():
         if userss:
             subject_info = get_subject_info(subject_id)
             text = (
-                f'*🌸 #{subject_info["name_cn"] or subject_info["name"]} [*[{ep}](https://cover.bangumi.online/episode/{video_id}.webp)*] 更新咯～*\n\n'
+                f'*🌸 #{subject_info["name_cn"] or subject_info["name"]} [*[{ep}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n'
                 f'[>>🍿 前往观看](https://bangumi.online/watch/{video_id}?s=bgmbot)\n'
             )
             from bot import bot, telebot
