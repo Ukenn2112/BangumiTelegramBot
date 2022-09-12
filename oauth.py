@@ -218,6 +218,10 @@ def push():
     video_id = request.values.get('video_id')
     ep = request.values.get('ep')
     image = request.values.get('image')
+    if video_id and not subject_id:
+        r = requests.post('https://bangumi.online/api/bgm/subject', data={'vid': video_id}).json()
+        if r['code'] == 10000:
+            subject_id = r['data']['subject']['id']
     if subject_id and video_id:
         userss = sub_user_list(subject_id)
         if userss:
