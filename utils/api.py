@@ -140,7 +140,7 @@ def nsfw_token():
             "select access_token,expiry_time,tg_id from user where bgm_id=?", (config.ADMIN_TG_ID,)
         ).fetchone()
     else:
-        data = sql_con.execute("select access_token,expiry_time from user limit 1").fetchone()
+        data = sql_con.execute("select access_token,expiry_time,tg_id from user limit 1").fetchone()
     now_time = datetime.datetime.now().timestamp() // 1000
     if now_time >= data[1]:  # 判断密钥是否过期
         expiry_data_get(data[2])
