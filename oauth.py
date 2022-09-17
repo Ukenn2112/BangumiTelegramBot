@@ -31,7 +31,11 @@ else:
 
 import logging
 
-logging.getLogger().setLevel(logging.INFO)
+if 'LOG_LEVEL' in dir(config):
+    logging.getLogger().setLevel(config.LOG_LEVEL.upper())
+else:
+    logging.getLogger().setLevel(logging.ERROR)
+
 logging.basicConfig(
     format='%(asctime)s %(message)s',
     handlers=[
@@ -273,11 +277,11 @@ def before():
     elif url == '/oauth_callback':
         pass
     elif re.findall(r'pma|db|mysql|phpMyAdmin|.env|php|admin|config|setup', url):
-        logging.info(f'[I] before: 拦截到非法请求 {request.remote_addr} -> {url}')
+        logging.warning(f'[W] before: 拦截到非法请求 {request.remote_addr} -> {url}')
         fuck = {'code': 200, 'message': 'Fack you mather!'}
         return json.dumps(fuck, ensure_ascii=False), 200
     elif request.remote_addr != ALLOW_IP:
-        logging.error(f'[E] before: 拦截访问 {request.remote_addr} -> {url}')
+        logging.warning(f'[W] before: 拦截访问 {request.remote_addr} -> {url}')
         resu = {'code': 403, 'message': '你没有访问权限！'}
         return json.dumps(resu, ensure_ascii=False), 200
     else:
