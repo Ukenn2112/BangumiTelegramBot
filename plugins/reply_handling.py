@@ -1,11 +1,14 @@
 import re
+
 import telebot
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 from utils.api import get_subject_info, post_collection, post_eps_reply, user_collection_get
 from utils.converts import convert_telegram_message_to_bbcode, subject_type_to_emoji
 
 
-def send(message, bot):
+def send(message: Message, bot: AsyncTeleBot):
     if message.reply_to_message.text is not None:
         reply_message = message.reply_to_message.text
         reply_message_text = reply_message

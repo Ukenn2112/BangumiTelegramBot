@@ -1,9 +1,11 @@
 """搜索引导指令"""
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 
-def send(message, bot):
+def send(message: Message, bot: AsyncTeleBot):
     message_data = message.text.split(' ')
     markup = InlineKeyboardMarkup()
     is_at = (

@@ -3,9 +3,11 @@ import datetime
 import uuid
 
 from model.page_model import WeekRequest, RequestSession
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 
-def send(message, bot):
+def send(message: Message, bot: AsyncTeleBot):
     data = message.text.split(' ')
     if len(data) == 1:
         # 如果未传参数

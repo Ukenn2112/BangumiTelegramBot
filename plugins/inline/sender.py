@@ -3,6 +3,8 @@ from typing import List
 
 import telebot
 from telebot.types import InlineQueryResultArticle
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 from config import BOT_USERNAME
 from utils.api import (
@@ -325,7 +327,7 @@ def query_mono(inline_query, cat):
 #             'switch_pm_text': switch_pm_text, 'switch_pm_parameter': "search", 'cache_time': 3600}
 
 
-def query_sender_text(inline_query, bot):
+def query_sender_text(inline_query: Message, bot: AsyncTeleBot):
     """私聊搜索"""
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')

@@ -1,6 +1,3 @@
-> **Note**
-> 现改用 SQLite 存储用户数据 之前使用 `bgm_data.json` ，您可以使用 `json_to_db.py` 进行数据转换
-
 [![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/BangumiTelegramBot.png)](https://github.com/Ukenn2112/BangumiTelegramBot/)
 
 
@@ -141,6 +138,8 @@ BangumiTelegramBot   # 主目录
 │  │  search.py           # 搜索引导
 │  │  start.py            # 查询/绑定 Bangumi
 │  │  week.py             # 每日放送查询
+│  │  unbind.py           # 解除绑定
+│  │  close.py            # 关闭会话
 │  │
 │  ├─callback  # 按钮查询
 │  │      collection_list_page.py       # 用户在看

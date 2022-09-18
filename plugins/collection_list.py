@@ -2,14 +2,27 @@
 import uuid
 from typing import Literal
 
-import telebot
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
+
 
 from config import BOT_USERNAME
 from model.page_model import CollectionsRequest, RequestSession
 from utils.api import user_data_get
 
 
-def send(message: telebot.types.Message, bot, subject_type):
+def send(message: Message, bot: AsyncTeleBot):
+    if 'book' in message.text:
+        subject_type = 1
+    elif 'anime' in message.text:
+        subject_type = 2
+    elif 'game' in message.text:
+        subject_type = 4
+    elif 'real' in message.text:
+        subject_type = 6
+    else:
+        subject_type = 2
+
     tg_id = message.from_user.id
     _user = user_data_get(tg_id)
     if _user is None:

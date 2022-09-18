@@ -3,6 +3,8 @@ import uuid
 from typing import Optional
 
 import telebot
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 from config import BOT_USERNAME
 from model.page_model import SubjectRequest, RequestSession
@@ -10,7 +12,7 @@ from utils.api import get_subject_info, get_subject_relations
 from utils.converts import subject_type_to_emoji
 
 
-def send(message, bot, subject_id: Optional[int] = None):
+def send(message: Message, bot: AsyncTeleBot, subject_id: Optional[int] = None):
     if subject_id is not None:
         subject_id = subject_id
     else:

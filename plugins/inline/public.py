@@ -3,6 +3,8 @@ from typing import List
 
 import telebot
 from telebot.types import InlineQueryResultArticle
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 from config import BOT_USERNAME
 from plugins.callback.subject_page import gander_page_text
@@ -246,7 +248,7 @@ def query_search_subject_characters(inline_query):
     }
 
 
-def query_public_text(inline_query, bot):
+def query_public_text(inline_query: Message, bot: AsyncTeleBot):
     """公共搜索"""
     query: str = inline_query.query
     query_param = inline_query.query.split(' ')

@@ -5,6 +5,8 @@ import sqlite3
 import uuid
 
 import telebot
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 from config import WEBSITE_BASE, BOT_USERNAME
 from model.page_model import SubjectRequest, RequestSession
@@ -12,7 +14,7 @@ from plugins import help
 from utils.api import get_subject_info, sub_add, sub_repeat, user_data_get, redis_cli
 
 
-def send(message, bot):
+def send(message: Message, bot: AsyncTeleBot):
     if message.chat.type != "private":
         if message.text == f'/start@{BOT_USERNAME}':
             bot.send_message(message.chat.id, '请私聊我进行Bangumi绑定', parse_mode='Markdown', timeout=20)

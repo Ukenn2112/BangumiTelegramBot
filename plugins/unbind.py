@@ -1,9 +1,10 @@
 """查询/绑定 Bangumi"""
 
 from utils.api import data_seek_get, user_data_delete
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
-
-def send(message, bot):
+def send(message: Message, bot: AsyncTeleBot):
     if data_seek_get(message.from_user.id):
         if message.text == "/unbind 确认":
             user_data_delete(message.from_user.id)

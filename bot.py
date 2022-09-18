@@ -9,7 +9,6 @@ import logging
 import pickle
 import re
 import os
-import time
 
 import telebot
 import sentry_sdk
@@ -36,7 +35,7 @@ from model.page_model import (
     DoEditEpisodeRequest,
     SubjectRelationsPageRequest,
 )
-from plugins import start, help, week, info, search, collection_list, unbind, reply_handling
+from plugins import start, help, week, info, search, collection_list, unbind, reply_handling, close
 from plugins.callback import (
     edit_rating_page,
     week_page,
@@ -78,87 +77,24 @@ else:
 bot = telebot.TeleBot(BOT_TOKEN)
 
 
-# 查询/绑定 Bangumi ./plugins/start
-@bot.message_handler(commands=['start'])
-def send_start(message):
-    start.send(message, bot)
-
-
-@bot.message_handler(commands=['unbind'])
-def send_unbind(message):
-    unbind.send(message, bot)
-
-
-# 使用帮助 ./plugins/help
-@bot.message_handler(commands=['help'])
-def send_help(message):
-    help.send(message, bot)
-
-
-# 查询 Bangumi 用户在看book ./plugins/doing_page
-@bot.message_handler(commands=['book'])
-def send_book(message):
-    collection_list.send(message, bot, 1)
-
-
-# 查询 Bangumi 用户在看anime ./plugins/doing_page
-@bot.message_handler(commands=['anime'])
-def send_anime(message):
-    collection_list.send(message, bot, 2)
-
-
-# 查询 Bangumi 用户在玩 game ./plugins/doing_page
-@bot.message_handler(commands=['game'])
-def send_game(message):
-    collection_list.send(message, bot, 4)
-
-
-# 查询 Bangumi 用户在看 real ./plugins/doing_page
-@bot.message_handler(commands=['real'])
-def send_real(message):
-    collection_list.send(message, bot, 6)
-
-
-# 每日放送查询 ./plugins/week
-@bot.message_handler(commands=['week'])
-def send_week(message):
-    week.send(message, bot)
-
-
-# 搜索引导指令 ./plugins/search
-@bot.message_handler(commands=['search'])
-def send_search_details(message):
-    search.send(message, bot)
-
-
-# 根据subjectId 返回对应条目信息 ./plugins/info
-@bot.message_handler(commands=['info'])
-def send_subject_info(message):
-    info.send(message, bot)
-
-
-# 关闭对话
-@bot.message_handler(commands=['close'])
-def close_message(message):
-    if message.reply_to_message is None:
-        return bot.send_message(
-            message.chat.id,
-            "错误使用, 请回复需要关闭的对话",
-            parse_mode='Markdown',
-            reply_to_message_id=message.message_id,
-        )
-    else:
-        if bot.get_me().id == message.reply_to_message.from_user.id:
-            bot.delete_message(message.chat.id, message_id=message.reply_to_message.message_id)
-            msg = bot.send_message(
-                message.chat.id,
-                "已关闭该对话",
-                parse_mode='Markdown',
-                reply_to_message_id=message.message_id,
-            )
-            bot.delete_message(message.chat.id, message_id=message.message_id)
-            time.sleep(5)
-            return bot.delete_message(message.chat.id, message_id=msg.id)
+def register_handlers():
+    """注册消息处理函数"""
+    bot.register_message_handler(start.send, # 查询/绑定 Bangumi ./plugins/start
+                                 commands=['start'], pass_bot=True)
+    bot.register_message_handler(help.send, # 使用帮助 ./plugins/help
+                                 commands=['help'], pass_bot=True)
+    bot.register_message_handler(collection_list.send, # 查询 Bangumi 用户收藏数据 ./plugins/doing_page
+                                 commands=['book', 'anime', 'game', 'real'], pass_bot=True)
+    bot.register_message_handler(week.send, # 查询每日放送 ./plugins/week
+                                 commands=['week'], pass_bot=True)
+    bot.register_message_handler(search.send, # 搜索条目 ./plugins/search
+                                 commands=['search'], pass_bot=True)
+    bot.register_message_handler(info.send, # 根据 subjectId 返回对应条目信息 ./plugins/info
+                                 commands=['info'], pass_bot=True)
+    bot.register_message_handler(close.send, # 关闭对话 ./plugins/close
+                                 commands=['close'], pass_bot=True)
+    bot.register_message_handler(unbind.send, # 解除绑定 ./plugins/unbind
+                                 commands=['unbind'], pass_bot=True)
 
 
 @bot.message_handler(regexp=r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)')
@@ -425,10 +361,9 @@ def request_handler(session: RequestSession):
 
 # 开始启动
 if __name__ == '__main__':
-    dirs = './data/'
-    if not os.path.exists(dirs):
-        os.makedirs(dirs)
+    if not os.path.exists('./data/'): os.makedirs('./data/')
     create_sql()
     set_bot_command(bot)
+    register_handlers()
     stop_run_continuously = run_continuously()
     bot.infinity_polling()

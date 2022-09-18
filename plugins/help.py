@@ -1,8 +1,10 @@
 """功能帮助"""
 from config import BOT_USERNAME
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 
-def send(message, bot):
+def send(message: Message, bot: AsyncTeleBot):
     text = (
         f'*{BOT_USERNAME} 使用帮助*\n\n'
         '/start _绑定Bangumi账号_\n'

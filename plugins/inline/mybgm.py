@@ -2,6 +2,8 @@
 import json
 
 import telebot
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import Message
 
 from config import APP_ID
 from utils.api import get_netabare_png, requests_get, get_user, user_data_get
@@ -12,7 +14,7 @@ if 'CHROMEDRIVER_PATH' in dir(config):
 else:
     CHROMEDRIVER_PATH = ''
 
-def query_mybgm_text(inline_query, bot):
+def query_mybgm_text(inline_query: Message, bot: AsyncTeleBot):
     message_data = inline_query.query.split(' ')
     query_result_list = []
     if len(message_data) == 1:
