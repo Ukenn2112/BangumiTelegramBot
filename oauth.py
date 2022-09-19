@@ -203,15 +203,15 @@ def sub():
                 sub_unadd(None, subject_id, user_id)
                 logging.info(f'[I] sub: 用户 {user_id} 取消订阅 {subject_id}')
                 resu = {'code': 200, 'message': '已取消订阅'}
-                return json.dumps(resu, ensure_ascii=False), 200
+                return jsonify(resu), 200
             else:
                 logging.error(f'[E] sub: 用户 {user_id} 未订阅过 {subject_id}')
                 resu = {'code': 401, 'message': '该用户未订阅此条目'}
-                return json.dumps(resu, ensure_ascii=False), 401
+                return jsonify(resu), 401
     else:
         logging.error(f"[E] sub: 缺少参数 {type} {subject_id} {user_id}")
         resu = {'code': 400, 'message': '参数不能为空！'}
-        return json.dumps(resu, ensure_ascii=False), 400
+        return jsonify(resu), 400
 
 
 # 推送 API
@@ -234,7 +234,8 @@ def push():
                 f'*🌸 #{subject_info["name_cn"] or subject_info["name"]} [*[{ep}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n'
                 f'[>>🍿 前往观看](https://bangumi.online/watch/{video_id}?s=bgmbot)\n'
             )
-            from bot import bot, telebot
+            import telebot
+            bot = telebot.TeleBot(config.BOT_TOKEN)
             markup = telebot.types.InlineKeyboardMarkup()
             markup.add(
                 telebot.types.InlineKeyboardButton(text='取消订阅', callback_data=f'unaddsub|{subject_id}'),
@@ -243,7 +244,7 @@ def push():
         else:
             logging.info(f'[I] push: {subject_id} 无订阅用户')
             resu = {'code': 200, 'message': f'{subject_id} 无订阅用户'}
-            return json.dumps(resu, ensure_ascii=False), 200
+            return jsonify(resu), 200
         lock.acquire() # 线程加锁
         s = 0 # 成功计数器
         us = 0 # 不成功计数器
@@ -259,11 +260,11 @@ def push():
         logging.info(f'[I] push: 推送成功 {s} 条，失败 {us} 条')
         resu = {'code': 200, 'message': f'推送:成功 {s} 失败 {us}'}
         lock.release() # 线程解锁
-        return json.dumps(resu, ensure_ascii=False), 200
+        return jsonify(resu), 200
     else:
         logging.error(f'[E] push: 缺少参数 {subject_id} {video_id}')
         resu = {'code': 400, 'message': '参数不能为空！'}
-        return json.dumps(resu, ensure_ascii=False), 400
+        return jsonify(resu), 400
 
 
 @app.before_request
@@ -279,11 +280,11 @@ def before():
     elif re.findall(r'pma|db|mysql|phpMyAdmin|.env|php|admin|config|setup', url):
         logging.warning(f'[W] before: 拦截到非法请求 {request.remote_addr} -> {url}')
         fuck = {'code': 200, 'message': 'Fack you mather!'}
-        return json.dumps(fuck, ensure_ascii=False), 200
+        return jsonify(fuck), 200
     elif request.remote_addr != ALLOW_IP:
         logging.warning(f'[W] before: 拦截访问 {request.remote_addr} -> {url}')
         resu = {'code': 403, 'message': '你没有访问权限！'}
-        return json.dumps(resu, ensure_ascii=False), 200
+        return jsonify(resu), 200
     else:
         pass
 
