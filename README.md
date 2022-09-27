@@ -13,6 +13,7 @@
 - [x] 通过 Telegram Inline 功能进行条目搜索
 - [x] 管理收藏
 - [x] 每日放送查询
+- [x] 图片搜索番剧
 - [x] 与 [Bangumi.online](https://bangumi.online/) 联动的番剧更新提醒
 
 ......
@@ -109,6 +110,7 @@ game - Bangumi用户在玩游戏
 real - Bangumi用户在看剧集
 week - 查询当日/空格加数字查询每日放送
 search - 搜索条目
+isearch - 图片搜索
 close - 关闭此对话
 ```
 

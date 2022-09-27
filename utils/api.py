@@ -840,3 +840,29 @@ def get_netabare_png(bgm_id: str) -> str:
         return f'https://telegra.ph{img_url}'
     except:
         return None
+
+def get_image_search(file_path):
+    """图片搜索"""
+    img_url = f'https://api.telegram.org/file/bot{config.BOT_TOKEN}/{file_path}'
+    r = requests.get(f'https://api.trace.moe/search?cutBorders&anilistInfo&url={img_url}')
+    if r.status_code != 200:
+        return None
+    data = r.json()['result'][0]
+
+    millis = data['from']
+    seconds = int(millis % 60)
+    minutes = int((millis / 60) % 60)
+    hours = int((millis / (60 * 60)) % 24)
+
+    bgm_data = search_subject(keywords=data['anilist']['title']['native'], type_=2)['list']
+    if not bgm_data:
+        return None
+    return {
+        'name': bgm_data[0]['name_cn'] or bgm_data[0]['name'],
+        'bgm_id': bgm_data[0]['id'],
+        'filename': data['filename'],
+        'episode': data['episode'],
+        'from_time': f'{str(hours).zfill(2)}:{str(minutes).zfill(2)}:{str(seconds).zfill(2)}',
+        'similarity': f'{round(data["similarity"]*100, 2)} %',
+        'video_url': data['video'],
+    }

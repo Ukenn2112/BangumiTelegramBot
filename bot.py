@@ -48,7 +48,7 @@ from plugins.callback import (
     subject_relations_page,
 )
 from plugins.inline import sender, public, mybgm
-from utils.api import create_sql, run_continuously, redis_cli, sub_repeat, sub_unadd, user_data_delete
+from utils.api import create_sql, run_continuously, redis_cli, sub_repeat, sub_unadd, user_data_delete, get_image_search
 
 logger = telebot.logger
 if 'LOG_LEVEL' in dir(config):
@@ -115,6 +115,36 @@ def send_reply(message):
     reply_handling.send(message, bot)
 
 
+@bot.message_handler(
+    commands=['isearch'], func=lambda message: message.reply_to_message is not None 
+    and message.reply_to_message.content_type == 'photo')
+@bot.message_handler(chat_types=['private'], content_types=['photo'])
+def image_search(message):
+    smg = bot.send_message(message.chat.id, '正在搜索中...', reply_to_message_id=message.message_id)
+    if message.photo:
+        file_info = bot.get_file(message.photo[-1].file_id)
+    else:
+        file_info = bot.get_file(message.reply_to_message.photo[-1].file_id)
+    data = get_image_search(file_info.file_path)
+    if data:
+        bot.delete_message(message.chat.id, smg.message_id)
+        text = (
+            f"*{data['name']}*\n\n"
+            f"*➤ 来自：*`第{data['episode']}集 - {data['from_time']}`\n"
+            f"*➤ 文件：* `{data['filename']}`\n"
+            f"*➤ 相似度：* `{data['similarity']}`\n"
+            )
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton(text='查看详情', url=f"t.me/{config.BOT_USERNAME}?start={data['bgm_id']}"))
+        bot.send_video(message.chat.id, data['video_url'], caption=text, parse_mode='Markdown', reply_to_message_id=message.message_id, reply_markup=markup)
+    else:
+        bot.edit_message_text(
+            "没有找到结果",
+            message.chat.id,
+            smg.message_id,
+        )
+
+
 # 空按钮回调处理
 @bot.callback_query_handler(func=lambda call: call.data == 'None')
 def callback_none(call):
@@ -171,6 +201,7 @@ def query_empty(inline_query):
 
 def set_bot_command(bot_):
     """设置Bot命令"""
+    bot_.delete_my_commands(scope=None, language_code=None)
     commands_list = [
         telebot.types.BotCommand("help", "使用帮助"),
         telebot.types.BotCommand("start", "绑定Bangumi账号"),
@@ -180,6 +211,7 @@ def set_bot_command(bot_):
         telebot.types.BotCommand("real", "Bangumi用户在看剧集"),
         telebot.types.BotCommand("week", "每日放送"),
         telebot.types.BotCommand("search", "搜索条目"),
+        telebot.types.BotCommand("isearch", "图片搜索"),
         telebot.types.BotCommand("close", "关闭此对话"),
         telebot.types.BotCommand("unbind", "解除 Bangumi 账号绑定"),
     ]
