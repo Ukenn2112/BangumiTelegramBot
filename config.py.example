@@ -23,8 +23,8 @@ REDIS_DATABASE = 0
 
 SESSION_EXPIRES = 3600 * 24
 
-## ChromeDriver https://chromedriver.chromium.org/downloads
-CHROMEDRIVER_PATH = ''
+## WebStackAPI https://github.com/Lete114/WebStack-Screenshot
+WEBSTACK_API = 'https://webstack-screenshot.vercel.app/'
 
 ## 日志等级 INFO/DEBUG/ERROR
 LOG_LEVEL = 'ERROR'
