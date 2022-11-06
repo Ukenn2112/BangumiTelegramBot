@@ -31,10 +31,7 @@ else:
 
 import logging
 
-if 'LOG_LEVEL' in dir(config):
-    logging.getLogger().setLevel(config.LOG_LEVEL.upper())
-else:
-    logging.getLogger().setLevel(logging.ERROR)
+logging.getLogger().setLevel(logging.INFO)
 
 logging.basicConfig(
     format='%(asctime)s %(message)s',
