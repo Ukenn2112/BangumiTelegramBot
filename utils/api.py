@@ -98,8 +98,7 @@ def sub_user_list(subject_id):
     data = sql_con.execute(
         "select tg_id from sub where subject_id=?", (subject_id,)
     ).fetchall()
-    user_list = [i[0] for i in data]
-    return [user_list[i:i+30] for i in range(0,len(user_list),30)]
+    return [i[0] for i in data]
 
 
 def data_seek_get(tg_id):

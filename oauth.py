@@ -16,10 +16,11 @@ from urllib import parse as url_parse
 import redis
 import requests
 from flask import Flask, jsonify, redirect, render_template, request
+from more_itertools import chunked
 from waitress import serve
 
 import config
-from config import (ALLOW_IP, APP_ID, APP_SECRET, BOT_USERNAME, REDIS_DATABASE,
+from config import (APP_ID, APP_SECRET, AUTH_KEY, BOT_USERNAME, REDIS_DATABASE,
                     REDIS_HOST, REDIS_PORT, WEBSITE_BASE)
 from utils.api import (create_sql, get_subject_info, sub_repeat, sub_unadd,
                        sub_user_list)
@@ -214,24 +215,22 @@ def sub():
 # 推送 API
 @app.route('/push', methods=['get', 'post'])
 def push():
-    logging.info(f'[I] push: 推送请求 {request.full_path}')
-    subject_id = request.values.get('subject_id')
+    import telebot
+    logging.info(f'[I] push: 收到推送请求 {request.full_path}')
     video_id = request.values.get('video_id')
-    ep = request.values.get('ep')
-    image = request.values.get('image')
-    if video_id and not subject_id:
-        r = requests.post('https://bangumi.online/api/bgm/subject', data={'vid': video_id}).json()
+    volume = request.values.get('volume')
+    if video_id:
+        r = requests.post('https://api.bangumi.online/bgm/subject', data={'vid': video_id}).json()
         if r['code'] == 10000:
             subject_id = r['data']['subject']['id']
     if subject_id and video_id:
-        userss = sub_user_list(subject_id)
-        if userss:
+        sub_users = sub_user_list(subject_id)
+        if sub_users:
             subject_info = get_subject_info(subject_id)
             text = (
-                f'*🌸 #{subject_info["name_cn"] or subject_info["name"]} [*[{ep}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n'
+                f'*🌸 #{subject_info["name_cn"] or subject_info["name"]} [*[{volume}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n'
                 f'[>>🍿 前往观看](https://bangumi.online/watch/{video_id}?s=bgmbot)\n'
             )
-            import telebot
             bot = telebot.TeleBot(config.BOT_TOKEN)
             markup = telebot.types.InlineKeyboardMarkup()
             markup.add(
@@ -245,14 +244,13 @@ def push():
         lock.acquire() # 线程加锁
         s = 0 # 成功计数器
         us = 0 # 不成功计数器
-        for users in userss:
+        for users in chunked(sub_users, 30):
             for user in users:
                 try:
                     bot.send_message(chat_id=user, text=text, parse_mode="Markdown", reply_markup=markup)
                     s += 1
-                except:
-                    us += 1
-            if len(userss) > 1:
+                except: us += 1
+            if len(sub_users) > 30:
                 time.sleep(1)
         logging.info(f'[I] push: 推送成功 {s} 条，失败 {us} 条')
         resu = {'code': 200, 'message': f'推送:成功 {s} 失败 {us}'}
@@ -278,7 +276,7 @@ def before():
         logging.warning(f'[W] before: 拦截到非法请求 {request.remote_addr} -> {url}')
         fuck = {'code': 200, 'message': 'Fack you mather!'}
         return jsonify(fuck), 200
-    elif request.remote_addr != ALLOW_IP:
+    elif request.headers.get('Content-Auth') != AUTH_KEY:
         logging.warning(f'[W] before: 拦截访问 {request.remote_addr} -> {url}')
         resu = {'code': 403, 'message': '你没有访问权限！'}
         return jsonify(resu), 200

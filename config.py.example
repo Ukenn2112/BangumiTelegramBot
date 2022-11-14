@@ -30,4 +30,4 @@ WEBSTACK_API = 'https://webstack-screenshot.vercel.app/'
 LOG_LEVEL = 'ERROR'
 
 SENTRY_DSN = ''
-ALLOW_IP = ''
+AUTH_KEY = ''
