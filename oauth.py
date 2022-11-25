@@ -222,7 +222,7 @@ def push():
     if video_id:
         r = requests.post('https://api.bangumi.online/bgm/subject', data={'vid': video_id}).json()
         if r['code'] == 10000:
-            subject_id = r['data']['subject']['id']
+            subject_id = r['data']['season']['id']
     if subject_id and video_id:
         sub_users = sub_user_list(subject_id)
         if sub_users:
