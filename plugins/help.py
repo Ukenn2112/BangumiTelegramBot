@@ -5,6 +5,9 @@ from telebot.types import Message
 
 
 def send(message: Message, bot: AsyncTeleBot):
+    if message.chat.type != "private":
+        if message.text != f'/start@{BOT_USERNAME}': 
+            return
     text = (
         f'*{BOT_USERNAME} 使用帮助*\n\n'
         '/start _绑定Bangumi账号_\n'
