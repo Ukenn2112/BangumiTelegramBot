@@ -15,6 +15,7 @@ from urllib import parse as url_parse
 
 import redis
 import requests
+from requests.adapters import HTTPAdapter
 from flask import Flask, jsonify, redirect, render_template, request
 from more_itertools import chunked
 from waitress import serve
@@ -218,17 +219,20 @@ def push():
     import telebot
     logging.info(f'[I] push: 收到推送请求 {request.full_path}')
     video_id = request.values.get('video_id')
-    volume = request.values.get('volume')
+    subject_id = None
     if video_id:
-        r = requests.post('https://api.bangumi.online/bgm/subject', data={'vid': video_id}).json()
+        s = requests.Session()
+        s.mount('https://', HTTPAdapter(max_retries=3))
+        r = s.post('https://api.bangumi.online/bgm/subject', data={'vid': video_id}, timeout=10).json()
         if r['code'] == 10000:
             subject_id = r['data']['season']['bgm_id']
+            subject_info = r['season']['title']
+            volume = r['data']['episode']['volume']
     if subject_id and video_id:
         sub_users = sub_user_list(subject_id)
         if sub_users:
-            subject_info = get_subject_info(subject_id)
             text = (
-                f'*🌸 #{subject_info["name_cn"] or subject_info["name"]} [*[{volume}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n'
+                f'*🌸 #{subject_info["zh"] or subject_info["ja"]} [*[{volume}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n'
                 f'[>>🍿 前往观看](https://bangumi.online/watch/{video_id}?s=bgmbot)\n'
             )
             bot = telebot.TeleBot(config.BOT_TOKEN)
