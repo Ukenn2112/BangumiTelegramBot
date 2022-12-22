@@ -23,8 +23,7 @@ from waitress import serve
 import config
 from config import (APP_ID, APP_SECRET, AUTH_KEY, BOT_USERNAME, REDIS_DATABASE,
                     REDIS_HOST, REDIS_PORT, WEBSITE_BASE)
-from utils.api import (create_sql, get_subject_info, sub_repeat, sub_unadd,
-                       sub_user_list)
+from utils.api import (create_sql, sub_repeat, sub_unadd, sub_user_list)
 
 if 'OAUTH_POST' in dir(config):
     OAUTH_POST = config.OAUTH_POST
@@ -277,11 +276,11 @@ def before():
     elif url == '/oauth_callback':
         pass
     elif re.findall(r'pma|db|mysql|phpMyAdmin|.env|php|admin|config|setup', url):
-        logging.warning(f'[W] before: 拦截到非法请求 {request.remote_addr} -> {url}')
+        logging.debug(f'[W] before: 拦截到非法请求 {request.remote_addr} -> {url}')
         fuck = {'code': 200, 'message': 'Fack you mather!'}
         return jsonify(fuck), 200
     elif request.headers.get('Content-Auth') != AUTH_KEY:
-        logging.warning(f'[W] before: 拦截访问 {request.remote_addr} -> {url}')
+        logging.debug(f'[W] before: 拦截访问 {request.remote_addr} -> {url}')
         resu = {'code': 403, 'message': '你没有访问权限！'}
         return jsonify(resu), 200
     else:
