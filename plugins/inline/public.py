@@ -92,6 +92,9 @@ def query_person_related_subjects(inline_query):
                 text="更多信息", switch_inline_query_current_chat=f"S {subject['id']}"
             ),
             telebot.types.InlineKeyboardButton(
+                text="巡礼", switch_inline_query_current_chat=f"anitabi {subject['id']}"
+            ),
+            telebot.types.InlineKeyboardButton(
                 text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"
             ),
             telebot.types.InlineKeyboardButton(
@@ -182,6 +185,9 @@ def query_search(inline_query):
             ]
             if subject["type"] != 3:  # 当类型为anime或real时
                 button_list.append(
+                    telebot.types.InlineKeyboardButton(
+                        text="巡礼", switch_inline_query_current_chat=f"anitabi {subject['id']}"
+                    ),
                     telebot.types.InlineKeyboardButton(
                         text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"
                     )

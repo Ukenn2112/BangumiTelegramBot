@@ -865,3 +865,22 @@ def get_image_search(file_path):
         'similarity': f'{round(data["similarity"]*100, 2)} %',
         'video_url': data['video'],
     }
+
+def get_anitabi_data():
+    """获取 anitabi 数据"""
+    anitabi_data = redis_cli.get("anitabi_data")
+    if anitabi_data:
+        if anitabi_data == b"None__":
+            raise FileNotFoundError("anitabi_data: 获取 anitabi 信息失败_缓存")
+        loads = json.loads(anitabi_data)
+    else:
+        loads = requests_get("https://anitabi.cn/api/bangumi/points.geo")
+        if loads is None:
+            redis_cli.set(f"anitabi_data", "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            raise FileNotFoundError("anitabi_data: 获取 anitabi 信息失败")
+        redis_cli.set(
+            "anitabi_data",
+            json.dumps(loads),
+            ex=60 * 60 * 24 * 7 + random.randint(-3600, 3600),
+        )
+    return loads

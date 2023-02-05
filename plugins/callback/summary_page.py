@@ -24,6 +24,9 @@ def generate_page(request: SummaryRequest) -> SummaryRequest:
     markup.add(
         telebot.types.InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"),
         telebot.types.InlineKeyboardButton(
+            text="巡礼", switch_inline_query_current_chat=f"anitabi {request.subject_id}"
+        ),
+        telebot.types.InlineKeyboardButton(
             text="角色", switch_inline_query_current_chat=f"SC {request.subject_id}"
         ),
     )

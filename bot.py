@@ -47,7 +47,7 @@ from plugins.callback import (
     edit_eps_page,
     subject_relations_page,
 )
-from plugins.inline import sender, public, mybgm
+from plugins.inline import sender, public, mybgm, anitabi
 from utils.api import create_sql, run_continuously, redis_cli, sub_repeat, sub_unadd, user_data_delete, get_image_search
 
 logger = telebot.logger
@@ -167,6 +167,7 @@ def test_chosen(chosen_inline_result):
     lambda query: query.query
     and query.chat_type == 'sender'
     and not query.query.startswith('mybgm')
+    and not query.query.startswith('anitabi')
 )
 def sender_query_text(inline_query):
     sender.query_sender_text(inline_query, bot)
@@ -177,6 +178,7 @@ def sender_query_text(inline_query):
     lambda query: query.query
     and query.chat_type != 'sender'
     and not query.query.startswith('mybgm')
+    and not query.query.startswith('anitabi')
 )
 def public_query_text(inline_query):
     public.query_public_text(inline_query, bot)
@@ -186,6 +188,10 @@ def public_query_text(inline_query):
 @bot.inline_handler(lambda query: query.query and 'mybgm' in query.query)
 def mybgm_query_text(inline_query):
     mybgm.query_mybgm_text(inline_query, bot)
+
+@bot.inline_handler(lambda query: query.query and 'anitabi' in query.query)
+def anitabi_query_text(inline_query):
+    anitabi.query_anitabi_text(inline_query, bot)
 
 
 @bot.inline_handler(lambda query: not query.query)
