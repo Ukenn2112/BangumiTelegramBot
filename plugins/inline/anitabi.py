@@ -18,7 +18,11 @@ def bgmid_anitabi(inline_query: Message, bgm_id: int):
     if anitabi_data:
         switch_pm_text = (anitabi_data['cn'] or anitabi_data['title']) + " 巡礼地址"
         for point in data['points'][offset : offset + 50]:
-            min, sec = divmod(point['s'], 60)
+            min, sec = 0, 0
+            if point.get('s'):
+                min, sec = divmod(point['s'], 60)
+            if not point.get('ep'):
+                point['ep'] = 0
             query_result_list.append(
                 InlineQueryResultVenue(
                     id=point['id'],
@@ -26,7 +30,7 @@ def bgmid_anitabi(inline_query: Message, bgm_id: int):
                     longitude=point['geo'][1],
                     title=point['cn'] if point.get('cn') else point['name'],
                     address=f"[EP{point['ep']:02d} {min:02d}:{sec:02d}] {anitabi_data['cn'] or anitabi_data['title']} 巡礼地址 @anitabi.cn",
-                    thumb_url='https://anitabi.cn/' + point['image']
+                    thumb_url=('https://anitabi.cn/' + point['image']) if point.get('image') else None,
                 )
             )
     return {
@@ -34,7 +38,7 @@ def bgmid_anitabi(inline_query: Message, bgm_id: int):
         'next_offset': str(offset + 50),
         'switch_pm_text': switch_pm_text,
         'switch_pm_parameter': "help",
-        'cache_time': 0,
+        'cache_time': 3600,
     }
 
 
