@@ -1,3 +1,6 @@
+> **Note**
+> 由于早期开发代码不规范导致看着很乱，~~再加上某人功能写到一半跑路（:~~，预计今年内全部重写
+
 [![image](https://cdn.jsdelivr.net/gh/Ukenn2112/image/BangumiTelegramBot.png)](https://github.com/Ukenn2112/BangumiTelegramBot/)
 
 
@@ -14,6 +17,7 @@
 - [x] 管理收藏
 - [x] 每日放送查询
 - [x] 图片搜索番剧
+- [x] 圣地巡礼数据查询 数据来自 [Anitabi.cn](https://anitabi.cn/)
 - [x] 与 [Bangumi.online](https://bangumi.online/) 联动的番剧更新提醒
 
 ......
