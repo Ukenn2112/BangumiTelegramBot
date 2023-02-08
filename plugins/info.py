@@ -190,6 +190,8 @@ def gander_info_message(
         f"\n📖 [详情](https://bgm.tv/subject/{subject_id})"
         f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
     )
+    if subject_type == 3:  # 当类型为Music时
+        text += f"\n🍎 [AppleMusic](https://am.ukenn.workers.dev/search?term={subject_info['name']})\n"
     subject_relations = get_subject_relations(subject_id)
     if subject_relations != "None__":
         for relation in subject_relations:
