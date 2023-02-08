@@ -331,5 +331,5 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
         f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)\n"
     )
     if subject_type == 3:  # 当类型为Music时
-        text += f"\n🍎 [AppleMusic](https://am.ukenn.workers.dev/search?term={subject_info['name']})\n"
+        text += f"🍎 [AppleMusic](https://am.ukenn.workers.dev/search?term={subject_info['name']})\n"
     return text
