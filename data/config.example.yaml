@@ -1,0 +1,24 @@
+BGM:
+  # App ID & App Secret https://bgm.tv/dev/app/create
+  APP_ID: bgm123456
+  APP_SECRET: 123dsda123456
+  # 长期有效的 Access Token https://next.bgm.tv/demo/access-token
+  ACCESS_TOKEN: kasdbdhadsdadwdqd
+
+# Telegram Bot https://t.me/BotFather
+BOT_TOKEN: 12345566:asndjakdajkxwasxccafsdf
+
+# API Server
+API_SERVER:
+  POST: 6008
+  WEBSITE_BASE: http://127.0.0.1
+  AUTH_KEY: sdasd-ee5dsdsf-4asdad5-9dsd0c-8asdaf82
+
+# Redis Server
+REDIS:
+  HOST: localhost
+  PORT: 6379
+  REDIS_DATABASE: 0
+
+# Log Level
+LOG_LEVEL: INFO

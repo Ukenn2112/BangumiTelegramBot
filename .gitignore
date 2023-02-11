@@ -1,8 +1,5 @@
-config.py
-bot.db
-bgm_data.json
-test_data.json
 run.log
-__pycache__/
-*.py[cod]
-data/
+sqldata.db
+.DS_Store
+__pycache__
+config.yaml
