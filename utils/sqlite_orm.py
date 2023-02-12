@@ -25,7 +25,7 @@ class SQLite:
         )
         self.conn.commit()
 
-    def insert_user_data(self, tg_id: int, bgm_id: int, access_token: str, refresh_token: str, cookie: str) -> None:
+    def insert_user_data(self, tg_id: int, bgm_id: int, access_token: str, refresh_token: str, cookie: str = None) -> None:
         """插入用户数据"""
         now_time = datetime.datetime.now().timestamp() // 1000
         expiry_time = (datetime.datetime.now() + datetime.timedelta(days=7)).timestamp() // 1000

@@ -11,7 +11,7 @@ class BangumiAPI:
     def __init__(self, app_id: str, app_secret: str, redirect_uri: str):
         self.app_id = app_id
         self.app_secret = app_secret
-        self.redirect_uri = redirect_uri + "/oauth_callback"
+        self.redirect_uri = redirect_uri
 
     async def __aenter__(self):
         self.s = aiohttp.ClientSession(
@@ -27,7 +27,15 @@ class BangumiAPI:
 
     # OAuth
     async def oauth_authorization_code(self, code: str) -> dict:
-        """授权获取 access_token"""
+        """授权获取 access_token
+        :return {
+            "access_token": "xxxxxxxxxxxxxxxx", api请求密钥
+            "expires_in": 604800, 有效期7天
+            "refresh_token": "xxxxxxxxxxxxxxxxxxx",  续期密钥
+            "scope": null,
+            "token_type": "Bearer",
+            "user_id": xxxxxx  bgm用户uid
+        }"""
         async with self.s.post(
             "https://bgm.tv/oauth/access_token",
             data={
