@@ -1,13 +1,15 @@
+import asyncio
 import json
 import logging
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import re
 from urllib import parse as url_parse
 
 from flask import Flask, jsonify, redirect, render_template, request
 from waitress import serve
 
-from utils.config_vars import CALLBACK_URL, config, redis, sql, bgm, BOT_USERNAME
+from utils.config_vars import (BOT_USERNAME, CALLBACK_URL, bgm, config, redis,
+                               sql)
 
 # 异步线程池
 executor = ThreadPoolExecutor()
@@ -70,6 +72,28 @@ def oauth_callback():
     except Exception as e:
         logging.error(f"[E] oauth_callback: {e}")
         return render_template("error.html")
+
+
+@app.before_request
+def before():
+    """中间件拦截器"""
+    url = request.path  # 读取到当前接口的地址
+    if url == '/health':
+        pass
+    elif url == '/oauth_index':
+        pass
+    elif url == '/oauth_callback':
+        pass
+    elif re.findall(r'pma|db|mysql|phpMyAdmin|.env|php|admin|config|setup', url):
+        logging.debug(f'[W] before: 拦截到非法请求 {request.remote_addr} -> {url}')
+        fuck = {'code': 200, 'message': 'Fack you mather!'}
+        return jsonify(fuck), 200
+    elif request.headers.get('Content-Auth') != config['API_SERVER']['AUTH_KEY']:
+        logging.debug(f'[W] before: 拦截访问 {request.remote_addr} -> {url}')
+        resu = {'code': 403, 'message': '你没有访问权限！'}
+        return jsonify(resu), 200
+    else:
+        pass
 
 
 def start_flask():
