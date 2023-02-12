@@ -25,7 +25,7 @@ class BangumiAPI:
     async def __aexit__(self, exc_type, exc, tb):
         await self.s.close()
 
-    # OAuth
+    # OAuth https://github.com/bangumi/api/blob/master/docs-raw/How-to-Auth.md
     async def oauth_authorization_code(self, code: str) -> dict:
         """授权获取 access_token
         :return {

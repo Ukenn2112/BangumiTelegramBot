@@ -37,7 +37,7 @@ class SQLite:
 
     def inquiry_user_data(self, tg_id) -> Union[tuple, None]:
         """查询用户数据
-        :return: (tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time)"""
+        :return: (0 tg_id, 1 bgm_id, 2 access_token, 3 refresh_token, 4 cookie, 5 expiry_time)"""
         data = self.cursor.execute("SELECT tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time FROM user WHERE tg_id=?", (tg_id,))
         return data.fetchone()
     
@@ -65,6 +65,31 @@ class SQLite:
             subject_id INTEGER)
             """)
         self.conn.commit()
+
+    def insert_subscribe_data(self, tg_id: int, user_id: int, subject_id: int) -> None:
+        """插入订阅数据"""
+        self.cursor.execute("INSERT INTO sub (tg_id, user_id, subject_id) VALUES (?, ?, ?)", (tg_id, user_id, subject_id))
+        self.conn.commit()
+    
+    def delete_subscribe_data(self, tg_id: int, subject_id: int) -> None:
+        """删除订阅数据"""
+        self.cursor.execute("DELETE FROM sub WHERE tg_id=? AND subject_id=?", (tg_id, subject_id))
+        self.conn.commit()
+    
+    def inquiry_subscribe_data(self, subject_id: int) -> list:
+        """查询 subject_id 的订阅 tg_id"""
+        data = self.cursor.execute("SELECT tg_id FROM sub WHERE subject_id=?", (subject_id,)).fetchall()
+        if data:
+            return [i[0] for i in data]
+        else:
+            return []
+    
+    def check_subscribe(self, subject_id: int, tg_id: int = None, bgm_id: int = None) -> bool:
+        """查询用户是否已订阅"""
+        data = self.cursor.execute(
+            "SELECT * FROM sub WHERE (tg_id=? OR bgm_id=?) AND subject_id=?",
+            (tg_id, bgm_id, subject_id))
+        return bool(data.fetchone())
     
     def close(self):
         self.conn.close()
