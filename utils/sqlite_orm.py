@@ -1,12 +1,14 @@
+import datetime
 import sqlite3
+from typing import Union
 
 
 class SQLite:
     def __init__(self):
-        self.conn = sqlite3.connect("data/sqldata.db", check_same_thread=False)
+        self.conn = sqlite3.connect("data/bot.db", check_same_thread=False)
         self.cursor = self.conn.cursor()
 
-    def create_users_db(self):
+    def create_users_db(self) -> None:
         """创建用户数据库"""
         self.cursor.execute("""create table if not exists
             user(
@@ -22,8 +24,38 @@ class SQLite:
             """
         )
         self.conn.commit()
+
+    def insert_user_data(self, tg_id: int, bgm_id: int, access_token: str, refresh_token: str, cookie: str) -> None:
+        """插入用户数据"""
+        now_time = datetime.datetime.now().timestamp() // 1000
+        expiry_time = (datetime.datetime.now() + datetime.timedelta(days=7)).timestamp() // 1000
+        self.cursor.execute(
+            "INSERT INTO user (tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time, create_time, update_time) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time, now_time, now_time))
+        self.conn.commit()
+
+    def inquiry_user_data(self, tg_id) -> Union[tuple, None]:
+        """查询用户数据
+        :return: (tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time)"""
+        data = self.cursor.execute("SELECT tg_id, bgm_id, access_token, refresh_token, cookie, expiry_time FROM user WHERE tg_id=?", (tg_id,))
+        return data.fetchone()
     
-    def create_subscribe_db(self):
+    def update_user_data(self, tg_id: int, access_token: str, refresh_token: str, cookie: str) -> None:
+        """更新用户数据"""
+        now_time = datetime.datetime.now().timestamp() // 1000
+        expiry_time = (datetime.datetime.now() + datetime.timedelta(days=7)).timestamp() // 1000
+        self.cursor.execute(
+            "UPDATE user SET access_token=?, refresh_token=?, cookie=?, expiry_time=?, update_time=? WHERE tg_id=?",
+            (access_token, refresh_token, cookie, expiry_time, now_time, tg_id))
+        self.conn.commit()
+    
+    def delete_user_data(self, tg_id: int) -> None:
+        """删除用户数据"""
+        self.cursor.execute("DELETE FROM user WHERE tg_id=?", (tg_id,))
+        self.conn.commit()
+    
+    def create_subscribe_db(self) -> None:
         """创建订阅数据库"""
         self.cursor.execute("""create table if not exists
             sub(

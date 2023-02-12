@@ -3,10 +3,9 @@ import logging
 
 import telebot
 
-
+from apiserver import start_api, stop_api
 from tgbot import bot_register
 from utils.config_vars import bot, config, sql
-from apiserver import start_api, stop_api
 
 telebot.logger.setLevel(config["LOG_LEVEL"].upper())
 logging.getLogger().setLevel(config["LOG_LEVEL"].upper())

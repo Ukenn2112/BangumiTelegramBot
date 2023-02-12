@@ -1,5 +1,5 @@
 run.log
-sqldata.db
+*.db
 .DS_Store
 __pycache__
 config.yaml
