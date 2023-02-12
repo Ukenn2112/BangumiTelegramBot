@@ -9,7 +9,9 @@ from .sqlite_orm import SQLite
 with open('data/config.yaml', 'r') as f:
     config: dict = yaml.safe_load(f)
 
-CALLBACK_URL = f"{config['API_SERVER']['WEBSITE_BASE']}:{config['API_SERVER']['POST']}/oauth_callback"
+# API 服务器地址
+API_SETVER_URL = f"{config['API_SERVER']['WEBSITE_BASE']}:{config['API_SERVER']['POST']}"
+CALLBACK_URL = f"{API_SETVER_URL}/oauth_callback"
 
 # 创建 TeleBot 实例
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode='Markdown')

@@ -4,11 +4,12 @@ from telebot.asyncio_filters import SimpleCustomFilter
 from utils.config_vars import BOT_USERNAME, bot
 
 from .start import send_start
-
+from .help import send_help
 
 def bot_register(bot: AsyncTeleBot):
     bot.add_custom_filter(IsPrivate())
-    bot.register_message_handler(send_start, commands=['start'], is_private=True, pass_bot=True)
+    bot.register_message_handler(send_start, commands=["start"], is_private=True, pass_bot=True)
+    bot.register_message_handler(send_help, commands=["help"], is_private=True, pass_bot=True)
 
 
 class IsPrivate(SimpleCustomFilter):

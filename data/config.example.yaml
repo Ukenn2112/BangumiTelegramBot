@@ -22,3 +22,6 @@ REDIS:
 
 # Log Level
 LOG_LEVEL: INFO
+
+# Session
+SESSION_EXPIRES: 86400

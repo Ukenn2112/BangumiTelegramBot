@@ -37,8 +37,6 @@ def oauth_index():
         redis_data = redis.get("oauth:" + state)
         if not redis_data: return render_template("error.html")
         params = json.loads(redis_data)
-        if "tg_id" not in params: return render_template("error.html")
-        elif not params["tg_id"]: return render_template("error.html")
         check = sql.inquiry_user_data(params["tg_id"])
         if not check: return render_template("verified.html")
         USER_AUTH_URL = "https://bgm.tv/oauth/authorize?" + url_parse.urlencode(
@@ -63,12 +61,9 @@ def oauth_callback():
         redis_data = redis.get("oauth:" + state)
         if not redis_data: return render_template("expired.html")
         params = json.loads(redis_data)
-        if "tg_id" not in params: return render_template("error.html")
-        elif not params["tg_id"]: return render_template("error.html")
         back_oauth = asyncio.run(bgm.oauth_authorization_code(code))
         sql.insert_user_data(params["tg_id"], back_oauth["user_id"], back_oauth["access_token"], back_oauth["refresh_token"])
-        param = params["param"] if "param" in params else "None"
-        return redirect(f"https://t.me/{BOT_USERNAME}?start={param}")
+        return redirect(f"https://t.me/{BOT_USERNAME}?start={params['param']}")
     except Exception as e:
         logging.error(f"[E] oauth_callback: {e}")
         return render_template("error.html")
