@@ -273,7 +273,13 @@ class BangumiAPI:
             f"{self.api_url}/v0/subject/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
-            return await resp.json()
+            loads = await resp.json()
+            loads['_air_weekday'] = None
+            for info in loads['infobox']:
+                if info['key'] == '放送星期':
+                    loads['_air_weekday'] = info['value']  # 加一个下划线 用于区别
+                    break
+            return loads
     
     @cache_data
     async def get_subject_persons(self, subject_id, access_token: str = None) -> list:

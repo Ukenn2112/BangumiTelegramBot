@@ -4,10 +4,11 @@ import uuid
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from .help import send_help
 from utils.before_api import get_user_token
-from utils.config_vars import BOT_USERNAME, API_SETVER_URL, sql, redis
+from utils.config_vars import API_SETVER_URL, BOT_USERNAME, bgm, redis, sql
 from utils.model.page_model import RequestSession, SubjectRequest
+
+from .help import send_help
 
 
 async def send_start(message: Message, bot: AsyncTeleBot):
@@ -21,12 +22,16 @@ async def send_start(message: Message, bot: AsyncTeleBot):
             return await bot.reply_to(message, "你已经订阅过这个番剧了哦~")
         else:
             sql.insert_subscribe_data(message.from_user.id, bgm_id, subject_id)
+            subject_info = await bgm.get_subject(subject_id)
+            text = (f"\\[*#订阅成功*]\n\n"
+                    f"*{subject_info['name_cn'] or subject_info['name']}*\n\n"
+                    f"*➤ 放送星期：*`{subject_info['_air_weekday']}`\n")
             markup = InlineKeyboardMarkup()
             markup.add(
                 InlineKeyboardButton(text="取消订阅", callback_data=f"unaddsub|{subject_id}"),
                 InlineKeyboardButton(text="查看详情", url=f"t.me/{BOT_USERNAME}?start={subject_id}")
             )
-            return await bot.reply_to(message, f"`{subject_id}` 订阅成功~", reply_markup=markup) # TODO 显示番剧名 以及更新时间
+            return await bot.reply_to(message, text, reply_markup=markup)
     elif len(msg_data) > 1 and msg_data[1] == "help":
         return await send_help(message, bot)
     access_token = await get_user_token(message.from_user.id)
