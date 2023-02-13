@@ -1,5 +1,7 @@
 import aiohttp
 
+from ..before_api import cache_data
+
 
 class BangumiAPI:
     """Bangumi API
@@ -232,6 +234,7 @@ class BangumiAPI:
             }
         )
     # 条目
+    @cache_data
     async def get_calendar(self) -> list:
         """
         每日放送
@@ -242,6 +245,7 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
     
+    @cache_data
     async def get_subject(self, subject_id, access_token: str = None) -> dict:
         """
         获取条目信息
@@ -259,6 +263,7 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
     
+    @cache_data
     async def get_subject_persons(self, subject_id, access_token: str = None) -> list:
         """
         获取条目人物
@@ -276,6 +281,7 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
     
+    @cache_data
     async def get_subject_characters(self, subject_id, access_token: str = None) -> list:
         """
         获取条目角色
@@ -293,6 +299,7 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
     
+    @cache_data
     async def get_subject_related(self, subject_id, access_token: str = None) -> list:
         """
         获取条目相关条目
