@@ -81,35 +81,30 @@ class BangumiAPI:
             return await resp.json()
     
     @cache_data
-    async def get_user_info(self, username) -> dict:
+    async def get_user_info(self, bgm_id) -> dict:
         """
-        获取用户信息
+        获取用户信息 (Old API) 新 API 还没老的好用 (:3 」∠)_
 
         Docs: https://bangumi.github.io/api/#/%E7%94%A8%E6%88%B7/getUserByName
 
-        username: 用户名 设置了用户名之后无法使用 UID。"""
+        :param bgm_id: BGM ID 或 用户名 可反查"""
         async with self.s.get(
-            f"{self.api_url}/v0/users/{username}",
+            f"{self.api_url}/user/{bgm_id}",
         ) as resp:
             return await resp.json()
     # 收藏
     async def get_user_subject_collections(self, username, access_token = None, subject_type = 2, collection_type = 3, limit = 30, offset = 0) -> dict:
         """
-        获取对应用户的条目收藏
+        获取用户的条目收藏
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/getUserCollectionsByUsername
 
-        username: 用户名 设置了用户名之后无法使用 UID。
-
-        access_token: Access Token (可选) 查看私有收藏则需要
-
-        subject_type: 收藏类型, 可选值: 1: 书籍, 2: 动画 (默认), 3: 音乐, 4: 游戏, 6: 三次元
-
-        collection_type: 收藏状态, 可选值: 1: 想看, 2: 看过, 3: 在看 (默认), 4: 搁置, 5: 抛弃
-
-        limit: 返回条目数量, 默认 30, 最大 100
-
-        offset: 返回条目偏移, 默认 0"""
+        :param username: 用户名 设置了用户名之后无法使用 UID。
+        :param access_token: Access Token (可选) 查看私有收藏则需要
+        :param subject_type: 收藏类型, 可选值: 1: 书籍, 2: 动画 (默认), 3: 音乐, 4: 游戏, 6: 三次元
+        :param collection_type: 收藏状态, 可选值: 1: 想看, 2: 看过, 3: 在看 (默认), 4: 搁置, 5: 抛弃
+        :param imit: 返回条目数量, 默认 30, 最大 100
+        :param offset: 返回条目偏移, 默认 0"""
         async with self.s.get(
             f"{self.api_url}/v0/users/{username}/collections",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
@@ -124,72 +119,67 @@ class BangumiAPI:
 
     async def get_user_subject_collection(self, username, subject_id, access_token = None) -> dict:
         """
-        获取对应条目用户的收藏
+        获取用户对应条目收藏
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/getUserCollection
 
-        username: 用户名 设置了用户名之后无法使用 UID。
-
-        subject_id: 条目 ID
-
-        access_token: Access Token (可选) 查看私有收藏则需要"""
+        :param username: 用户名 设置了用户名之后无法使用 UID。
+        :param subject_id: 条目 ID
+        :param access_token: Access Token (可选) 查看私有收藏则需要"""
         async with self.s.get(
             f"{self.api_url}/v0/users/{username}/collection/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
     
-    async def send_user_subject_collection(self, access_token, subject_id, status: str = "do", comment: str = None, tags: str = None, rating: int = None, privacy: int = 0) -> None:
+    async def patch_user_subject_collection(self, access_token, subject_id, collection_type: int = None, rate: int = None, ep_status: int = None, vol_status: int = None, comment: str = None, private: bool = None, tags: list[str] = None) -> None:
         """
-        发送条目收藏
+        发送用户条目收藏
 
-        Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/postUserCollection
+        Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/patchUserCollection
 
-        access_token: Access Token
-
-        subject_id: 条目 ID
-
-        status: 收藏状态, 可选值: wish: 想看, collect: 看过, do: 在看 (默认), on_hold: 搁置, drop: 抛弃
-
-        comment: 吐槽 (简评，最多200字) (可选)
-
-        tags: 标签, 多个以以半角空格分割 (可选)
-
-        rating: 评分, 0-10 (可选) 不填默认重置为未评分
-
-        privacy: 隐私设置, 0: 公开, 1: 私有"""
-        params = {
-            "status": status
-            }
-        if comment:
-            params["comment"] = comment
-        if tags:
-            params["tags"] = tags
-        if rating:
-            params["rating"] = rating
-        if privacy:
-            params["privacy"] = privacy
-        return await self.s.post(
-            f"{self.api_url}/collection/{subject_id}/update",
+        :param access_token: Access Token
+        :param subject_id: 条目 ID
+        :param collection_type: 收藏状态, 可选值: 1: 想看, 2: 看过, 3: 在看 (默认), 4: 搁置, 5: 抛弃
+        :param rate: 评分, 0-10, 0 为删除评分
+        :param ep_status: 章节状态, 0: 未看, 1: 看过, 2: 抛弃, 3: 搁置 (只能用于修改书籍条目进度)
+        :param vol_status: 卷状态, 0: 未看, 1: 看过, 2: 抛弃, 3: 搁置 (只能用于修改书籍条目进度)
+        :param comment: 吐槽, 最多 200 字符
+        :param private: 是否私有收藏, 默认 False
+        :param tags: 标签, None 为不修改, [] 为清空 不能包含空格"""
+        send_data = {}
+        if collection_type is not None:
+            send_data["status"] = collection_type
+        if rate is not None:
+            send_data["rating"] = rate
+        if ep_status is not None:
+            send_data["ep_status"] = ep_status
+        if vol_status is not None:
+            send_data["vol_status"] = vol_status
+        if comment is not None:
+            send_data["comment"] = comment
+        if private is not None:
+            send_data["private"] = private
+        if tags is not None:
+            send_data["tags"] = tags
+        async with self.s.patch(
+            f"{self.api_url}/v0/users/-/collections/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
-            data = params
-        )
+            json = send_data
+        ) as resp:
+            return await resp.json()
 
     async def get_user_episode_collections(self, access_token, subject_id, offset = 0, limit = 100, episode_type = 0) -> dict:
         """
-        获取条目章节收藏
+        获取用户条目章节收藏
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/getUserSubjectEpisodeCollection
 
-        access_token: Access Token
-
-        subject_id: 条目 ID
-
-        offset: 返回条目偏移, 默认 0
-
-        limit: 返回条目数量, 默认 100, 最大 100
-
-        episode_type: 集数类型, 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他"""
+        :param access_token: Access Token
+        :param subject_id: 条目 ID
+        :param offset: 返回条目偏移, 默认 0
+        :param limit: 返回条目数量, 默认 100, 最大 100
+        :param episode_type: 集数类型, 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他"""
         async with self.s.get(
             f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
             headers = {"Authorization": f"Bearer {access_token}"},
@@ -203,30 +193,47 @@ class BangumiAPI:
     
     async def get_user_episode_collection(self, access_token, episode_id) -> dict:
         """
-        获取章节收藏
+        获取用户章节收藏
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/getUserEpisodeCollection
 
-        access_token: Access Token
-
-        episode_id: 章节 ID"""
+        :param access_token: Access Token
+        :param episode_id: 章节 ID"""
         async with self.s.get(
             f"{self.api_url}/v0/users/-/collections/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
         ) as resp:
             return await resp.json()
     
-    async def update_user_episode_collection(self, access_token, episode_id, status = 2) -> None:
+    async def patch_uesr_episode_collection(self, access_token, subject_id, episodes_id: list[int], status: int = 2) -> None:
         """
-        更新章节收藏
+        发送用户条目章节收藏
+
+        Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/patchUserSubjectEpisodeCollection
+
+        :param access_token: Access Token
+        :param subject_id: 条目 ID
+        :param episodes_id: 章节 ID 列表
+        :param status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
+        async with self.s.patch(
+            f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
+            headers = {"Authorization": f"Bearer {access_token}"},
+            json = {
+                "episodes": episodes_id,
+                "type": status
+            }
+        ) as resp:
+            return await resp.json()
+
+    async def put_user_episode_collection(self, access_token, episode_id, status = 2) -> None:
+        """
+        更新用户章节收藏 (单集修改)
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/putUserEpisodeCollection
 
-        access_token: Access Token
-
-        episode_id: 章节 ID
-
-        status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
+        :param access_token: Access Token
+        :param episode_id: 章节 ID
+        :param status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
         return await self.s.put(
             f"{self.api_url}/v0/users/-/collections/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
@@ -253,9 +260,8 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getSubjectById
 
-        subject_id: 条目 ID
-        
-        access_token: Access Token"""
+        :param subject_id: 条目 ID
+        :param access_token: Access Token"""
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
@@ -271,9 +277,8 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getRelatedPersonsBySubjectId
 
-        subject_id: 条目 ID
-        
-        access_token: Access Token"""
+        :param subject_id: 条目 ID
+        :param access_token: Access Token"""
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
@@ -289,9 +294,8 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getRelatedCharactersBySubjectId
 
-        subject_id: 条目 ID
-        
-        access_token: Access Token"""
+        :param subject_id: 条目 ID
+        :param access_token: Access Token"""
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
@@ -307,9 +311,8 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getRelatedSubjectsBySubjectId
 
-        subject_id: 条目 ID
-        
-        access_token: Access Token"""
+        :param subject_id: 条目 ID
+        :param access_token: Access Token"""
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
@@ -325,15 +328,11 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E7%AB%A0%E8%8A%82/getEpisodes
 
-        subject_id: 条目 ID
-
-        episode_type: 集数类型, 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他
-
-        limit: 返回数量, 默认 100
-
-        offset: 偏移量, 默认 0
-        
-        access_token: Access Token"""
+        :param subject_id: 条目 ID
+        :param episode_type: 集数类型, 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他
+        :param limit: 返回数量, 默认 100
+        :param offset: 偏移量, 默认 0
+        :param access_token: Access Token"""
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
@@ -355,9 +354,8 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E7%AB%A0%E8%8A%82/getEpisodeById
 
-        episode_id: 章节 ID
-        
-        access_token: Access Token"""
+        :param episode_id: 章节 ID
+        :param access_token: Access Token"""
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
@@ -374,7 +372,7 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E4%BA%BA%E7%89%A9/getPersonById
 
-        person_id: 人物 ID"""
+        :param person_id: 人物 ID"""
         async with self.s.get(
             f"{self.api_url}/v0/persons/{person_id}",
         ) as resp:
@@ -387,7 +385,7 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E4%BA%BA%E7%89%A9/getRelatedSubjectsByPersonId
 
-        person_id: 人物 ID"""
+        :param person_id: 人物 ID"""
         async with self.s.get(
             f"{self.api_url}/v0/persons/{person_id}/subjects",
         ) as resp:
@@ -400,7 +398,7 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E4%BA%BA%E7%89%A9/getRelatedCharactersByPersonId
 
-        person_id: 人物 ID"""
+        :param person_id: 人物 ID"""
         async with self.s.get(
             f"{self.api_url}/v0/persons/{person_id}/characters",
         ) as resp:
@@ -413,7 +411,7 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E8%A7%92%E8%89%B2/getCharacterById
 
-        character_id: 角色 ID"""
+        :param character_id: 角色 ID"""
         async with self.s.get(
             f"{self.api_url}/v0/characters/{character_id}",
         ) as resp:
@@ -426,7 +424,7 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E8%A7%92%E8%89%B2/getRelatedSubjectsByCharacterId
 
-        character_id: 角色 ID"""
+        :param character_id: 角色 ID"""
         async with self.s.get(
             f"{self.api_url}/v0/characters/{character_id}/subjects",
         ) as resp:
@@ -439,7 +437,7 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E8%A7%92%E8%89%B2/getRelatedPersonsByCharacterId
 
-        character_id: 角色 ID"""
+        :param character_id: 角色 ID"""
         async with self.s.get(
             f"{self.api_url}/v0/characters/{character_id}/persons",
         ) as resp:
