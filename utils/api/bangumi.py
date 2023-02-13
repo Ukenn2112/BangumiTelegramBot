@@ -365,3 +365,82 @@ class BangumiAPI:
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
+
+    # 人物
+    @cache_data
+    async def get_person(self, person_id) -> dict:
+        """
+        获取人物信息
+
+        Docs: https://bangumi.github.io/api/#/%E4%BA%BA%E7%89%A9/getPersonById
+
+        person_id: 人物 ID"""
+        async with self.s.get(
+            f"{self.api_url}/v0/persons/{person_id}",
+        ) as resp:
+            return await resp.json()
+
+    @cache_data
+    async def get_person_subjects(self, person_id) -> list:
+        """
+        获取人物相关条目
+
+        Docs: https://bangumi.github.io/api/#/%E4%BA%BA%E7%89%A9/getRelatedSubjectsByPersonId
+
+        person_id: 人物 ID"""
+        async with self.s.get(
+            f"{self.api_url}/v0/persons/{person_id}/subjects",
+        ) as resp:
+            return await resp.json()
+    
+    @cache_data
+    async def get_person_characters(self, person_id) -> list:
+        """
+        获取人物相关角色
+
+        Docs: https://bangumi.github.io/api/#/%E4%BA%BA%E7%89%A9/getRelatedCharactersByPersonId
+
+        person_id: 人物 ID"""
+        async with self.s.get(
+            f"{self.api_url}/v0/persons/{person_id}/characters",
+        ) as resp:
+            return await resp.json()
+    # 角色
+    @cache_data
+    async def get_character(self, character_id) -> dict:
+        """
+        获取角色信息
+
+        Docs: https://bangumi.github.io/api/#/%E8%A7%92%E8%89%B2/getCharacterById
+
+        character_id: 角色 ID"""
+        async with self.s.get(
+            f"{self.api_url}/v0/characters/{character_id}",
+        ) as resp:
+            return await resp.json()
+    
+    @cache_data
+    async def get_character_subjects(self, character_id) -> list:
+        """
+        获取角色相关条目
+
+        Docs: https://bangumi.github.io/api/#/%E8%A7%92%E8%89%B2/getRelatedSubjectsByCharacterId
+
+        character_id: 角色 ID"""
+        async with self.s.get(
+            f"{self.api_url}/v0/characters/{character_id}/subjects",
+        ) as resp:
+            return await resp.json()
+    
+    @cache_data
+    async def get_character_persons(self, character_id) -> list:
+        """
+        获取角色相关人物
+
+        Docs: https://bangumi.github.io/api/#/%E8%A7%92%E8%89%B2/getRelatedPersonsByCharacterId
+
+        character_id: 角色 ID"""
+        async with self.s.get(
+            f"{self.api_url}/v0/characters/{character_id}/persons",
+        ) as resp:
+            return await resp.json()
