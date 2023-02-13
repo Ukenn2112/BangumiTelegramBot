@@ -90,7 +90,7 @@ class SQLite:
     def check_subscribe(self, subject_id: int, tg_id: int = None, bgm_id: int = None) -> bool:
         """查询用户是否已订阅"""
         data = self.cursor.execute(
-            "SELECT * FROM sub WHERE (tg_id=? OR bgm_id=?) AND subject_id=?",
+            "SELECT * FROM sub WHERE (tg_id=? OR user_id=?) AND subject_id=?",
             (tg_id, bgm_id, subject_id))
         return bool(data.fetchone())
     

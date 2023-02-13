@@ -1,10 +1,7 @@
 import datetime
-import logging
-import json
-import random
 from typing import Union
 
-from .config_vars import bgm, redis, sql
+from .config_vars import bgm, sql
 
 
 async def get_user_token(tg_id: int) -> Union[str, None]:
@@ -22,24 +19,3 @@ async def get_user_token(tg_id: int) -> Union[str, None]:
             return user_data[2]
     else:
         return None
-
-def cache_data(func):
-    """api 中间件 如有缓存则返回缓存"""
-    async def wrapper(*args, **kwargs):
-        # 函数名:不定量参数:定量参数（不包含 access_token）
-        key = f"{func.__name__}:{json.dumps(args)}:{json.dumps({k: v for k, v in kwargs.items() if k != 'access_token'})}"
-        result = redis.get(key)
-        if result:
-            if result == "None__":
-                return None
-            else:
-                return json.loads(result)
-        try:
-            result = await func(*args, **kwargs)
-        except:
-            redis.set(key, "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
-            logging.error(f"API 请求错误: {key}")
-            return None
-        redis.set(key, json.dumps(result), ex=60 * 60 * 24 + random.randint(-3600, 3600))
-        return result
-    return wrapper

@@ -14,14 +14,14 @@ from .help import send_help
 async def send_start(message: Message, bot: AsyncTeleBot):
     msg_data = message.text.split(" ")
     if len(msg_data) > 1 and msg_data[1].startswith("addsub"):
-        sub_data = msg_data[1].lstrip("addsub").split("-")
+        sub_data = msg_data[1].lstrip("addsub").split('user')
         if len(sub_data) < 2: return
         subject_id, bgm_id = sub_data[0], sub_data[1]
         if not subject_id.isdigit() or not bgm_id.isdigit(): return
-        if sql.check_subscribe(subject_id, message.from_user.id):
+        if sql.check_subscribe(int(subject_id), message.from_user.id):
             return await bot.reply_to(message, "你已经订阅过这个番剧了哦~")
         else:
-            sql.insert_subscribe_data(message.from_user.id, bgm_id, subject_id)
+            sql.insert_subscribe_data(message.from_user.id, int(bgm_id), int(subject_id))
             subject_info = await bgm.get_subject(subject_id)
             text = (f"\\[*#订阅成功*]\n\n"
                     f"*{subject_info['name_cn'] or subject_info['name']}*\n\n"

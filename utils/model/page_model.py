@@ -2,7 +2,7 @@ from typing import List, Dict, Optional, Literal
 
 import telebot
 
-from utils.api import user_data_get
+from ..before_api import get_user_token
 
 COLLECTION_TYPE_STR = Literal['wish', 'collect', 'do', 'on_hold', 'dropped']
 EpStatusType = Literal['watched', 'queue', 'drop', 'remove', 'watched_batch']
@@ -31,7 +31,7 @@ class RequestSession:
         self.uuid: str = uuid
         self.call: Optional[telebot.types.CallbackQuery] = None
         self.request_message: telebot.types.Message = request_message
-        self.bgm_auth = user_data_get(request_message.from_user.id)
+        self.bgm_auth = get_user_token(request_message.from_user.id)
 
 
 class WeekRequest(BaseRequest):

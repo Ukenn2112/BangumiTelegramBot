@@ -1,12 +1,42 @@
+import builtins
+import json
+import logging
+import random
 from typing import Literal
 
 import aiohttp
+import yaml
 from lxml.etree import HTML
+from redis import Redis
 
-import builtins
+with open("data/config.yaml", "r") as f:
+    redis_config: dict = yaml.safe_load(f)["REDIS"]
 
-from ..before_api import cache_data
+redis = Redis(
+    host=redis_config['HOST'],
+    port=redis_config['PORT'],
+    db=redis_config['REDIS_DATABASE'])
 
+def cache_data(func):
+    """api 中间件 如有缓存则返回缓存"""
+    async def wrapper(*args, **kwargs):
+        # 函数名:不定量参数:定量参数（不包含 access_token）
+        key = f"{func.__name__}:{json.dumps(args[1:])}:{json.dumps({k: v for k, v in kwargs.items() if k != 'access_token'})}"
+        result = redis.get(key)
+        if result:
+            if result == b"None__":
+                return None
+            else:
+                return json.loads(result)
+        try:
+            result = await func(*args, **kwargs)
+        except Exception as e:
+            redis.set(key, "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            logging.error(f"API 请求错误: {key}:{e}")
+            return None
+        redis.set(key, json.dumps(result), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+        return result
+    return wrapper
 
 class BangumiAPI:
     """Bangumi API
@@ -22,18 +52,12 @@ class BangumiAPI:
         self.app_secret = app_secret
         self.redirect_uri = redirect_uri
         self.nsfw_token = nsfw_token
-
-    async def __aenter__(self):
         self.s = aiohttp.ClientSession(
             headers={
                 "User-Agent":"Ukenn/BangumiBot (https://github.com/Ukenn2112/BangumiTelegramBot)"
             },
             timeout=aiohttp.ClientTimeout(total=10),
         )
-        return self
-    
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.s.close()
 
     # OAuth https://github.com/bangumi/api/blob/master/docs-raw/How-to-Auth.md
     async def oauth_authorization_code(self, code: str) -> dict:
@@ -270,7 +294,7 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/subject/{subject_id}",
+            f"{self.api_url}/v0/subjects/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             loads = await resp.json()
@@ -293,7 +317,7 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/subject/{subject_id}/persons",
+            f"{self.api_url}/v0/subjects/{subject_id}/persons",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
@@ -310,7 +334,7 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/subject/{subject_id}/characters",
+            f"{self.api_url}/v0/subjects/{subject_id}/characters",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
@@ -327,7 +351,7 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/subject/{subject_id}/subjects",
+            f"{self.api_url}/v0/subjects/{subject_id}/subjects",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()

@@ -15,7 +15,7 @@ CALLBACK_URL = f"{API_SETVER_URL}/oauth_callback"
 
 # 创建 TeleBot 实例
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode='Markdown')
-BOT_USERNAME = bot.get_me().username
+BOT_USERNAME = config["BOT_USERNAME"]
 
 # bgm.tv API
 bgm = BangumiAPI(

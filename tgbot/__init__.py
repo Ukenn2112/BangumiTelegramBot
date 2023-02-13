@@ -13,13 +13,12 @@ def bot_register(bot: AsyncTeleBot):
 
 
 class IsPrivate(SimpleCustomFilter):
-    """仅私聊使用"""
-    key="is_private"
+    key='is_private'
     @staticmethod
-    async def is_private(message):
-        if message.chat.type != "private":
-            if message.text == f"/start@{BOT_USERNAME}":
-                bot.reply_to(message, "请在私聊中使用此命令~")
-            return False
-        else:
+    async def check(message):
+        if message.chat.type == "private":
             return True
+        else:
+            if BOT_USERNAME in message.text:
+                await bot.reply_to(message, "请在私聊中使用此命令~")
+            return False

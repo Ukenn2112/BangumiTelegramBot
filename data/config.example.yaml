@@ -7,6 +7,7 @@ BGM:
 
 # Telegram Bot https://t.me/BotFather
 BOT_TOKEN: 12345566:asndjakdajkxwasxccafsdf
+BOT_USERNAME：bgm_bot # 不要@，只填写用户名
 
 # API Server
 API_SERVER:

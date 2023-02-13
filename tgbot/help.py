@@ -21,7 +21,7 @@ async def send_help(message: Message, bot: AsyncTeleBot):
         f"`@{BOT_USERNAME} mybgm/mybgm [BGM username/Uid] `\n_查询Bangumi收藏统计/空格加username或uid不绑定查询_\n"
         "\n*➤ 更多方法：*_见图_"
     )
-    bot.send_photo(
+    await bot.send_photo(
         message.chat.id,
         photo="https://cdn.jsdelivr.net/gh/Ukenn2112/image@1.0.0/inline_query.png",
         caption=text,
