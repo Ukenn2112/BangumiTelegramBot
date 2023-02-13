@@ -4,14 +4,17 @@ import aiohttp
 class BangumiAPI:
     """Bangumi API
     :param app_id: Bangumi App ID
-    :param app_secret: Bangumi App Secret"""
+    :param app_secret: Bangumi App Secret
+    :param redirect_uri: OAuth 回调地址
+    :param nsfw_token: NSFW Token"""
 
-    api_url = "https://api.bgm.tv/v0"
+    api_url = "https://api.bgm.tv"
 
-    def __init__(self, app_id: str, app_secret: str, redirect_uri: str):
+    def __init__(self, app_id: str, app_secret: str, redirect_uri: str, nsfw_token: str = None):
         self.app_id = app_id
         self.app_secret = app_secret
         self.redirect_uri = redirect_uri
+        self.nsfw_token = nsfw_token
 
     async def __aenter__(self):
         self.s = aiohttp.ClientSession(
@@ -70,7 +73,7 @@ class BangumiAPI:
         
         access_token: Access Token"""
         async with self.s.get(
-            f"{self.api_url}/me",
+            f"{self.api_url}/v0/me",
             headers = {"Authorization": f"Bearer {access_token}"}
         ) as resp:
             return await resp.json()
@@ -83,7 +86,7 @@ class BangumiAPI:
 
         username: 用户名 设置了用户名之后无法使用 UID。"""
         async with self.s.get(
-            f"{self.api_url}/users/{username}",
+            f"{self.api_url}/v0/users/{username}",
         ) as resp:
             return await resp.json()
     # 收藏
@@ -105,7 +108,7 @@ class BangumiAPI:
 
         offset: 返回条目偏移, 默认 0"""
         async with self.s.get(
-            f"{self.api_url}/users/{username}/collections",
+            f"{self.api_url}/v0/users/{username}/collections",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
             params={
                 "subject_type": subject_type,
@@ -128,7 +131,7 @@ class BangumiAPI:
 
         access_token: Access Token (可选) 查看私有收藏则需要"""
         async with self.s.get(
-            f"{self.api_url}/users/{username}/collection/{subject_id}",
+            f"{self.api_url}/v0/users/{username}/collection/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
@@ -164,7 +167,7 @@ class BangumiAPI:
         if privacy:
             params["privacy"] = privacy
         return await self.s.post(
-            f"https://api.bgm.tv/collection/{subject_id}/update",
+            f"{self.api_url}/collection/{subject_id}/update",
             headers = {"Authorization": f"Bearer {access_token}"},
             data = params
         )
@@ -185,7 +188,7 @@ class BangumiAPI:
 
         episode_type: 集数类型, 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他"""
         async with self.s.get(
-            f"{self.api_url}/users/-/collections/{subject_id}/episodes",
+            f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
             headers = {"Authorization": f"Bearer {access_token}"},
             params={
                 "offset": offset,
@@ -205,7 +208,7 @@ class BangumiAPI:
 
         episode_id: 章节 ID"""
         async with self.s.get(
-            f"{self.api_url}/users/-/collections/episodes/{episode_id}",
+            f"{self.api_url}/v0/users/-/collections/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
         ) as resp:
             return await resp.json()
@@ -222,9 +225,87 @@ class BangumiAPI:
 
         status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
         return await self.s.put(
-            f"{self.api_url}/users/-/collections/episodes/{episode_id}",
+            f"{self.api_url}/v0/users/-/collections/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
             data = {
                 "type": status
             }
         )
+    # 条目
+    async def get_calendar(self) -> list:
+        """
+        每日放送
+
+        Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getCalendar"""
+        async with self.s.get(
+            f"{self.api_url}/calendar"
+        ) as resp:
+            return await resp.json()
+    
+    async def get_subject(self, subject_id, access_token: str = None) -> dict:
+        """
+        获取条目信息
+
+        Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getSubjectById
+
+        subject_id: 条目 ID
+        
+        access_token: Access Token"""
+        if not access_token:
+            access_token = self.nsfw_token
+        async with self.s.get(
+            f"{self.api_url}/v0/subject/{subject_id}",
+            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+        ) as resp:
+            return await resp.json()
+    
+    async def get_subject_persons(self, subject_id, access_token: str = None) -> list:
+        """
+        获取条目人物
+
+        Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getRelatedPersonsBySubjectId
+
+        subject_id: 条目 ID
+        
+        access_token: Access Token"""
+        if not access_token:
+            access_token = self.nsfw_token
+        async with self.s.get(
+            f"{self.api_url}/v0/subject/{subject_id}/persons",
+            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+        ) as resp:
+            return await resp.json()
+    
+    async def get_subject_characters(self, subject_id, access_token: str = None) -> list:
+        """
+        获取条目角色
+
+        Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getRelatedCharactersBySubjectId
+
+        subject_id: 条目 ID
+        
+        access_token: Access Token"""
+        if not access_token:
+            access_token = self.nsfw_token
+        async with self.s.get(
+            f"{self.api_url}/v0/subject/{subject_id}/characters",
+            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+        ) as resp:
+            return await resp.json()
+    
+    async def get_subject_related(self, subject_id, access_token: str = None) -> list:
+        """
+        获取条目相关条目
+
+        Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getRelatedSubjectsBySubjectId
+
+        subject_id: 条目 ID
+        
+        access_token: Access Token"""
+        if not access_token:
+            access_token = self.nsfw_token
+        async with self.s.get(
+            f"{self.api_url}/v0/subject/{subject_id}/subjects",
+            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+        ) as resp:
+            return await resp.json()

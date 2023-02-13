@@ -21,7 +21,8 @@ BOT_USERNAME = bot.get_me().username
 bgm = BangumiAPI(
     config["BGM"]["APP_ID"],
     config["BGM"]["APP_SECRET"],
-    CALLBACK_URL)
+    CALLBACK_URL,
+    config["BGM"]["ACCESS_TOKEN"])
 
 # 数据库
 sql = SQLite()
