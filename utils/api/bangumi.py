@@ -1,4 +1,9 @@
+from typing import Literal
+
 import aiohttp
+from lxml.etree import HTML
+
+import builtins
 
 from ..before_api import cache_data
 
@@ -442,3 +447,81 @@ class BangumiAPI:
             f"{self.api_url}/v0/characters/{character_id}/persons",
         ) as resp:
             return await resp.json()
+    # 搜索
+    @cache_data
+    async def search_subjects(self, keywords, subject_type, response_group: Literal["small", "medium", "large"] = "small", start = 0, max_results = 25) -> list:
+        """
+        条目搜索 (Old API) 由于新 API 暂时为试验性可能变动较大, 故暂时使用旧 API
+
+        Docs: https://bangumi.github.io/api/#/%E6%90%9C%E7%B4%A2/searchSubjectByKeywords
+
+        :param keywords: 关键词
+        :param subject_type: 条目类型, 1: 小说, 2: 动画, 3: 音乐, 4: 音乐, 6: 三次元
+        :param response_group: 返回数据组, small: 小, medium: 中 large: 大, 默认 small
+        :param start: 返回起始位置, 默认 0
+        :param max_results: 返回数量, 默认 25 (最大 25)"""
+        async with self.s.get(
+            f"{self.api_url}/search/subject/{keywords}",
+            params = {
+                "type": subject_type,
+                "responseGroup": response_group,
+                "start": start,
+                "max_results": max_results,
+            }
+        ) as resp:
+            return await resp.json()
+
+    @cache_data
+    async def search_mono(self, keywords, page = 1, cat: Literal["all", "crt", "prsn"] = "all"):
+        """
+        人物搜索 (Web API)
+
+        :param keyword: 关键词
+        :param page: 页码, 默认 1
+        :param cat: 搜索类型, all: 全部, crt: 角色, prsn: 人物, 默认 all"""
+        async with self.s.get(
+            f"http://bgm.tv/mono_search/{keywords}",
+            params = {
+                "cat": cat,
+                "page": page,
+            }
+        ) as resp:
+            html_data = HTML(await resp.text())
+            error = html_data.xpath("//*[@id='colunmNotice']/div/p[1]")
+            if error:
+                return {"error": error[0].text, "list": []}
+            else:
+                rows = html_data.xpath("//*[@id='columnSearchB']/div[@class='light_odd clearit']")
+                list_data = list()
+                for row in rows:
+                    _name = row.xpath("div/h2/a")
+                    name = builtins.str.removesuffix(_name[0].text, " / ") if _name else None
+                    _name_cn = row.xpath("div/h2/a/span")
+                    name_cn = _name_cn[0].text if _name_cn else None
+                    _img_url = row.xpath("a/img")
+                    img_url = (
+                        "https:" + _img_url[0].get("src")
+                        if _img_url and _img_url[0].get("src") != "/img/info_only.png"
+                        else None
+                    )
+                    _info = row.xpath("a")
+                    info = _info[0].text.strip() if _info else None
+                    _mono_data = row.xpath("a")
+                    mono_id, mono_type = None, None
+                    if _mono_data:
+                        mono_data: str = _mono_data[0].get("href")
+                        if mono_data.startswith("/character/"):
+                            mono_id = int(mono_data[11:])
+                            mono_type = "character"
+                        elif mono_data.startswith("/person/"):
+                            mono_id = int(mono_data[8:])
+                            mono_type = "person"
+                    list_data.append({
+                        "id": mono_id,
+                        "type": mono_type,
+                        "name": name,
+                        "name_cn": name_cn,
+                        "img_url": img_url,
+                        "info": info,
+                    })
+                return {"error": None, "list": list_data}
