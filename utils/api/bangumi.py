@@ -80,6 +80,7 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
     
+    @cache_data
     async def get_user_info(self, username) -> dict:
         """
         获取用户信息
@@ -244,7 +245,7 @@ class BangumiAPI:
             f"{self.api_url}/calendar"
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_subject(self, subject_id, access_token: str = None) -> dict:
         """
@@ -313,6 +314,54 @@ class BangumiAPI:
             access_token = self.nsfw_token
         async with self.s.get(
             f"{self.api_url}/v0/subject/{subject_id}/subjects",
+            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+        ) as resp:
+            return await resp.json()
+    # 章节
+    @cache_data
+    async def get_episodes(self, subject_id, episode_type = 0, limit = 100, offset = 100, access_token: str = None) -> dict:
+        """
+        获取条目章节信息
+
+        Docs: https://bangumi.github.io/api/#/%E7%AB%A0%E8%8A%82/getEpisodes
+
+        subject_id: 条目 ID
+
+        episode_type: 集数类型, 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他
+
+        limit: 返回数量, 默认 100
+
+        offset: 偏移量, 默认 0
+        
+        access_token: Access Token"""
+        if not access_token:
+            access_token = self.nsfw_token
+        async with self.s.get(
+            f"{self.api_url}/v0/episodes",
+            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+            params = {
+                "subject_id": subject_id,
+                "type": episode_type,
+                "limit": limit,
+                "offset": offset,
+            }
+        ) as resp:
+            return await resp.json()
+    
+    @cache_data
+    async def get_episode(self, episode_id, access_token: str = None) -> dict:
+        """
+        获取章节信息
+
+        Docs: https://bangumi.github.io/api/#/%E7%AB%A0%E8%8A%82/getEpisodeById
+
+        episode_id: 章节 ID
+        
+        access_token: Access Token"""
+        if not access_token:
+            access_token = self.nsfw_token
+        async with self.s.get(
+            f"{self.api_url}/v0/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
