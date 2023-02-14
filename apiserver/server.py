@@ -8,14 +8,13 @@ from urllib import parse as url_parse
 from flask import Flask, jsonify, redirect, render_template, request
 from waitress import serve
 
-from utils.config_vars import (BOT_USERNAME, CALLBACK_URL, bgm, config, redis,
-                               sql)
+from utils.config_vars import CALLBACK_URL, bgm, config, redis, sql
 
 # 异步线程池
 executor = ThreadPoolExecutor()
 
 app = Flask(__name__)
-app.config ["JSON_SORT_KEYS"] = False
+app.config["JSON_SORT_KEYS"] = False
 app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
 
 # 错误访问
@@ -63,7 +62,7 @@ def oauth_callback():
         params = json.loads(redis_data)
         back_oauth = asyncio.run(bgm.oauth_authorization_code(code))
         sql.insert_user_data(params["tg_id"], back_oauth["user_id"], back_oauth["access_token"], back_oauth["refresh_token"])
-        return redirect(f"https://t.me/{BOT_USERNAME}?start={params['param']}")
+        return redirect(f"https://t.me/{config['BOT_USERNAME']}?start={params['param']}")
     except Exception as e:
         logging.error(f"[E] oauth_callback: {e}")
         return render_template("error.html")

@@ -1,6 +1,5 @@
 import yaml
 from redis import Redis
-from telebot.async_telebot import AsyncTeleBot
 
 from .api import BangumiAPI
 from .sqlite_orm import SQLite
@@ -13,9 +12,9 @@ with open('data/config.yaml', 'r') as f:
 API_SETVER_URL = f"{config['API_SERVER']['WEBSITE_BASE']}:{config['API_SERVER']['POST']}"
 CALLBACK_URL = f"{API_SETVER_URL}/oauth_callback"
 
-# 创建 TeleBot 实例
-bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode='Markdown')
 BOT_USERNAME = config["BOT_USERNAME"]
+
+LOG_LEVEL = config["LOG_LEVEL"]
 
 # bgm.tv API
 bgm = BangumiAPI(

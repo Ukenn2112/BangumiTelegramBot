@@ -2,7 +2,7 @@ from typing import List, Dict, Optional, Literal
 
 import telebot
 
-from ..before_api import get_user_token
+from utils.before_api import get_user_token
 
 COLLECTION_TYPE_STR = Literal['wish', 'collect', 'do', 'on_hold', 'dropped']
 EpStatusType = Literal['watched', 'queue', 'drop', 'remove', 'watched_batch']

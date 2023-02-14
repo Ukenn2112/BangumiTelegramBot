@@ -1,10 +1,12 @@
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_filters import SimpleCustomFilter
 
-from utils.config_vars import BOT_USERNAME, bot
+from utils.config_vars import BOT_USERNAME, config
 
-from .start import send_start
 from .help import send_help
+from .start import send_start
+
+bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
 def bot_register(bot: AsyncTeleBot):
     bot.add_custom_filter(IsPrivate())
@@ -22,3 +24,7 @@ class IsPrivate(SimpleCustomFilter):
             if BOT_USERNAME in message.text:
                 await bot.reply_to(message, "请在私聊中使用此命令~")
             return False
+
+async def start_bot():
+    bot_register(bot)
+    await bot.polling(non_stop=True)
