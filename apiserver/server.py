@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import re
@@ -8,8 +7,7 @@ from urllib import parse as url_parse
 from flask import Flask, jsonify, redirect, render_template, request
 from waitress import serve
 
-from utils.api import BangumiAPI
-from utils.config_vars import CALLBACK_URL, config, redis, sql
+from utils.config_vars import CALLBACK_URL, bgm, config, redis, sql
 
 # 异步线程池
 executor = ThreadPoolExecutor()
@@ -61,21 +59,13 @@ def oauth_callback():
         redis_data = redis.get("oauth:" + state)
         if not redis_data: return render_template("expired.html")
         params = json.loads(redis_data)
-        back_oauth = asyncio.run(authorization_code(code))
+        back_oauth = bgm.oauth_authorization_code(code)
         sql.insert_user_data(params["tg_id"], back_oauth["user_id"], back_oauth["access_token"], back_oauth["refresh_token"])
         return redirect(f"https://t.me/{config['BOT_USERNAME']}?start={params['param']}")
     except Exception as e:
         logging.error(f"[E] oauth_callback: {e}")
         return render_template("error.html")
 
-async def authorization_code(code):
-    bgm = BangumiAPI(
-            config["BGM"]["APP_ID"],
-            config["BGM"]["APP_SECRET"],
-            CALLBACK_URL,
-            config["BGM"]["ACCESS_TOKEN"]
-        )
-    return await bgm.oauth_authorization_code(code)
 
 @app.before_request
 def before():

@@ -2,7 +2,7 @@ import json
 import uuid
 
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 
 from utils.user_token import get_user_token
 from utils.config_vars import API_SETVER_URL, BOT_USERNAME, bgm, redis, sql
@@ -58,5 +58,6 @@ async def send_start(message: Message, bot: AsyncTeleBot):
             }
         redis.set("oauth:" + state, json.dumps(params), ex=3600)
         markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton(text="绑定Bangumi", url=f"{API_SETVER_URL}/oauth_index?state={state}"))
+        markup.add(InlineKeyboardButton(text="授权绑定 Bangumi", url=f"{API_SETVER_URL}/oauth_index?state={state}"))
+        markup.add(InlineKeyboardButton(text="登录绑定 Bangumi", web_app=WebAppInfo(url=f"{API_SETVER_URL}/web_index?state={state}"))) # TODO WebApp
         return await bot.reply_to(message, "*欢迎使用 BangumiTelegrBot，现在开始绑定您的 Bangumi 账号吧～*", reply_markup=markup)

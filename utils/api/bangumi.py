@@ -1,7 +1,10 @@
 import builtins
+import datetime
+import urllib.parse
 from typing import Literal
 
 import aiohttp
+import requests
 from lxml.etree import HTML
 
 from ..before_api import cache_data
@@ -21,15 +24,65 @@ class BangumiAPI:
         self.app_secret = app_secret
         self.redirect_uri = redirect_uri
         self.nsfw_token = nsfw_token
-        self.s = aiohttp.ClientSession(
-            headers={
+        self.headers = {
                 "User-Agent":"Ukenn/BangumiBot (https://github.com/Ukenn2112/BangumiTelegramBot)"
             },
-            timeout=aiohttp.ClientTimeout(total=10),
+        self.s = aiohttp.ClientSession(
+            headers = self.headers[0],
+            timeout = aiohttp.ClientTimeout(total=10),
+        )
+
+    def web_authorization_captcha(self) -> tuple[bytes, str]:
+        """获取验证码图片
+        :return (图片二进制, RequestsCookieJar)"""
+        now = datetime.datetime.now()
+        with requests.get(
+            f"https://bgm.tv/oauth/captcha{int(now.timestamp())}",
+            headers = self.headers[0],
+        ) as resp:
+            return (resp.content, resp.cookies)
+
+    def web_authorization_login(self, cookies, email, password, captcha_challenge_field):
+        """Web 登录"""
+        with requests.post(
+            "https://bgm.tv/FollowTheRabbit",
+            headers = self.headers[0],
+            cookies = cookies,
+            data = urllib.parse.urlencode({
+                "email": email,
+                "password": password,
+                "captcha_challenge_field": captcha_challenge_field,
+                "loginsubmit": "登录",
+                "referer": "https://bgm.tv/FollowTheRabbit",
+                "dreferer": "https://bgm.tv/FollowTheRabbit",
+            }),
+            timeout = 10,
+        ) as resp:
+            return resp.cookies
+
+    def web_authorization_oauth(self, cookies, state):
+        """Web OAuth"""
+        return requests.post(
+            "https://bgm.tv/oauth/authorize",
+            headers = self.headers[0],
+            cookies = cookies,
+            params = {
+                "client_id": self.app_id,
+                "state": state,
+                "redirect_uri": self.redirect_uri,
+                "response_type": "code",
+            },
+            data = urllib.parse.urlencode({
+                "client_id": self.app_id,
+                "formhash": "512e20b8",
+                "redirect_uri": None,
+                "submit": "授权",
+            }),
+            timeout = 10,
         )
 
     # OAuth https://github.com/bangumi/api/blob/master/docs-raw/How-to-Auth.md
-    async def oauth_authorization_code(self, code: str) -> dict:
+    def oauth_authorization_code(self, code: str) -> dict:
         """授权获取 access_token
         :return {
             "access_token": "xxxxxxxxxxxxxxxx", api请求密钥
@@ -39,23 +92,25 @@ class BangumiAPI:
             "token_type": "Bearer",
             "user_id": xxxxxx  bgm用户uid
         }"""
-        async with self.s.post(
+        with requests.post(
             "https://bgm.tv/oauth/access_token",
-            data={
+            headers = self.headers[0],
+            data = {
                 "client_id": self.app_id,
                 "client_secret": self.app_secret,
                 "grant_type": "authorization_code",
                 "code": code,
                 "redirect_uri": self.redirect_uri
-            }
+            },
+            timeout=10
         ) as resp:
-            return await resp.json()
+            return resp.json()
 
     async def oauth_refresh_token(self, refresh_token) -> dict:
         """刷新 access_token"""
         async with self.s.post(
             "https://bgm.tv/oauth/access_token",
-            data={
+            data = {
                 "client_id": self.app_id,
                 "client_secret": self.app_secret,
                 "grant_type": "refresh_token",
@@ -106,7 +161,7 @@ class BangumiAPI:
         async with self.s.get(
             f"{self.api_url}/v0/users/{username}/collections",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
-            params={
+            params = {
                 "subject_type": subject_type,
                 "collection_type": collection_type,
                 "limit": limit,
@@ -181,7 +236,7 @@ class BangumiAPI:
         async with self.s.get(
             f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
             headers = {"Authorization": f"Bearer {access_token}"},
-            params={
+            params = {
                 "offset": offset,
                 "limit": limit,
                 "episode_type": episode_type
