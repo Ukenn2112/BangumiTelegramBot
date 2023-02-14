@@ -4,7 +4,7 @@ import uuid
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from utils.before_api import get_user_token
+from utils.user_token import get_user_token
 from utils.config_vars import API_SETVER_URL, BOT_USERNAME, bgm, redis, sql
 
 from .help import send_help

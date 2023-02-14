@@ -1,42 +1,11 @@
 import builtins
-import json
-import logging
-import random
 from typing import Literal
 
 import aiohttp
-import yaml
 from lxml.etree import HTML
-from redis import Redis
 
-with open("data/config.yaml", "r") as f:
-    redis_config: dict = yaml.safe_load(f)["REDIS"]
+from ..before_api import cache_data
 
-redis = Redis(
-    host=redis_config['HOST'],
-    port=redis_config['PORT'],
-    db=redis_config['REDIS_DATABASE'])
-
-def cache_data(func):
-    """api 中间件 如有缓存则返回缓存"""
-    async def wrapper(*args, **kwargs):
-        # 函数名:不定量参数:定量参数（不包含 access_token）
-        key = f"{func.__name__}:{json.dumps(args[1:])}:{json.dumps({k: v for k, v in kwargs.items() if k != 'access_token'})}"
-        result = redis.get(key)
-        if result:
-            if result == b"None__":
-                return None
-            else:
-                return json.loads(result)
-        try:
-            result = await func(*args, **kwargs)
-        except Exception as e:
-            redis.set(key, "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
-            logging.error(f"API 请求错误: {key}:{e}")
-            return None
-        redis.set(key, json.dumps(result), ex=60 * 60 * 24 + random.randint(-3600, 3600))
-        return result
-    return wrapper
 
 class BangumiAPI:
     """Bangumi API

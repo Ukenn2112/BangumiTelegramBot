@@ -1,21 +1,35 @@
-import datetime
-from typing import Union
+import json
+import logging
+import random
 
-from .config_vars import bgm, sql
+import yaml
+from redis import Redis
 
+with open("data/config.yaml", "r") as f:
+    redis_config: dict = yaml.safe_load(f)["REDIS"]
 
-async def get_user_token(tg_id: int) -> Union[str, None]:
-    """获取用户的token 过期则刷新"""
-    user_data = sql.inquiry_user_data(tg_id)
-    if user_data:
-        if user_data[5] < datetime.datetime.now().timestamp() // 1000:
-            back = await bgm.oauth_refresh_token(user_data[3])
-            if not back["access_token"]:
-                sql.delete_user_data(tg_id)
+redis = Redis(
+    host=redis_config['HOST'],
+    port=redis_config['PORT'],
+    db=redis_config['REDIS_DATABASE'])
+
+def cache_data(func):
+    """api 中间件 如有缓存则返回缓存"""
+    async def wrapper(*args, **kwargs):
+        # 函数名:不定量参数:定量参数（不包含 access_token）
+        key = f"{func.__name__}:{json.dumps(args[1:])}:{json.dumps({k: v for k, v in kwargs.items() if k != 'access_token'})}"
+        result = redis.get(key)
+        if result:
+            if result == b"None__":
                 return None
-            sql.update_user_data(tg_id, back["access_token"], back["refresh_token"], user_data[4])
-            return back["access_token"]
-        else:
-            return user_data[2]
-    else:
-        return None
+            else:
+                return json.loads(result)
+        try:
+            result = await func(*args, **kwargs)
+        except Exception as e:
+            redis.set(key, "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
+            logging.error(f"API 请求错误: {key}:{e}")
+            return None
+        redis.set(key, json.dumps(result), ex=60 * 60 * 24 + random.randint(-3600, 3600))
+        return result
+    return wrapper
