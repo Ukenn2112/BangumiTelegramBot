@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>登录</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        Telegram.WebApp.expand()
+    </script>
+    <style>
+        body {
+            --bg-color: var(--tg-theme-bg-color, #fff);
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            color: var(--tg-theme-text-color, #222);
+            font-size: 14px;
+            margin: 0;
+            padding: 0;
+            color-scheme: var(--tg-color-scheme);
+        }
+        body.gray {
+            background-color: var(--tg-theme-secondary-bg-color, #efefef);
+        }
+    </style>
+</head>
+<body>
+	<h1>登录 Bangumi</h1>
+	<form>
+		<label for="email">邮箱：</label>
+		<input type="text" id="email" name="email"><br><br>
+		<label for="password">密码：</label>
+		<input type="password" id="password" name="password"><br><br>
+		<label for="captcha">验证码：</label>
+		<input type="text" id="captcha" name="captcha">
+		<img id="captchaImg" src="data:image/gif;base64,{{ b64_captcha }}" alt="验证码"/><br><br>
+		<button type="button" onclick="login()">登录</button>
+	</form>
+</body>
+<script>
+    function login() {
+        // 获取输入框中的值
+        var email = document.getElementById("email").value;
+        var password = document.getElementById("password").value;
+        var captcha = document.getElementById("captcha").value;
+        var state = new URLSearchParams(window.location.search).get("state");
+        if (!email || !password || !captcha) {
+            Telegram.WebApp.HapticFeedback.notificationOccurred("error")
+            alert("请填写完整的登录信息！");
+            return;
+        }
+        // 将值封装为json格式
+        var data = {
+            email: email,
+            password: password,
+            captcha: captcha,
+            state: state
+        };
+        
+        // 发送post请求
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/web_login", true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhr.setRequestHeader("Cookie", document.cookie);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) {
+                    const backData = JSON.parse(xhr.responseText);
+                    Telegram.WebApp.openTelegramLink("https://t.me/" + backData.BotUsername + "?start=" + backData.Params);
+                } else if (xhr.status == 400) {
+                    Telegram.WebApp.HapticFeedback.notificationOccurred('error')
+                    alert(xhr.responseText);
+                    location.reload();
+                }
+            }
+        };
+        xhr.send(JSON.stringify(data));
+    }
+</script>
+</html>

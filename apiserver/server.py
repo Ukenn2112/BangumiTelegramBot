@@ -4,7 +4,8 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from urllib import parse as url_parse
 
-from flask import Flask, jsonify, redirect, render_template, request
+import requests.utils
+from flask import Flask, jsonify, redirect, render_template, request, make_response
 from waitress import serve
 
 from utils.config_vars import CALLBACK_URL, bgm, config, redis, sql
@@ -25,6 +26,53 @@ def index():
 @app.route("/health")
 def health():
     return "OK"  # 健康检查
+
+
+@app.route("/web_index")
+def web_index():
+    try:
+        state = request.args.get("state")
+        if not state: return render_template("error.html")
+        redis_data = redis.get("oauth:" + state)
+        if not redis_data: return render_template("expired.html")
+        params = json.loads(redis_data)
+        check = sql.inquiry_user_data(params["tg_id"])
+        if check: return render_template("verified.html")
+        b64_captcha, cookie = bgm.web_authorization_captcha()
+        cookie_dict: dict = requests.utils.dict_from_cookiejar(cookie)
+        resp = make_response(render_template("webindex.html", b64_captcha=b64_captcha))
+        resp.set_cookie("chii_sec_id", cookie_dict["chii_sec_id"])
+        resp.set_cookie("chii_sid", cookie_dict["chii_sid"])
+        return resp
+    except Exception as e:
+        logging.error(f"[E] web_index: {e}")
+        return render_template("error.html")
+
+
+@app.route("/web_login", methods=["POST"])
+def web_login():
+    try:
+        cookie = request.headers.get("cookie")
+        email, password = request.json.get("email"), request.json.get("password")
+        captcha, state = request.json.get("captcha"), request.json.get("state")
+        if not state or not cookie: return "error", 400
+        redis_data = redis.get("oauth:" + state)
+        if not redis_data: return "expired", 400
+        params = json.loads(redis_data)
+        check = sql.inquiry_user_data(params["tg_id"])
+        if check: return "verified", 400
+        back_check, back_data = bgm.web_authorization_login(cookie, email, password, captcha)
+        if not back_check: return back_data, 400
+        cookie_dict: dict = requests.utils.dict_from_cookiejar(back_data)
+        cookie_str = cookie + "; " + "; ".join([f"{k}={v}" for k, v in cookie_dict.items()])
+        code = bgm.web_authorization_oauth(cookie_str)
+        if not code: return "error", 400
+        back_oauth = bgm.oauth_authorization_code(code)
+        sql.insert_user_data(params["tg_id"], back_oauth["user_id"], back_oauth["access_token"], back_oauth["refresh_token"], cookie_str)
+        return jsonify({"BotUsername": config["BOT_USERNAME"], "Params": params["param"]}), 200
+    except Exception as e:
+        logging.error(f"[E] web_index: {e}")
+        return "error", 400
 
 
 @app.route("/oauth_index")
@@ -61,6 +109,7 @@ def oauth_callback():
         params = json.loads(redis_data)
         back_oauth = bgm.oauth_authorization_code(code)
         sql.insert_user_data(params["tg_id"], back_oauth["user_id"], back_oauth["access_token"], back_oauth["refresh_token"])
+        redis.delete("oauth:" + state)
         return redirect(f"https://t.me/{config['BOT_USERNAME']}?start={params['param']}")
     except Exception as e:
         logging.error(f"[E] oauth_callback: {e}")
@@ -71,11 +120,7 @@ def oauth_callback():
 def before():
     """中间件拦截器"""
     url = request.path  # 读取到当前接口的地址
-    if url == '/health':
-        pass
-    elif url == '/oauth_index':
-        pass
-    elif url == '/oauth_callback':
+    if url in ["/health", "/oauth_index", "/oauth_callback", "/web_index", "/web_login"]:
         pass
     elif re.findall(r'pma|db|mysql|phpMyAdmin|.env|php|admin|config|setup', url):
         logging.debug(f'[W] before: 拦截到非法请求 {request.remote_addr} -> {url}')

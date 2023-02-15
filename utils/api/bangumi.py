@@ -1,6 +1,6 @@
+import base64
 import builtins
 import datetime
-import urllib.parse
 from typing import Literal
 
 import aiohttp
@@ -32,54 +32,82 @@ class BangumiAPI:
             timeout = aiohttp.ClientTimeout(total=10),
         )
 
-    def web_authorization_captcha(self) -> tuple[bytes, str]:
+    def web_authorization_captcha(self):
         """获取验证码图片
         :return (图片二进制, RequestsCookieJar)"""
+        set_cookie = requests.get("https://bgm.tv/login", headers = self.headers[0], timeout=10).cookies
         now = datetime.datetime.now()
         with requests.get(
-            f"https://bgm.tv/oauth/captcha{int(now.timestamp())}",
+            f"https://bgm.tv/signup/captcha?{int(now.timestamp() * 1000)}1",
             headers = self.headers[0],
+            cookies=set_cookie,
         ) as resp:
-            return (resp.content, resp.cookies)
+            return (base64.b64encode(resp.content).decode('utf-8'), set_cookie)
 
-    def web_authorization_login(self, cookies, email, password, captcha_challenge_field):
+    def web_authorization_login(self, cookies: str, email: str, password: str, captcha_challenge_field: str):
         """Web 登录"""
         with requests.post(
             "https://bgm.tv/FollowTheRabbit",
-            headers = self.headers[0],
-            cookies = cookies,
-            data = urllib.parse.urlencode({
+            headers = {
+                **self.headers[0],
+                "Cookie": cookies,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            data = {
                 "email": email,
                 "password": password,
                 "captcha_challenge_field": captcha_challenge_field,
                 "loginsubmit": "登录",
                 "referer": "https://bgm.tv/FollowTheRabbit",
                 "dreferer": "https://bgm.tv/FollowTheRabbit",
-            }),
+            },
+            allow_redirects=False,
             timeout = 10,
         ) as resp:
-            return resp.cookies
+            if resp.status_code == 200:
+                resp.encoding = "utf-8"
+                html_data = HTML(resp.text)
+                error = html_data.xpath("//*[@id='colunmNotice']/div/p[1]")
+                if error:
+                    return (False, error[0].text)
+            return (True, resp.cookies)
 
-    def web_authorization_oauth(self, cookies, state):
+    def web_authorization_oauth(self, cookies: str):
         """Web OAuth"""
-        return requests.post(
+        params = {
+            "client_id": self.app_id,
+            "redirect_uri": self.redirect_uri,
+            "response_type": "code",
+        }
+        get_data = requests.get(
             "https://bgm.tv/oauth/authorize",
-            headers = self.headers[0],
-            cookies = cookies,
-            params = {
-                "client_id": self.app_id,
-                "state": state,
-                "redirect_uri": self.redirect_uri,
-                "response_type": "code",
+            headers = {
+                **self.headers[0],
+                "Cookie": cookies,
             },
-            data = urllib.parse.urlencode({
-                "client_id": self.app_id,
-                "formhash": "512e20b8",
-                "redirect_uri": None,
-                "submit": "授权",
-            }),
+            params = params,
             timeout = 10,
         )
+        html_data = HTML(get_data.text)
+        formhash = html_data.xpath("//input[@name='formhash']/@value")
+        if not formhash: return None
+        return requests.post(
+            "https://bgm.tv/oauth/authorize",
+            headers = {
+                **self.headers[0],
+                "Cookie": cookies,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            data = {
+                "client_id": self.app_id,
+                "formhash": formhash[0],
+                "redirect_uri": None,
+                "submit": "授权",
+            },
+            params = params,
+            timeout = 10,
+            allow_redirects=False
+        ).headers.get('Location').split("code=")[-1]
 
     # OAuth https://github.com/bangumi/api/blob/master/docs-raw/How-to-Auth.md
     def oauth_authorization_code(self, code: str) -> dict:
