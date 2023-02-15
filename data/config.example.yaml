@@ -13,6 +13,7 @@ BOT_USERNAME：bgm_bot # 不要@，只填写用户名
 API_SERVER:
   POST: 6008
   WEBSITE_BASE: http://127.0.0.1
+  INVERSE_URL: 
   AUTH_KEY: sdasd-ee5dsdsf-4asdad5-9dsd0c-8asdaf82
 
 # Redis Server
