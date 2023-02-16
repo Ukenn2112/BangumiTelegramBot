@@ -52,7 +52,7 @@ async def send_start(message: Message, bot: AsyncTeleBot):
             }
         redis.set("oauth:" + state, json.dumps(params), ex=3600)
         markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton(text="授权绑定 Bangumi", url=f"{API_SETVER_URL}/oauth_index?state={state}"))
         if "https://" in API_SETVER_URL:
             markup.add(InlineKeyboardButton(text="登录绑定 Bangumi", web_app=WebAppInfo(url=f"{API_SETVER_URL}/web_index?state={state}")))
+        markup.add(InlineKeyboardButton(text="授权绑定 Bangumi", url=f"{API_SETVER_URL}/oauth_index?state={state}"))
         return await bot.reply_to(message, "*欢迎使用 BangumiTelegrBot，现在开始绑定您的 Bangumi 账号吧～*", reply_markup=markup)
