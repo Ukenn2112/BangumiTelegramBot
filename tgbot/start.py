@@ -42,12 +42,6 @@ async def send_start(message: Message, bot: AsyncTeleBot):
         session.stack = [subject_request]
         session.bot_message = msg
         # TODO return consumption_request(session)
-    elif access_token and len(msg_data) > 1 and "chii_auth=" in message.text:
-        if "chii_sec_id=" in message.text and "chii_sid=" in message.text:
-            sql.update_user_data(message.from_user.id, cookie = message.text.replace("/start ", ""))
-            return await bot.reply_to(message, "添加 Cookie 成功~")
-        else:
-            return await bot.reply_to(message, "Cookie 格式错误~")
     elif access_token:
         return await bot.reply_to(message, "您已绑定，快开始使用吧~")
     else:
