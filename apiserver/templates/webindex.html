@@ -107,6 +107,10 @@
                     alert(xhr.responseText);
                     location.reload();
                     mainButton.hideProgress();
+                } else if (xhr.status == 403) {
+                    Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+                    alert(xhr.responseText);
+                    Telegram.WebApp.close();
                 }
             }
         };

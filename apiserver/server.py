@@ -55,24 +55,24 @@ def web_login():
         cookie = request.headers.get("cookie")
         email, password = request.json.get("email"), request.json.get("password")
         captcha, state = request.json.get("captcha"), request.json.get("state")
-        if not state or not cookie: return "error", 400
+        if not state or not cookie: return "缺少必要参数", 403
         redis_data = redis.get("oauth:" + state)
-        if not redis_data: return "expired", 400
+        if not redis_data: return "您的请求已过期，请重新私聊 Bot 并发送 /start", 403
         params = json.loads(redis_data)
         check = sql.inquiry_user_data(params["tg_id"])
-        if check: return "verified", 400
+        if check: return "你已验证成功，无需重复验证", 403
         back_check, back_data = bgm.web_authorization_login(cookie, email, password, captcha)
         if not back_check: return back_data, 400
         cookie_dict: dict = requests.utils.dict_from_cookiejar(back_data)
         cookie_str = cookie + "; " + "; ".join([f"{k}={v}" for k, v in cookie_dict.items()])
         code = bgm.web_authorization_oauth(cookie_str)
-        if not code: return "error", 400
+        if not code: return "Web 授权失败，请重试", 400
         back_oauth = bgm.oauth_authorization_code(code)
         sql.insert_user_data(params["tg_id"], back_oauth["user_id"], back_oauth["access_token"], back_oauth["refresh_token"], cookie_str)
         return jsonify({"BotUsername": config["BOT_USERNAME"], "Params": params["param"]}), 200
     except Exception as e:
-        logging.error(f"[E] web_index: {e}")
-        return "error", 400
+        logging.error(f"[E] web_login: {e}")
+        return "出错了，请重试", 403
 
 
 @app.route("/oauth_index")
