@@ -7,15 +7,24 @@ from utils.config_vars import BOT_USERNAME, config
 from .collection_list import send_collection_list
 from .help import send_help
 from .start import send_start
+from .model import global_callback_handler
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
 def bot_register():
     """注册Bot命令"""
     bot.add_custom_filter(IsPrivate())
+    # Commands
     bot.register_message_handler(send_start, commands=["start"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_help, commands=["help"], is_private=True, pass_bot=True)
-    bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "" "real"], pass_bot=True)
+    bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music" "real"], pass_bot=True)
+    # CallbackQuery
+    bot.register_callback_query_handler(callback_none, func=lambda c: c.data == "None", pass_bot=True)
+    bot.register_callback_query_handler(global_callback_handler, func=lambda c: True, pass_bot=True)
+
+
+async def callback_none(call):
+    return await bot.answer_callback_query(call.id)
 
 
 async def set_bot_command():
@@ -56,6 +65,7 @@ class IsPrivate(SimpleCustomFilter):
             if BOT_USERNAME in message.text:
                 await bot.reply_to(message, "请在私聊中使用此命令～")
             return False
+
 
 async def start_bot():
     bot_register()

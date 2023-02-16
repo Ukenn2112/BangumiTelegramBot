@@ -2,7 +2,7 @@ import logging
 import pickle
 
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import InputMedia
+from telebot.types import InputMedia, CallbackQuery
 
 from utils.config_vars import config, redis, sql
 
@@ -85,6 +85,23 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
     redis.set(session.uuid, pickle.dumps(session), ex=config["REDIS"]["SESSION_EXPIRES"])
     if stack_call:
         await bot.answer_callback_query(stack_call.id, text=callback_text)
+
+
+async def global_callback_handler(call: CallbackQuery, bot: AsyncTeleBot):
+    data = call.data.split("|")
+    redis_key = data[0]
+    request_key = data[1]
+    call_data = redis.get(redis_key)
+    if not call_data:
+        return await bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=1)
+    redis.delete(redis_key)  # TODO 没事务 多线程下可能出问题
+    session: RequestSession = pickle.loads(call_data)
+    next_page = session.stack[-1].possible_request.get(request_key, None)
+    if not next_page:
+        return await bot.answer_callback_query(call.id, "您的请求出错了", cache_time=3600)
+    session.stack.append(next_page)
+    session.call = call
+    await consumption_request(bot, session)
 
 
 async def request_handler(session: RequestSession):
