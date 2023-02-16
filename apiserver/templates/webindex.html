@@ -4,11 +4,14 @@
 	<meta charset="UTF-8">
 	<title>登录</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        Telegram.WebApp.expand()
-    </script>
+    <meta name="viewport" content="initial-scale=1, maximum-scale=3, minimum-scale=1, user-scalable=no">
     <style>
         body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
             --bg-color: var(--tg-theme-bg-color, #fff);
             font-family: sans-serif;
             background-color: var(--bg-color);
@@ -21,22 +24,55 @@
         body.gray {
             background-color: var(--tg-theme-secondary-bg-color, #efefef);
         }
+        .container{
+            /*相对定位*/
+            position: relative;
+            z-index: 1;
+            border-radius: 15px;
+            display: flex;
+            /*垂直配列*/
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 350px;
+            height: 500px;
+        }
+        .container .title{
+            font-size: 26px;
+            margin: 10px auto 40px auto;
+        }
+        .container input{
+            width: 280px;
+            height: 30px;
+            text-indent: 8px;
+            border: none;
+            border-bottom: 1px solid var(--tg-theme-link-color, #000);
+            outline: none;
+            margin: 12px auto;
+        }
     </style>
 </head>
 <body>
-	<h1>登录 Bangumi</h1>
-	<form>
-		<label for="email">邮箱：</label>
-		<input type="text" id="email" name="email"><br><br>
-		<label for="password">密码：</label>
-		<input type="password" id="password" name="password"><br><br>
-		<label for="captcha">验证码：</label>
-		<input type="text" id="captcha" name="captcha">
-		<img id="captchaImg" src="data:image/gif;base64,{{ b64_captcha }}" alt="验证码"/><br><br>
-		<button type="button" onclick="login()">登录</button>
+	<div class="container">
+        <div class="title">登录 Bangumi</div>
+		<input type="text" id="email" name="email" placeholder="邮箱">
+		<input type="password" id="password" name="password" placeholder="密码">
+		<input type="text" id="captcha" name="captcha" placeholder="验证码">
+		<img id="captchaImg" src="data:image/gif;base64,{{ b64_captcha }}" alt="验证码图片">
 	</form>
 </body>
 <script>
+    const mainButton = Telegram.WebApp.MainButton;
+    mainButton.setParams({
+        text: "登录 Bangumi",
+        is_active: true,
+        is_visible: true,
+    }).onClick(login).show();
+
+    Telegram.WebApp.expand();
+    Telegram.WebApp.ready();
+    Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+
     function login() {
         // 获取输入框中的值
         var email = document.getElementById("email").value;
@@ -44,7 +80,7 @@
         var captcha = document.getElementById("captcha").value;
         var state = new URLSearchParams(window.location.search).get("state");
         if (!email || !password || !captcha) {
-            Telegram.WebApp.HapticFeedback.notificationOccurred("error")
+            Telegram.WebApp.HapticFeedback.notificationOccurred("error");
             alert("请填写完整的登录信息！");
             return;
         }
@@ -55,7 +91,7 @@
             captcha: captcha,
             state: state
         };
-        
+        mainButton.showProgress();
         // 发送post请求
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/web_login", true);
@@ -67,9 +103,10 @@
                     const backData = JSON.parse(xhr.responseText);
                     Telegram.WebApp.openTelegramLink("https://t.me/" + backData.BotUsername + "?start=" + backData.Params);
                 } else if (xhr.status == 400) {
-                    Telegram.WebApp.HapticFeedback.notificationOccurred('error')
+                    Telegram.WebApp.HapticFeedback.notificationOccurred('error');
                     alert(xhr.responseText);
                     location.reload();
+                    mainButton.hideProgress();
                 }
             }
         };
