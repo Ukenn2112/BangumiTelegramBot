@@ -191,7 +191,7 @@ class BangumiAPI:
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
             params = {
                 "subject_type": subject_type,
-                "collection_type": collection_type,
+                "type": collection_type,
                 "limit": limit,
                 "offset": offset
             }

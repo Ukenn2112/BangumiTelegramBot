@@ -4,11 +4,11 @@ import uuid
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 
-from utils.user_token import get_user_token
+from utils.user_token import bgm_user_data
 from utils.config_vars import API_SETVER_URL, BOT_USERNAME, bgm, redis, sql
 
 from .help import send_help
-from .model.page_model import RequestSession, SubjectRequest
+from .model import RequestSession, SubjectRequest
 
 
 async def send_start(message: Message, bot: AsyncTeleBot):
@@ -19,7 +19,7 @@ async def send_start(message: Message, bot: AsyncTeleBot):
         subject_id, bgm_id = sub_data[0], sub_data[1]
         if not subject_id.isdigit() or not bgm_id.isdigit(): return
         if sql.check_subscribe(int(subject_id), message.from_user.id):
-            return await bot.reply_to(message, "你已经订阅过这个番剧了哦~")
+            return await bot.reply_to(message, "你已经订阅过这个番剧了哦～")
         else:
             sql.insert_subscribe_data(message.from_user.id, int(bgm_id), int(subject_id))
             subject_info = await bgm.get_subject(subject_id)
@@ -34,16 +34,16 @@ async def send_start(message: Message, bot: AsyncTeleBot):
             return await bot.reply_to(message, text, reply_markup=markup)
     elif len(msg_data) > 1 and msg_data[1] == "help":
         return await send_help(message, bot)
-    access_token = await get_user_token(message.from_user.id)
-    if access_token and len(msg_data) > 1 and msg_data[1].isdecimal():
+    user_data = await bgm_user_data(message.from_user.id)
+    if user_data and len(msg_data) > 1 and msg_data[1].isdecimal():
         msg = await bot.reply_to(message, "正在获取番剧信息...")
         session = RequestSession(uuid.uuid4().hex, message)
         subject_request = SubjectRequest(session, subject_id, True)
         session.stack = [subject_request]
         session.bot_message = msg
         # TODO return consumption_request(session)
-    elif access_token:
-        return await bot.reply_to(message, "您已绑定，快开始使用吧~")
+    elif user_data:
+        return await bot.reply_to(message, "您已绑定，快开始使用吧～")
     else:
         state = uuid.uuid4().hex
         params = {

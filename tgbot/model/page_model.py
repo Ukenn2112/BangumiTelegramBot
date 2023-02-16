@@ -1,8 +1,6 @@
-from typing import List, Dict, Optional, Literal
+from typing import Dict, List, Literal, Optional
 
 import telebot
-
-from utils.user_token import get_user_token
 
 COLLECTION_TYPE_STR = Literal['wish', 'collect', 'do', 'on_hold', 'dropped']
 EpStatusType = Literal['watched', 'queue', 'drop', 'remove', 'watched_batch']
@@ -23,7 +21,7 @@ class RequestSession:
     request_message: telebot.types.Message
     bot_message: telebot.types.Message
 
-    def __init__(self, uuid: str, request_message: telebot.types.Message):
+    def __init__(self, uuid: str, request_message: telebot.types.Message, user_bgm_data: dict):
         """
         tg页面会话
         """
@@ -31,7 +29,7 @@ class RequestSession:
         self.uuid: str = uuid
         self.call: Optional[telebot.types.CallbackQuery] = None
         self.request_message: telebot.types.Message = request_message
-        self.bgm_auth = get_user_token(request_message.from_user.id)
+        self.bgm_auth = user_bgm_data
 
 
 class WeekRequest(BaseRequest):

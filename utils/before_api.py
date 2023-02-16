@@ -1,5 +1,4 @@
 import json
-import logging
 import random
 
 import yaml
@@ -21,15 +20,14 @@ def cache_data(func):
         result = redis.get(key)
         if result:
             if result == b"None__":
-                return None
+                raise FileNotFoundError(f"API 请求错误-缓存 {key}:{e}")
             else:
                 return json.loads(result)
         try:
             result = await func(*args, **kwargs)
         except Exception as e:
             redis.set(key, "None__", ex=60 * 10)  # 不存在时 防止缓存穿透
-            logging.error(f"API 请求错误: {key}:{e}")
-            return None
+            raise FileNotFoundError(f"API 请求错误 {key}:{e}")
         redis.set(key, json.dumps(result), ex=60 * 60 * 24 + random.randint(-3600, 3600))
         return result
     return wrapper
