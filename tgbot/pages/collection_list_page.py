@@ -12,21 +12,13 @@ from ..model.page_model import BackRequest, CollectionsRequest, SubjectRequest
 
 async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
     session_uuid = request.session.uuid
-    if request.user_data is None:
-        try:
-            request.user_data = await bgm.get_user_info(request.session.bgm_auth["bgmId"])
-        except FileNotFoundError:
-            request.page_text = "出错了，无法获取到您的个人信息"
-            return request
-
-    nickname = request.user_data.get("nickname")
     subject_type = request.subject_type
     limit = request.limit
     offset = request.offset
     try:
         user_collections = await bgm.get_user_subject_collections(
-            request.user_data["username"],
-            request.session.bgm_auth["accessToken"],
+            request.session.user_bgm_data["userData"]["username"],
+            request.session.user_bgm_data["accessToken"],
             request.subject_type,
             request.collection_type,
             request.limit,
@@ -62,7 +54,7 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
             request.session, info["subject"]["id"]
         )
     text = (
-        f"*{nickname} {collection_type_subject_type_str(subject_type, request.collection_type)}"
+        f"*{request.session.user_bgm_data['userData']['nickname']} {collection_type_subject_type_str(subject_type, request.collection_type)}"
         f"的{subject_type_to_str(subject_type)}*\n\n{text_data}"
         f"共{count}部"
     )

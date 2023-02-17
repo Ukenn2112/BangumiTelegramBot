@@ -29,7 +29,7 @@ class RequestSession:
         self.uuid: str = uuid
         self.call: Optional[telebot.types.CallbackQuery] = None
         self.request_message: telebot.types.Message = request_message
-        self.bgm_auth = user_bgm_data
+        self.user_bgm_data = user_bgm_data
 
 
 class WeekRequest(BaseRequest):

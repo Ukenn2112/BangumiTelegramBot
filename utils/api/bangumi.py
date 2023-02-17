@@ -208,7 +208,7 @@ class BangumiAPI:
         :param subject_id: 条目 ID
         :param access_token: Access Token (可选) 查看私有收藏则需要"""
         async with self.s.get(
-            f"{self.api_url}/v0/users/{username}/collection/{subject_id}",
+            f"{self.api_url}/v0/users/{username}/collections/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
