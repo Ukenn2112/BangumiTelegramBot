@@ -43,16 +43,10 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
     for info, num, nums_unicode in zip(subject_list, nums, nums_unicode):
         text_data += (
             f"*{nums_unicode}* {info['subject']['name_cn'] or info['subject']['name']}"
-            f" `[{info['ep_status']}/{info['subject']['eps']}]`\n\n"
+            f" `[{info['ep_status']}/{'??' if info['subject']['eps'] == 0 else info['subject']['eps']}]`\n\n"
         )
-        button_list.append(
-            InlineKeyboardButton(
-                text=num, callback_data=f"{session_uuid}|{nums_unicode}"
-            )
-        )
-        request.possible_request[nums_unicode] = SubjectRequest(
-            request.session, info["subject"]["id"]
-        )
+        button_list.append(InlineKeyboardButton(text=num, callback_data=f"{session_uuid}|{nums_unicode}"))
+        request.possible_request[nums_unicode] = SubjectRequest(request.session, info["subject"]["id"])
     text = (
         f"*{request.session.user_bgm_data['userData']['nickname']} {collection_type_subject_type_str(subject_type, request.collection_type)}"
         f"的{subject_type_to_str(subject_type)}*\n\n{text_data}"
@@ -67,13 +61,9 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
             request.possible_request["back"] = BackRequest(request.session)
         else:
             button_list2.append(InlineKeyboardButton(text='这是首页', callback_data="None"))
-        button_list2.append(
-            InlineKeyboardButton(text=f'{int(offset / limit) + 1}/{math.ceil(count / limit)}', callback_data="None")
-        )
+        button_list2.append(InlineKeyboardButton(text=f'{int(offset / limit) + 1}/{math.ceil(count / limit)}', callback_data="None"))
         if offset + limit < count:
-            button_list2.append(
-                InlineKeyboardButton(text='下一页', callback_data=f'{session_uuid}|{offset + limit}')
-            )
+            button_list2.append(InlineKeyboardButton(text='下一页', callback_data=f'{session_uuid}|{offset + limit}'))
             next_request = CollectionsRequest(
                 request.session,
                 subject_type,

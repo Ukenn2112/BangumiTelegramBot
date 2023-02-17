@@ -11,6 +11,7 @@ from .model import CollectionsRequest, RequestSession, consumption_request
 async def send_collection_list(message: Message, bot: AsyncTeleBot):
     """处理用户收藏列表"""
     # 1: 书籍, 2: 动画 (默认), 3: 音乐, 4: 游戏, 6: 三次元
+    text_sp = message.text.split(" ")
     subject_types = {
         "/book": 1,
         "/anime": 2,
@@ -18,7 +19,7 @@ async def send_collection_list(message: Message, bot: AsyncTeleBot):
         "/game": 4,
         "/real": 6,
     }
-    subject_type = subject_types.get(message.text, 2)
+    subject_type = subject_types.get(text_sp[0], 2)
     user_data = await bgm_user_data(message.from_user.id)
     if user_data is None:
         bot_data = await bot.get_me()
@@ -26,7 +27,6 @@ async def send_collection_list(message: Message, bot: AsyncTeleBot):
     msg = await bot.reply_to(message, "正在获取收藏列表，请稍后...")
     collection_type = 3
     if message.text:
-        text_sp = message.text.split(" ")
         if len(text_sp) > 1:
             # 1: 想看, 2: 看过, 3: 在看 (默认), 4: 搁置, 5: 抛弃
             param = message.text[len(text_sp[0]) + 1:]

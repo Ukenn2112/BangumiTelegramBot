@@ -1,8 +1,7 @@
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from utils.config_vars import BOT_USERNAME, bgm
+from utils.config_vars import BOT_USERNAME, bgm, redis
 from utils.converts import score_to_str, subject_type_to_emoji
-from utils.subject_img import subject_image
 
 from ..model.page_model import (BackRequest, EditCollectionTypePageRequest,
                                 EditRatingPageRequest, SubjectEpsPageRequest,
@@ -14,31 +13,25 @@ async def generate_page(subject_request: SubjectRequest) -> SubjectRequest:
     user_collection = None
     if not subject_request.page_text and not subject_request.page_markup:
         if subject_request.session.bot_message.chat.type == "private":
-            if (
-                subject_request.session.user_bgm_data
-                and 'accessToken' in subject_request.session.user_bgm_data
-            ):
+            if subject_request.session.user_bgm_data and 'accessToken' in subject_request.session.user_bgm_data:
                 user_collection = await bgm.get_user_subject_collection(
                     subject_request.session.user_bgm_data['userData']['username'],
                     subject_request.subject_id,
                     subject_request.session.user_bgm_data['accessToken'],
                 )
 
-    if not subject_request.page_text and not subject_request.page_image:
+    if subject_image := redis.get(f"_subject_image:{subject_request.subject_id}"):
+        subject_request.page_image = subject_image.decode()
+    if not subject_request.page_text or not subject_request.page_image:
         subject_info = await bgm.get_subject(subject_request.subject_id)
         if not subject_request.page_text:
-            subject_request.page_text = gander_page_text(
-                subject_request.subject_id, user_collection, subject_info
-            )
-
+            subject_request.page_text = await gander_page_text(subject_request.subject_id, user_collection, subject_info)
         if not subject_request.page_image:
-            subject_request.page_image = subject_image(subject_info)
+            subject_request.page_image = redis.get(f"subject_image:{subject_request.subject_id}")
 
     if not subject_request.page_markup:
         if subject_request.session.bot_message.chat.type == "private":
-            subject_request.page_markup = gender_page_manager_button(
-                subject_request, user_collection
-            )
+            subject_request.page_markup = gender_page_manager_button(subject_request, user_collection)
         else:
             subject_request.page_markup = gender_page_show_buttons(subject_request)
     return subject_request
@@ -49,47 +42,27 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection)
     markup = InlineKeyboardMarkup()
     button_list = [[], []]
     if not subject_request.is_root:
-        button_list[1].append(
-            InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back")
-        )
+        button_list[1].append(InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"))
         subject_request.possible_request['back'] = BackRequest(subject_request.session)
-    button_list[0].append(
-        InlineKeyboardButton(text='简介', callback_data=f"{session_uuid}|summary")
-    )
-    button_list[0].append(
-        InlineKeyboardButton(text='关联', callback_data=f"{session_uuid}|relations")
-    )
+    button_list[0].append(InlineKeyboardButton(text='简介', callback_data=f"{session_uuid}|summary"))
+    button_list[0].append(InlineKeyboardButton(text='关联', callback_data=f"{session_uuid}|relations"))
     if user_collection:
         if 'status' in user_collection:
-            button_list[1].append(
-                InlineKeyboardButton(
-                    text='评分', callback_data=f"{session_uuid}|rating"
-                )
-            )
-            edit_rating_page_request = EditRatingPageRequest(
-                subject_request.session, subject_request.subject_id
-            )
+            button_list[1].append(InlineKeyboardButton(text='评分', callback_data=f"{session_uuid}|rating"))
+            edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
             edit_rating_page_request.page_image = subject_request.page_image
             edit_rating_page_request.user_collection = user_collection
             subject_request.possible_request['rating'] = edit_rating_page_request
 
-            button_list[0].append(
-                InlineKeyboardButton(text='点格子', callback_data=f"{session_uuid}|eps")
-            )
+            button_list[0].append(InlineKeyboardButton(text='点格子', callback_data=f"{session_uuid}|eps"))
         else:
-            button_list[0].append(
-                InlineKeyboardButton(text='章节', callback_data=f"{session_uuid}|eps")
-            )
+            button_list[0].append(InlineKeyboardButton(text='章节', callback_data=f"{session_uuid}|eps"))
         subject_eps_page_request = SubjectEpsPageRequest(
             subject_request.session, subject_id=subject_request.subject_id, limit=12, type_=0
         )
         subject_eps_page_request.user_collection = user_collection
         subject_request.possible_request['eps'] = subject_eps_page_request
-        button_list[1].append(
-            InlineKeyboardButton(
-                text='收藏管理', callback_data=f"{session_uuid}|collection"
-            )
-        )
+        button_list[1].append(InlineKeyboardButton(text='收藏管理', callback_data=f"{session_uuid}|collection"))
         edit_collection_type_page_request = EditCollectionTypePageRequest(
             subject_request.session, subject_request.subject_id
         )
@@ -101,9 +74,7 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection)
         )
         subject_eps_page_request.user_collection = user_collection
         subject_request.possible_request['eps'] = subject_eps_page_request
-        button_list[0].append(
-            InlineKeyboardButton(text='章节', callback_data=f"{session_uuid}|eps")
-        )
+        button_list[0].append(InlineKeyboardButton(text='章节', callback_data=f"{session_uuid}|eps"))
     subject_request.possible_request['summary'] = SummaryRequest(
         subject_request.session, subject_request.subject_id
     )
@@ -160,10 +131,10 @@ def gender_page_show_buttons(subject_request: SubjectRequest):
     return markup
 
 
-def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str:
+async def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str:
     """详情页"""
     if not subject_info:
-        subject_info = bgm.get_subject(subject_id)
+        subject_info = await bgm.get_subject(subject_id)
     subject_type = subject_info['type']
     text = (
         f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n"
@@ -223,21 +194,9 @@ def gander_page_text(subject_id, user_collection=None, subject_info=None) -> str
         text += f"*➤ 发售日期：*`{subject_info['date']}`\n"
     if subject_type == 3:  # 当类型为Music时
         for box in subject_info['infobox']:
-            if box.get('key') == '艺术家':
-                text += f"*➤ 艺术家：*`{box['value']}`\n"
-            if box.get('key') == '作曲':
-                text += f"*➤ 作曲：*`{box['value']}`\n"
-            if box.get('key') == '作词':
-                text += f"*➤ 作词：*`{box['value']}`\n"
-            if box.get('key') == '编曲':
-                text += f"*➤ 编曲：*`{box['value']}`\n"
-            if box.get('key') == '厂牌':
-                text += f"*➤ 厂牌：*`{box['value']}`\n"
-            if box.get('key') == '碟片数量':
-                text += f"*➤ 碟片数量：*`{box['value']}`\n"
-            if box.get('key') == '播放时长':
-                text += f"*➤ 播放时长：*`{box['value']}`\n"
-            if box.get('key') == '价格':
+            if box.get('key') in ['艺术家', '作曲', '作词', '编曲', '厂牌', '碟片数量', '播放时长']:
+                text += f"*➤ {box['key']}：*`{box['value']}`\n"
+            if box.get('key') in ['价格']:
                 if isinstance(box['value'], list):
                     text += "*➤ 价格：*"
                     for price in box['value']:

@@ -17,7 +17,7 @@ def bot_register():
     # Commands
     bot.register_message_handler(send_start, commands=["start"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_help, commands=["help"], is_private=True, pass_bot=True)
-    bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music" "real"], pass_bot=True)
+    bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music", "real"], pass_bot=True)
     # CallbackQuery
     bot.register_callback_query_handler(callback_none, func=lambda c: c.data == "None", pass_bot=True)
     bot.register_callback_query_handler(global_callback_handler, func=lambda c: True, pass_bot=True)

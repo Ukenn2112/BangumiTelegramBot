@@ -7,7 +7,8 @@ import aiohttp
 import requests
 from lxml.etree import HTML
 
-from ..before_api import cache_data
+from ..before_api import cache_data, redis
+from ..subject_img import subject_image
 
 
 class BangumiAPI:
@@ -350,11 +351,12 @@ class BangumiAPI:
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             loads = await resp.json()
-            loads['_air_weekday'] = None
-            for info in loads['infobox']:
-                if info['key'] == '放送星期':
-                    loads['_air_weekday'] = info['value']  # 加一个下划线 用于区别
+            loads["_air_weekday"] = None
+            for info in loads["infobox"]:
+                if info["key"] == "放送星期":
+                    loads["_air_weekday"] = info["value"]  # 加一个下划线 用于区别
                     break
+            redis.set(f"subject_image:{subject_id}", subject_image(loads), ex = 60 * 60 * 24)
             return loads
     
     @cache_data
