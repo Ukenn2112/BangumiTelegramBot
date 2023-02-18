@@ -13,8 +13,14 @@ async def bgm_user_data(tg_id: int) -> Union[dict, None]:
         if user_key[5] < datetime.datetime.now().timestamp() // 1000:
             back = await bgm.oauth_refresh_token(user_key[3])
             if not back["access_token"]:
-                sql.delete_user_data(tg_id)
-                return None
+                if not user_key[4]:
+                    sql.delete_user_data(tg_id)
+                    return None
+                code = bgm.web_authorization_oauth(user_key[4])
+                if not code:
+                    sql.delete_user_data(tg_id)
+                    return None
+                back = bgm.oauth_authorization_code(code)
             sql.update_user_data(tg_id, back["access_token"], back["refresh_token"], user_key[4])
             return {"bgmId": user_key[1], "accessToken": back["access_token"], "Cookie": user_key[4], "userData": user_data}
         else:

@@ -46,7 +46,8 @@ class BangumiAPI:
             return (base64.b64encode(resp.content).decode('utf-8'), set_cookie)
 
     def web_authorization_login(self, cookies: str, email: str, password: str, captcha_challenge_field: str):
-        """Web 登录"""
+        """Web 登录
+        :return (是否成功 bool, 错误信息/RequestsCookieJar)"""
         with requests.post(
             "https://bgm.tv/FollowTheRabbit",
             headers = {
@@ -74,7 +75,8 @@ class BangumiAPI:
             return (True, resp.cookies)
 
     def web_authorization_oauth(self, cookies: str):
-        """Web OAuth"""
+        """Web OAuth 授权
+        :return code"""
         params = {
             "client_id": self.app_id,
             "redirect_uri": self.redirect_uri,
