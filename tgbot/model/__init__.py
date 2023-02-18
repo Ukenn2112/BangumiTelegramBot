@@ -13,6 +13,7 @@ from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
 
 
 async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
+    """Consumption 处理头"""
     callback_text = None
     try:
         callback_text = await request_handler(session)
@@ -28,14 +29,13 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
         top.page_text = "发生了未知异常QAQ"
         logging.exception(f"发生异常 session:{session.uuid}")
     if top.page_image:
-        if session.bot_message.content_type == 'text':
+        if session.bot_message.content_type == "text":
             await bot.delete_message(
                 message_id=session.bot_message.message_id, chat_id=session.request_message.chat.id
             )
             session.bot_message = await bot.send_photo(
                 photo=top.page_image,
                 caption=top.page_text,
-                parse_mode='markdown',
                 reply_markup=top.page_markup,
                 chat_id=session.request_message.chat.id,
                 reply_to_message_id=session.request_message.message_id,
@@ -43,32 +43,29 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
         else:
             session.bot_message = await bot.edit_message_media(
                 media=InputMedia(
-                    type='photo',
+                    type="photo",
                     media=top.page_image,
                     caption=top.page_text,
-                    parse_mode="markdown",
                 ),
                 reply_markup=top.page_markup,
                 message_id=session.bot_message.message_id,
                 chat_id=session.request_message.chat.id,
             )
         for stack in session.stack:
-            if isinstance(stack, SubjectRequest) and session.bot_message.content_type == 'photo':
+            if isinstance(stack, SubjectRequest) and session.bot_message.content_type == "photo":
                 redis.set(f"_subject_image:{stack.subject_id}", session.bot_message.photo[-1].file_id, ex = 60 * 60 * 24)
     else:
-        if session.bot_message.content_type == 'text':
+        if session.bot_message.content_type == "text":
             session.bot_message = await bot.edit_message_text(
                 text=top.page_text,
                 reply_markup=top.page_markup,
-                parse_mode='markdown',
                 message_id=session.bot_message.message_id,
                 chat_id=session.request_message.chat.id,
             )
-        elif top.retain_image and session.bot_message.content_type == 'photo':
+        elif top.retain_image and session.bot_message.content_type == "photo":
             session.bot_message = await bot.edit_message_caption(
                 caption=top.page_text,
                 reply_markup=top.page_markup,
-                parse_mode='markdown',
                 message_id=session.bot_message.message_id,
                 chat_id=session.request_message.chat.id,
             )
@@ -79,7 +76,6 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
             session.bot_message = await bot.send_message(
                 text=top.page_text,
                 reply_markup=top.page_markup,
-                parse_mode='markdown',
                 chat_id=session.request_message.chat.id,
                 reply_to_message_id=session.request_message.message_id,
             )
@@ -91,6 +87,7 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
 
 
 async def global_callback_handler(call: CallbackQuery, bot: AsyncTeleBot):
+    """CallBack 处理头"""
     data = call.data.split("|")
     redis_key = data[0]
     request_key = data[1]
