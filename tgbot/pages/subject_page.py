@@ -1,7 +1,8 @@
+import html
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from utils.config_vars import BOT_USERNAME, bgm, redis
-from utils.converts import score_to_str, subject_type_to_emoji
+from utils.converts import collection_type_subject_type_str, score_to_str, subject_type_to_emoji
 
 from ..model.page_model import (BackRequest, EditCollectionTypePageRequest,
                                 EditRatingPageRequest, SubjectEpsPageRequest,
@@ -135,18 +136,20 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
     """详情页"""
     if not subject_info: subject_info = await bgm.get_subject(subject_id)
     subject_type = subject_info["type"]
-    text = (
-        f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n"
-        f"{subject_info['name']}\n\n"
-    )
-    if user_collection.get("status"):
-        text += f"*BGM ID：*`{subject_id}` | {user_collection['status']['name']}"
+    if subject_info["name_cn"]:
+        text = (
+            f"{subject_type_to_emoji(subject_type)} *{subject_info['name_cn']}*\n"
+            f"{subject_info['name']}\n\n"
+        )
     else:
-        text += f"*BGM ID：*`{subject_id}`"
+        text = f"{subject_type_to_emoji(subject_type)} *{subject_info['name']}*\n\n"
+    text += f"*BGM ID：*`{subject_id}`"
+    if user_collection:
+        text += f" | {collection_type_subject_type_str(subject_type, user_collection['type'])}"
     if subject_info["nsfw"]:
         text += " 🔞"
     text += "\n"
-    if subject_info.get("rating", {}).get("score"):
+    if subject_info["rating"]["score"] != 0:
         text += (
             f"*➤ BGM 平均评分：*`{subject_info['rating']['score']}`🌟 "
             f"{score_to_str(subject_info['rating']['score'])}\n"
@@ -154,13 +157,12 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
     else:
         text += "*➤ BGM 平均评分：*暂无评分\n"
     
-    epssssss = subject_info["eps"] if subject_info["eps"] else subject_info["total_episodes"]
+    epssssss = subject_info["eps"] if subject_info["eps"] != 0 else subject_info["total_episodes"]
     if user_collection:
-        if "rating" in user_collection:
-            if user_collection["rating"] == 0:
-                text += "*➤ 您的评分：*暂未评分\n"
-            else:
-                text += f"*➤ 您的评分：*`{user_collection['rating']}`🌟\n"
+        if user_collection["rate"] == 0:
+            text += "*➤ 您的评分：*暂未评分\n"
+        else:
+            text += f"*➤ 您的评分：*`{user_collection['rate']}`🌟\n"
     else:
         if subject_type in [2, 6]:  # 当类型为anime或real时
             text += f"*➤ 集数：*共`{epssssss}`集\n"
@@ -172,7 +174,7 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
         text += f"*➤ 放送开始：*`{subject_info['date']}`\n"
         if subject_info["_air_weekday"]:
             text += f"*➤ 放送星期：*`{subject_info['_air_weekday']}`\n"
-        if user_collection and "ep_status" in user_collection:
+        if user_collection:
             text += f"*➤ 观看进度：*`{user_collection['ep_status']}/{epssssss}`\n"
     if subject_type == 1:  # 当类型为book时
         text += f"*➤ 书籍类型：*`{subject_info['platform']}`\n"
@@ -193,7 +195,7 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
     if subject_type == 3:  # 当类型为Music时
         for box in subject_info["infobox"]:
             if box.get("key") in ["艺术家", "作曲", "作词", "编曲", "厂牌", "碟片数量", "播放时长"]:
-                text += f"*➤ {box['key']}：*`{box['value']}`\n"
+                text += f"*➤ {box['key']}：*`{html.unescape(box['value'])}`\n"
             if box.get("key") in ["价格"]:
                 if isinstance(box["value"], list):
                     text += "*➤ 价格：*"
@@ -226,50 +228,29 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
                 else:
                     text += f"*➤ 售价：*`{box['value']}`\n"
         text += f"*➤ 发行日期：*`{subject_info['date']}`\n"
-    if (
-        user_collection
-        and "tag" in user_collection
-        and user_collection["tag"]
-        and len(user_collection["tag"]) == 1
-        and user_collection["tag"][0] == ""
-    ):
-        user_collection["tag"] = []  # 鬼知道为什么没标签会返回个空字符串
-    if subject_info["tags"] and len(subject_info["tags"]) == 1 and subject_info["tags"][0] == "":
-        subject_info["tags"] = []
-    if (user_collection and "tag" in user_collection and user_collection["tag"]) or (
-        subject_info["tags"]
-    ):
+    if user_collection["tags"] or subject_info["tags"]:
         text += "*➤ 标签：*"
-    if user_collection and "tag" in user_collection and user_collection["tag"]:
-        for tag in user_collection["tag"][:10]:
+    if user_collection["tags"]:
+        for tag in user_collection["tags"][:10]:
             text += f"#{'x' if tag.isdecimal() else ''}{tag} "
         if subject_info["tags"]:
-            tag_not_click = [
-                i for i in subject_info["tags"] if i["name"] not in user_collection["tag"]
-            ]
+            tag_not_click = [i for i in subject_info["tags"] if i["name"] not in user_collection["tags"]]
         else:
             tag_not_click = []
     else:
         tag_not_click = subject_info["tags"]
     if tag_not_click and tag_not_click[0]:
         # 如果有列表
-        if not (user_collection and "tag" in user_collection and user_collection["tag"]):
+        if not user_collection["tags"]:
             # 如果没有用户标签
             if tag_not_click and tag_not_click[0]:
                 for tag in tag_not_click[:10]:
                     text += f"`{tag['name']}` "
-        if (
-            user_collection
-            and "tag" in user_collection
-            and user_collection["tag"]
-            and len(user_collection["tag"]) < 10
-        ):
+        if user_collection["tags"] and len(user_collection["tags"]) < 10:
             # 有用户标签 但 用户标签数小于10
-            for tag in tag_not_click[: 10 - len(user_collection["tag"])]:
+            for tag in tag_not_click[:10 - len(user_collection["tags"])]:
                 text += f"`{tag['name']}` "
-        if (user_collection and "tag" in user_collection and user_collection["tag"]) or (
-            subject_info["tags"]
-        ):
+        if user_collection["tags"] or subject_info["tags"]:
             text += "\n"
     text += (
         f"\n📖 [详情](https://bgm.tv/subject/{subject_id})"
