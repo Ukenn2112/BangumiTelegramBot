@@ -1,4 +1,5 @@
 """查询 Bangumi 用户收藏列表"""
+import asyncio
 import math
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -33,6 +34,13 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
             f"的{subject_type_to_str(subject_type)}"
         )
         return request
+    # 提前异步获取subject信息
+    loop = asyncio.get_running_loop()
+    tasks = []
+    for info in subject_list:
+        task = loop.create_task(bgm.get_subject(info["subject"]["id"]))
+        tasks.append(task)
+    asyncio.gather(*tasks)
     # 开始处理Telegram消息
     # 拼接字符串
     markup = InlineKeyboardMarkup()

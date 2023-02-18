@@ -53,7 +53,7 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
             )
         for stack in session.stack:
             if isinstance(stack, SubjectRequest) and session.bot_message.content_type == "photo":
-                redis.set(f"_subject_image:{stack.subject_id}", session.bot_message.photo[-1].file_id, ex = 60 * 60 * 24)
+                redis.set(f"subject_image:{stack.subject_id}", session.bot_message.photo[-1].file_id, ex = 60 * 60 * 24)
     else:
         if session.bot_message.content_type == "text":
             session.bot_message = await bot.edit_message_text(

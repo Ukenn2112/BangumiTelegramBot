@@ -35,7 +35,7 @@ class BangumiAPI:
 
     def web_authorization_captcha(self):
         """获取验证码图片
-        :return (图片二进制, RequestsCookieJar)"""
+        :return (图片 Base64, RequestsCookieJar)"""
         set_cookie = requests.get("https://bgm.tv/login", headers = self.headers[0], timeout=10).cookies
         now = datetime.datetime.now()
         with requests.get(
@@ -356,7 +356,7 @@ class BangumiAPI:
                 if info["key"] == "放送星期":
                     loads["_air_weekday"] = info["value"]  # 加一个下划线 用于区别
                     break
-            redis.set(f"subject_image:{subject_id}", subject_image(loads), ex = 60 * 60 * 24)
+            redis.set(f"_subject_image:{subject_id}", subject_image(loads), ex = 60 * 60 * 24)
             return loads
     
     @cache_data

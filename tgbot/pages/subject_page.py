@@ -20,14 +20,14 @@ async def generate_page(subject_request: SubjectRequest) -> SubjectRequest:
                     subject_request.session.user_bgm_data["accessToken"],
                 )
 
-    if subject_image := redis.get(f"_subject_image:{subject_request.subject_id}"):
+    if subject_image := redis.get(f"subject_image:{subject_request.subject_id}"):
         subject_request.page_image = subject_image.decode()
     if not subject_request.page_text or not subject_request.page_image:
         subject_info = await bgm.get_subject(subject_request.subject_id)
         if not subject_request.page_text:
             subject_request.page_text = await gander_page_text(subject_request.subject_id, user_collection, subject_info)
         if not subject_request.page_image:
-            subject_request.page_image = redis.get(f"subject_image:{subject_request.subject_id}")
+            subject_request.page_image = redis.get(f"_subject_image:{subject_request.subject_id}")
 
     if not subject_request.page_markup:
         if subject_request.session.bot_message.chat.type == "private":
