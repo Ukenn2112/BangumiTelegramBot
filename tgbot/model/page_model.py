@@ -1,35 +1,38 @@
 from typing import Dict, List, Literal, Optional
 
-import telebot
+from telebot.types import Message, CallbackQuery
+from telebot import REPLY_MARKUP_TYPES
 
-COLLECTION_TYPE_STR = Literal['wish', 'collect', 'do', 'on_hold', 'dropped']
-EpStatusType = Literal['watched', 'queue', 'drop', 'remove', 'watched_batch']
+COLLECTION_TYPE_STR = Literal["wish", "collect", "do", "on_hold", "dropped"]
+EpStatusType = Literal["watched", "queue", "drop", "remove", "watched_batch"]
 
 
 class BaseRequest:
     def __init__(self, session):
-        self.possible_request: Dict[str, BaseRequest] = {}
-        self.page_text: Optional[str] = None
-        self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
-        self.callback_text: Optional[str] = None
+        self.possible_request: Dict[str, BaseRequest] = {} # 可能的请求
+        self.page_text: Optional[str] = None # 页面文本
+        self.page_image: Optional[str] = None # 页面图片
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None # 页面回调
+        self.callback_text: Optional[str] = None # 回调文本
         self.retain_image: Optional[bool] = True  # 是否保留页面图片
-        self.session: RequestSession = session
+        self.session: RequestSession = session # 会话
 
 
 class RequestSession:
-    request_message: telebot.types.Message
-    bot_message: telebot.types.Message
+    request_message: Message # 用户请求消息
+    bot_message: Message # 机器人消息
 
-    def __init__(self, uuid: str, request_message: telebot.types.Message, user_bgm_data: dict):
+    def __init__(self, uuid: str, request_message: Message, user_bgm_data: dict):
+        """Telegram 页面会话
+        :param uuid: 会话 uuid
+        :param request_message: 用户请求消息
+        :param user_bgm_data: 用户 Bangumi 数据
         """
-        tg页面会话
-        """
-        self.stack: List[BaseRequest] = []
-        self.uuid: str = uuid
-        self.call: Optional[telebot.types.CallbackQuery] = None
-        self.request_message: telebot.types.Message = request_message
-        self.user_bgm_data = user_bgm_data
+        self.stack: List[BaseRequest] = [] # 请求栈
+        self.uuid: str = uuid # 会话 uuid
+        self.call: Optional[CallbackQuery] = None # 回调
+        self.request_message: Message = request_message # 用户请求消息
+        self.user_bgm_data = user_bgm_data # 用户 Bangumi 数据
 
 
 class WeekRequest(BaseRequest):
@@ -46,7 +49,7 @@ class WeekRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -58,13 +61,14 @@ class CollectionsRequest(BaseRequest):
         offset=0,
         collection_type: Literal[1, 2, 3, 4, 5, None] = 3,
         limit=10,
+        user_bgm_data: dict = None,
     ):
         """用户收藏
         :param subject_type: 条目类型 1书籍 2动画 3音乐 4游戏 6三次元
         :param offset: 分页页数
         :param collection_type: 收藏类型 1想看 2看过 3在看 4搁置 5抛弃
         :param limit:每页数量
-
+        :param user_bgm_data: 用户 Bangumi 数据
         """
         super().__init__(session)
         self.subject_type: Literal[1, 2, 3, 4, 6] = subject_type
@@ -72,13 +76,13 @@ class CollectionsRequest(BaseRequest):
         self.collection_type: Literal[1, 2, 3, 4, 5, None] = collection_type
         self.limit: int = limit
 
-        self.user_data = None
+        self.user_bgm_data = user_bgm_data
         self.retain_image = False
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -97,7 +101,7 @@ class SubjectRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -113,7 +117,7 @@ class SummaryRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -130,7 +134,7 @@ class EditCollectionTypePageRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -149,7 +153,7 @@ class DoEditCollectionTypeRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -166,7 +170,7 @@ class EditRatingPageRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -184,7 +188,7 @@ class DoEditRatingRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -214,7 +218,7 @@ class SubjectEpsPageRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -233,7 +237,7 @@ class SubjectRelationsPageRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -254,7 +258,7 @@ class EditEpsPageRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -272,7 +276,7 @@ class DoEditEpisodeRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -288,7 +292,7 @@ class EditCollectionTagsPageRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
         self.callback_text: Optional[str] = None
 
 
@@ -301,7 +305,7 @@ class BackRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
 
 
 class RefreshRequest(BaseRequest):
@@ -312,4 +316,4 @@ class RefreshRequest(BaseRequest):
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
-        self.page_markup: Optional[telebot.REPLY_MARKUP_TYPES] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None

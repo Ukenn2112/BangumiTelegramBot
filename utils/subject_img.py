@@ -57,7 +57,7 @@ def subject_image(subject_info: dict) -> bytes:
     _, t, _, b = font1.getbbox("A")
     yt += b - t
     subject_type = {1: "Book", 2: "Anime", 3: "Music", 4: "Game", 6: "Real"}
-    text = f"{subject_type.get(subject_info['type'], 'Anime')} Fall {subject_info['date'][:4]}"
+    text = f"{subject_type.get(subject_info['type'], 'Anime')} Fall {subject_info['date'][:4] if subject_info['date'] else '????'}"
     if subject_info["eps"] != 0:
         text += f"·{subject_info['eps']} episodes"
     draw.text((xl, yt), text, (168, 168, 168), font1, "ls")

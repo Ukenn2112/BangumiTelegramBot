@@ -23,7 +23,7 @@ async def send_collection_list(message: Message, bot: AsyncTeleBot):
     user_data = await bgm_user_data(message.from_user.id)
     if user_data is None:
         bot_data = await bot.get_me()
-        return await bot.reply_to(message, f"发现您未绑定 Bangumi，快*[点我](https://t.me/{bot_data.username}?start=None)*进行绑定吧～", parse_mode="MarkdownV2", disable_web_page_preview=True)
+        return await bot.reply_to(message, f"发现您未绑定 Bangumi，快*[点我](https://t.me/{bot_data.username}?start=None)*进行绑定吧～", parse_mode="MarkdownV2")
     msg = await bot.reply_to(message, "正在获取收藏列表，请稍后...")
     collection_type = 3
     if message.text:
@@ -44,8 +44,8 @@ async def send_collection_list(message: Message, bot: AsyncTeleBot):
                 collection_type = None
     session = RequestSession(uuid.uuid4().hex, request_message=message, user_bgm_data=user_data)
     request = CollectionsRequest(
-        session, subject_type=subject_type, collection_type=collection_type
+        session, subject_type=subject_type, collection_type=collection_type, user_bgm_data=user_data
     )
-    session.stack = [request]
+    session.stack = [request] # 初始化栈
     session.bot_message = msg
     await consumption_request(bot, session)

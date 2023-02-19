@@ -14,7 +14,7 @@ async def generate_page(subject_request: SubjectRequest) -> SubjectRequest:
     user_collection = None
     if not subject_request.page_text and not subject_request.page_markup:
         if subject_request.session.bot_message.chat.type == "private":
-            if subject_request.session.user_bgm_data and "accessToken" in subject_request.session.user_bgm_data:
+            if subject_request.session.user_bgm_data:
                 user_collection = await bgm.get_user_subject_collection(
                     subject_request.session.user_bgm_data["userData"]["username"],
                     subject_request.subject_id,
@@ -38,7 +38,7 @@ async def generate_page(subject_request: SubjectRequest) -> SubjectRequest:
     return subject_request
 
 
-def gender_page_manager_button(subject_request: SubjectRequest, user_collection):
+def gender_page_manager_button(subject_request: SubjectRequest, user_collection: dict):
     session_uuid = subject_request.session.uuid
     markup = InlineKeyboardMarkup()
     button_list = [[], []]
@@ -48,7 +48,7 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection)
     button_list[0].append(InlineKeyboardButton(text="简介", callback_data=f"{session_uuid}|summary"))
     button_list[0].append(InlineKeyboardButton(text="关联", callback_data=f"{session_uuid}|relations"))
     if user_collection:
-        if "status" in user_collection:
+        if user_collection.get("rate"):
             button_list[1].append(InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating"))
             edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
             edit_rating_page_request.page_image = subject_request.page_image
@@ -156,7 +156,7 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
         )
     else:
         text += "*➤ BGM 平均评分：*暂无评分\n"
-    
+    subject_info["date"] = subject_info["date"] if subject_info["date"] else "未知"
     epssssss = subject_info["eps"] if subject_info["eps"] != 0 else subject_info["total_episodes"]
     if user_collection:
         if user_collection["rate"] == 0:

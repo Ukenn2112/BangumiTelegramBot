@@ -20,7 +20,7 @@ def cache_data(func):
         result = redis.get(key)
         if result:
             if result == b"None__":
-                raise FileNotFoundError(f"API 请求错误-缓存 {key}:{e}")
+                raise FileNotFoundError(f"API 请求错误-缓存 {key}")
             else:
                 return json.loads(result)
         try:

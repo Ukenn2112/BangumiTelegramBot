@@ -2,7 +2,7 @@ import logging
 import pickle
 
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import InputMedia, CallbackQuery
+from telebot.types import CallbackQuery, InputMedia
 
 from utils.config_vars import config, redis, sql
 
@@ -14,7 +14,7 @@ from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
 
 async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
     """Consumption 处理头"""
-    callback_text = None
+    callback_text = "未知请求，处理失败..."
     try:
         callback_text = await request_handler(session)
         top = session.stack[-1]
@@ -26,10 +26,10 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
         send_start(session.request_message, bot)
     except Exception:
         top = BaseRequest(session)
-        top.page_text = "发生了未知异常QAQ"
+        top.page_text = "发生了未知异常 QAQ"
         logging.exception(f"发生异常 session:{session.uuid}")
-    if top.page_image:
-        if session.bot_message.content_type == "text":
+    if top.page_image: # 当前页面有图片
+        if session.bot_message.content_type == "text": # 上一个页面是文字 则删除上一条消息发送新消息
             await bot.delete_message(
                 message_id=session.bot_message.message_id, chat_id=session.request_message.chat.id
             )
@@ -40,7 +40,7 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
                 chat_id=session.request_message.chat.id,
                 reply_to_message_id=session.request_message.message_id,
             )
-        else:
+        else: # 上一个页面是图片 则编辑上一条消息
             session.bot_message = await bot.edit_message_media(
                 media=InputMedia(
                     type="photo",
@@ -54,22 +54,22 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
         for stack in session.stack:
             if isinstance(stack, SubjectRequest) and session.bot_message.content_type == "photo":
                 redis.set(f"subject_image:{stack.subject_id}", session.bot_message.photo[-1].file_id, ex = 60 * 60 * 24)
-    else:
-        if session.bot_message.content_type == "text":
+    else: # 当前页面没有图片
+        if session.bot_message.content_type == "text": # 上一个页面是文字 则编辑上一条消息
             session.bot_message = await bot.edit_message_text(
                 text=top.page_text,
                 reply_markup=top.page_markup,
                 message_id=session.bot_message.message_id,
                 chat_id=session.request_message.chat.id,
             )
-        elif top.retain_image and session.bot_message.content_type == "photo":
+        elif top.retain_image and session.bot_message.content_type == "photo": # 上一个页面同样是图片 则编辑上一条消息
             session.bot_message = await bot.edit_message_caption(
                 caption=top.page_text,
                 reply_markup=top.page_markup,
                 message_id=session.bot_message.message_id,
                 chat_id=session.request_message.chat.id,
             )
-        else:
+        else: # 上一个页面是图片 且不保留图片 则删除上一条消息发送新消息
             await bot.delete_message(
                 message_id=session.bot_message.message_id, chat_id=session.request_message.chat.id
             )
@@ -89,12 +89,10 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
 async def global_callback_handler(call: CallbackQuery, bot: AsyncTeleBot):
     """CallBack 处理头"""
     data = call.data.split("|")
-    redis_key = data[0]
-    request_key = data[1]
+    redis_key, request_key = data[0], data[1]
     call_data = redis.get(redis_key)
-    if not call_data:
-        return await bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=1)
-    redis.delete(redis_key)  # TODO 没事务 多线程下可能出问题
+    if not call_data: return await bot.answer_callback_query(call.id, "您的请求不存在或已过期", cache_time=1)
+    # redis.delete(redis_key)  # TODO 没事务 多线程下可能出问题
     session: RequestSession = pickle.loads(call_data)
     next_page = session.stack[-1].possible_request.get(request_key, None)
     if not next_page:
@@ -106,7 +104,7 @@ async def global_callback_handler(call: CallbackQuery, bot: AsyncTeleBot):
 
 async def request_handler(session: RequestSession):
     callback_text = None
-    top = session.stack[-1]
+    top = session.stack[-1] # 最后一个请求
     if isinstance(top, CollectionsRequest):
         await collection_list_page.generate_page(top)
     elif isinstance(top, SubjectRequest):
