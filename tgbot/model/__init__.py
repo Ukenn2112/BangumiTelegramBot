@@ -35,53 +35,103 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
             await bot.delete_message(
                 message_id=session.bot_message.message_id, chat_id=session.request_message.chat.id
             )
-            session.bot_message = await bot.send_photo(
-                photo=top.page_image,
-                caption=top.page_text,
-                reply_markup=top.page_markup,
-                chat_id=session.request_message.chat.id,
-                reply_to_message_id=session.request_message.message_id,
-            )
-        else: # 上一个页面是图片 则编辑上一条消息
-            session.bot_message = await bot.edit_message_media(
-                media=InputMedia(
-                    type="photo",
-                    media=top.page_image,
+            try:
+                session.bot_message = await bot.send_photo(
+                    photo=top.page_image,
                     caption=top.page_text,
-                    parse_mode="Markdown",
-                ),
-                reply_markup=top.page_markup,
-                message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id,
-            )
+                    reply_markup=top.page_markup,
+                    chat_id=session.request_message.chat.id,
+                    reply_to_message_id=session.request_message.message_id,
+                )
+            except Exception:
+                session.bot_message = await bot.send_photo(
+                    photo=top.page_image,
+                    caption=top.page_text,
+                    reply_markup=top.page_markup,
+                    chat_id=session.request_message.chat.id,
+                    reply_to_message_id=session.request_message.message_id,
+                    parse_mode="HTML",
+                )
+        else: # 上一个页面是图片 则编辑上一条消息
+            try:
+                session.bot_message = await bot.edit_message_media(
+                    media=InputMedia(
+                        type="photo",
+                        media=top.page_image,
+                        caption=top.page_text,
+                        parse_mode="Markdown",
+                    ),
+                    reply_markup=top.page_markup,
+                    message_id=session.bot_message.message_id,
+                    chat_id=session.request_message.chat.id,
+                )
+            except Exception:
+                session.bot_message = await bot.edit_message_media(
+                    media=InputMedia(
+                        type="photo",
+                        media=top.page_image,
+                        caption=top.page_text,
+                        parse_mode="HTML",
+                    ),
+                    reply_markup=top.page_markup,
+                    message_id=session.bot_message.message_id,
+                    chat_id=session.request_message.chat.id,
+                )
         for stack in session.stack:
             if isinstance(stack, SubjectRequest) and session.bot_message.content_type == "photo":
                 redis.set(f"subject_image:{stack.subject_id}", session.bot_message.photo[-1].file_id, ex = 60 * 60 * 24)
     else: # 当前页面没有图片
         if session.bot_message.content_type == "text": # 上一个页面是文字 则编辑上一条消息
-            session.bot_message = await bot.edit_message_text(
-                text=top.page_text,
-                reply_markup=top.page_markup,
-                message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id,
-            )
+            try:
+                session.bot_message = await bot.edit_message_text(
+                    text=top.page_text,
+                    reply_markup=top.page_markup,
+                    message_id=session.bot_message.message_id,
+                    chat_id=session.request_message.chat.id,
+                )
+            except Exception:
+                session.bot_message = await bot.edit_message_text(
+                    text=top.page_text,
+                    reply_markup=top.page_markup,
+                    message_id=session.bot_message.message_id,
+                    chat_id=session.request_message.chat.id,
+                    parse_mode="HTML",
+                )
         elif top.retain_image and session.bot_message.content_type == "photo": # 上一个页面同样是图片 则编辑上一条消息
-            session.bot_message = await bot.edit_message_caption(
-                caption=top.page_text,
-                reply_markup=top.page_markup,
-                message_id=session.bot_message.message_id,
-                chat_id=session.request_message.chat.id,
-            )
+            try:
+                session.bot_message = await bot.edit_message_caption(
+                    caption=top.page_text,
+                    reply_markup=top.page_markup,
+                    message_id=session.bot_message.message_id,
+                    chat_id=session.request_message.chat.id,
+                )
+            except Exception:
+                session.bot_message = await bot.edit_message_caption(
+                    caption=top.page_text,
+                    reply_markup=top.page_markup,
+                    message_id=session.bot_message.message_id,
+                    chat_id=session.request_message.chat.id,
+                    parse_mode="HTML",
+                )
         else: # 上一个页面是图片 且不保留图片 则删除上一条消息发送新消息
             await bot.delete_message(
                 message_id=session.bot_message.message_id, chat_id=session.request_message.chat.id
             )
-            session.bot_message = await bot.send_message(
-                text=top.page_text,
-                reply_markup=top.page_markup,
-                chat_id=session.request_message.chat.id,
-                reply_to_message_id=session.request_message.message_id,
-            )
+            try:
+                session.bot_message = await bot.send_message(
+                    text=top.page_text,
+                    reply_markup=top.page_markup,
+                    chat_id=session.request_message.chat.id,
+                    reply_to_message_id=session.request_message.message_id,
+                )
+            except Exception:
+                session.bot_message = await bot.send_message(
+                    text=top.page_text,
+                    reply_markup=top.page_markup,
+                    chat_id=session.request_message.chat.id,
+                    reply_to_message_id=session.request_message.message_id,
+                    parse_mode="HTML",
+                )
     stack_call = session.call
     session.call = None
     redis.set(session.uuid, pickle.dumps(session), ex=config["REDIS"]["SESSION_EXPIRES"])
