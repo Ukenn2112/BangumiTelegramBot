@@ -223,16 +223,14 @@ class SubjectEpsPageRequest(BaseRequest):
 
 
 class SubjectRelationsPageRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_id: int):
+    def __init__(self, session: RequestSession, subject_info: dict):
         """展示条目关联条目
 
-        :param subject_id: 条目ID
+        :param subject_info: 条目信息
         """
 
         super().__init__(session)
-        self.subject_id: int = subject_id
-
-        self.subject_info: Optional[dict] = None
+        self.subject_info: dict = subject_info
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

@@ -360,7 +360,8 @@ class BangumiAPI:
                 if info["key"] == "放送星期":
                     loads["_air_weekday"] = info["value"]  # 加一个下划线 用于区别
                     break
-            redis.set(f"_subject_image:{subject_id}", subject_image(loads), ex = 60 * 60 * 24)
+            if loads["images"]["large"]:
+                redis.set(f"_subject_image:{subject_id}", subject_image(loads), ex = 60 * 60 * 24)
             return loads
     
     @cache_data

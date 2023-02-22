@@ -50,9 +50,9 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
     subject_request.possible_request["summary"] = SummaryRequest(
         subject_request.session, subject_request.subject_info
     )
-    button_list[0].append(InlineKeyboardButton(text="关联", callback_data=f"{session_uuid}|relations")) # TODO
+    button_list[0].append(InlineKeyboardButton(text="关联", callback_data=f"{session_uuid}|relations"))
     relations_request = SubjectRelationsPageRequest(
-        subject_request.session, subject_id=subject_request.subject_id
+        subject_request.session, subject_request.subject_info
     )
     subject_request.possible_request["relations"] = relations_request
     if user_collection:
@@ -60,9 +60,9 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
         edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
         edit_rating_page_request.user_collection = user_collection
         subject_request.possible_request["rating"] = edit_rating_page_request
-        button_list[0].append(InlineKeyboardButton(text="点格子", callback_data=f"{session_uuid}|eps")) # TODO
+        button_list[0].append(InlineKeyboardButton(text="点格子", callback_data=f"{session_uuid}|eps"))
     else:
-        button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps")) # TODO
+        button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
     subject_eps_page_request = SubjectEpsPageRequest(
         subject_request.session, subject_request.subject_info, limit=12, episode_type=0
     )
@@ -99,7 +99,7 @@ def gender_page_show_buttons(subject_request: SubjectRequest) -> InlineKeyboardM
         subject_request.session, subject_request.subject_info
     )
     relations_request = SubjectRelationsPageRequest(
-        subject_request.session, subject_id=subject_request.subject_id
+        subject_request.session, subject_request.subject_info
     )
     subject_request.possible_request["relations"] = relations_request
     subject_request.possible_request["collection"] = EditCollectionTypePageRequest(

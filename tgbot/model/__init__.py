@@ -7,10 +7,10 @@ from telebot.types import CallbackQuery, InputMedia
 from utils.config_vars import config, redis, sql
 
 from ..pages import (collection_list_page, subject_eps_page, subject_page,
-                     summary_page)
+                     summary_page, subject_relations_page)
 from .exception import TokenExpired
 from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
-                         RefreshRequest, RequestSession, SubjectEpsPageRequest,
+                         RefreshRequest, RequestSession, SubjectEpsPageRequest, SubjectRelationsPageRequest,
                          SubjectRequest, SummaryRequest)
 
 
@@ -118,6 +118,8 @@ async def request_handler(session: RequestSession):
         await subject_eps_page.generate_page(top)
         if len(session.stack) > 2 and isinstance(session.stack[-2], SubjectEpsPageRequest):
             del session.stack[-2]
+    elif isinstance(top, SubjectRelationsPageRequest):
+        await subject_relations_page.generate_page(top)
     elif isinstance(top, BackRequest):
         del session.stack[-2:]  # 删除最后两个
         if top.needs_refresh:
