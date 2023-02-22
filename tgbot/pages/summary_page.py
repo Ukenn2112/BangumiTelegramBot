@@ -1,7 +1,6 @@
 """简介页"""
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from utils.config_vars import bgm, redis
 from utils.converts import subject_type_to_emoji
 
 from ..model.page_model import BackRequest, SummaryRequest

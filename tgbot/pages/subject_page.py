@@ -210,9 +210,9 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
                 else:
                     text += f"*➤ 售价：*`{box['value']}`\n"
         text += f"*➤ 发行日期：*`{subject_info['date']}`\n"
-    if user_collection["tags"] or subject_info["tags"]:
+    if subject_info["tags"]:
         text += "*➤ 标签：*"
-    if user_collection["tags"]:
+    if user_collection and user_collection["tags"]:
         for tag in user_collection["tags"][:10]:
             text += f"#{'x' if tag.isdecimal() else ''}{tag} "
         if subject_info["tags"]:
@@ -223,16 +223,16 @@ async def gander_page_text(subject_id, user_collection: dict = None, subject_inf
         tag_not_click = subject_info["tags"]
     if tag_not_click and tag_not_click[0]:
         # 如果有列表
-        if not user_collection["tags"]:
+        if not user_collection or not user_collection["tags"]:
             # 如果没有用户标签
             if tag_not_click and tag_not_click[0]:
                 for tag in tag_not_click[:10]:
                     text += f"`{tag['name']}` "
-        if user_collection["tags"] and len(user_collection["tags"]) < 10:
+        if user_collection and user_collection["tags"] and len(user_collection["tags"]) < 10:
             # 有用户标签 但 用户标签数小于10
             for tag in tag_not_click[:10 - len(user_collection["tags"])]:
                 text += f"`{tag['name']}` "
-        if user_collection["tags"] or subject_info["tags"]:
+        if subject_info["tags"]:
             text += "\n"
     text += (
         f"\n📖 [详情](https://bgm.tv/subject/{subject_id})"

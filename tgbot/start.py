@@ -38,7 +38,7 @@ async def send_start(message: Message, bot: AsyncTeleBot):
     if user_data and len(msg_data) > 1 and msg_data[1].isdecimal():
         msg = await bot.reply_to(message, "正在获取番剧信息...")
         session = RequestSession(uuid.uuid4().hex, message, user_data)
-        subject_request = SubjectRequest(session, subject_id, True)
+        subject_request = SubjectRequest(session, msg_data[1], is_root=True)
         session.stack = [subject_request]
         session.bot_message = msg
         return await consumption_request(bot, session)
