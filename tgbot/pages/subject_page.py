@@ -20,13 +20,13 @@ async def generate_page(subject_request: SubjectRequest) -> SubjectRequest:
                     subject_request.subject_id,
                     subject_request.session.user_bgm_data["accessToken"],
                 )
-
+    if not subject_request.subject_info:
+        subject_request.subject_info = await bgm.get_subject(subject_request.subject_id)
     if subject_image := redis.get(f"subject_image:{subject_request.subject_id}"):
         subject_request.page_image = subject_image.decode()
     if not subject_request.page_text or not subject_request.page_image:
-        subject_info = await bgm.get_subject(subject_request.subject_id)
         if not subject_request.page_text:
-            subject_request.page_text = await gander_page_text(subject_request.subject_id, user_collection, subject_info)
+            subject_request.page_text = await gander_page_text(subject_request.subject_id, user_collection, subject_request.subject_info)
         if not subject_request.page_image:
             subject_request.page_image = redis.get(f"_subject_image:{subject_request.subject_id}")
 
@@ -38,7 +38,8 @@ async def generate_page(subject_request: SubjectRequest) -> SubjectRequest:
     return subject_request
 
 
-def gender_page_manager_button(subject_request: SubjectRequest, user_collection: dict):
+def gender_page_manager_button(subject_request: SubjectRequest, user_collection: dict) -> InlineKeyboardMarkup:
+    """管理按钮"""
     session_uuid = subject_request.session.uuid
     markup = InlineKeyboardMarkup()
     button_list = [[], []]
@@ -46,44 +47,32 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
         button_list[1].append(InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back"))
         subject_request.possible_request["back"] = BackRequest(subject_request.session)
     button_list[0].append(InlineKeyboardButton(text="简介", callback_data=f"{session_uuid}|summary"))
-    button_list[0].append(InlineKeyboardButton(text="关联", callback_data=f"{session_uuid}|relations"))
-    if user_collection:
-        if user_collection.get("rate"):
-            button_list[1].append(InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating"))
-            edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
-            edit_rating_page_request.page_image = subject_request.page_image
-            edit_rating_page_request.user_collection = user_collection
-            subject_request.possible_request["rating"] = edit_rating_page_request
-
-            button_list[0].append(InlineKeyboardButton(text="点格子", callback_data=f"{session_uuid}|eps"))
-        else:
-            button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
-        subject_eps_page_request = SubjectEpsPageRequest(
-            subject_request.session, subject_id=subject_request.subject_id, limit=12, type_=0
-        )
-        subject_eps_page_request.user_collection = user_collection
-        subject_request.possible_request["eps"] = subject_eps_page_request
-        button_list[1].append(InlineKeyboardButton(text="收藏管理", callback_data=f"{session_uuid}|collection"))
-        edit_collection_type_page_request = EditCollectionTypePageRequest(
-            subject_request.session, subject_request.subject_id
-        )
-        subject_request.possible_request["collection"] = edit_collection_type_page_request
-        edit_collection_type_page_request.page_image = subject_request.page_image
-    else:
-        subject_eps_page_request = SubjectEpsPageRequest(
-            subject_request.session, subject_id=subject_request.subject_id, limit=12, type_=0
-        )
-        subject_eps_page_request.user_collection = user_collection
-        subject_request.possible_request["eps"] = subject_eps_page_request
-        button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
     subject_request.possible_request["summary"] = SummaryRequest(
-        subject_request.session, subject_request.subject_id
+        subject_request.session, subject_request.subject_info
     )
-    subject_request.possible_request["summary"].page_image = subject_request.page_image
+    button_list[0].append(InlineKeyboardButton(text="关联", callback_data=f"{session_uuid}|relations"))
     relations_request = SubjectRelationsPageRequest(
         subject_request.session, subject_id=subject_request.subject_id
     )
     subject_request.possible_request["relations"] = relations_request
+    if user_collection:
+        button_list[1].append(InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating"))
+        edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
+        edit_rating_page_request.user_collection = user_collection
+        subject_request.possible_request["rating"] = edit_rating_page_request
+        button_list[0].append(InlineKeyboardButton(text="点格子", callback_data=f"{session_uuid}|eps"))
+    else:
+        button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
+        subject_eps_page_request = SubjectEpsPageRequest(
+            subject_request.session, subject_id=subject_request.subject_id, limit=12, type_=0
+        )
+        subject_eps_page_request.user_collection = user_collection
+        subject_request.possible_request["eps"] = subject_eps_page_request
+    button_list[1].append(InlineKeyboardButton(text="收藏管理", callback_data=f"{session_uuid}|collection"))
+    edit_collection_type_page_request = EditCollectionTypePageRequest(
+        subject_request.session, subject_request.subject_id
+    )
+    subject_request.possible_request["collection"] = edit_collection_type_page_request
 
     for i in button_list:
         if i:
@@ -91,20 +80,15 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
     return markup
 
 
-def gender_page_show_buttons(subject_request: SubjectRequest):
+def gender_page_show_buttons(subject_request: SubjectRequest) -> InlineKeyboardMarkup:
+    """仅预览按钮 无管理"""
     session_uuid = subject_request.session.uuid
     markup = InlineKeyboardMarkup()
     button_list = [[], []]
     if not subject_request.is_root:
-        button_list[1].append(
-            InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back")
-        )
+        button_list[1].append(InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back"))
         subject_request.possible_request["back"] = BackRequest(subject_request.session)
-    button_list[1].append(
-        InlineKeyboardButton(
-            text="去管理", url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"
-        )
-    )  # TODO
+    button_list[1].append(InlineKeyboardButton(text="去管理", url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))  # TODO
     button_list[0].append(InlineKeyboardButton(text="简介", callback_data=f"{session_uuid}|summary"))
     button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
     button_list[0].append(InlineKeyboardButton(text="关联", callback_data=f"{session_uuid}|relations"))
@@ -114,9 +98,8 @@ def gender_page_show_buttons(subject_request: SubjectRequest):
     subject_eps_page_request.user_collection = {"code"}
     subject_request.possible_request["eps"] = subject_eps_page_request
     subject_request.possible_request["summary"] = SummaryRequest(
-        subject_request.session, subject_request.subject_id
+        subject_request.session, subject_request.subject_info
     )
-    subject_request.possible_request["summary"].page_image = subject_request.page_image
     relations_request = SubjectRelationsPageRequest(
         subject_request.session, subject_id=subject_request.subject_id
     )
@@ -124,7 +107,6 @@ def gender_page_show_buttons(subject_request: SubjectRequest):
     subject_request.possible_request["collection"] = EditCollectionTypePageRequest(
         subject_request.session, subject_request.subject_id
     )
-    subject_request.possible_request["collection"].page_image = subject_request.page_image
 
     for i in button_list:
         if i:
@@ -133,7 +115,7 @@ def gender_page_show_buttons(subject_request: SubjectRequest):
 
 
 async def gander_page_text(subject_id, user_collection: dict = None, subject_info: dict = None) -> str:
-    """详情页"""
+    """详情页 字符串拼接"""
     if not subject_info: subject_info = await bgm.get_subject(subject_id)
     subject_type = subject_info["type"]
     if subject_info["name_cn"]:

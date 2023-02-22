@@ -6,15 +6,15 @@ from telebot.types import CallbackQuery, InputMedia
 
 from utils.config_vars import config, redis, sql
 
-from ..pages import collection_list_page, subject_page
+from ..pages import collection_list_page, subject_page, summary_page
 from .exception import TokenExpired
 from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
-                         RefreshRequest, RequestSession, SubjectRequest)
+                         RefreshRequest, RequestSession, SubjectRequest, SummaryRequest)
 
 
 async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
     """Consumption 处理头"""
-    callback_text = "未知请求，处理失败..."
+    callback_text = None
     try:
         callback_text = await request_handler(session)
         top = session.stack[-1]
@@ -46,6 +46,7 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
                     type="photo",
                     media=top.page_image,
                     caption=top.page_text,
+                    parse_mode="Markdown",
                 ),
                 reply_markup=top.page_markup,
                 message_id=session.bot_message.message_id,
@@ -109,6 +110,8 @@ async def request_handler(session: RequestSession):
         await collection_list_page.generate_page(top)
     elif isinstance(top, SubjectRequest):
         await subject_page.generate_page(top)
+    elif isinstance(top, SummaryRequest):
+        await summary_page.generate_page(top)
     elif isinstance(top, BackRequest):
         del session.stack[-2:]  # 删除最后两个
         if top.needs_refresh:

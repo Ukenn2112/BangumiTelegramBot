@@ -1,7 +1,7 @@
 import base64
 import builtins
 import datetime
-from typing import Literal
+from typing import Literal, Union
 
 import aiohttp
 import requests
@@ -201,9 +201,9 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
 
-    async def get_user_subject_collection(self, username, subject_id, access_token = None) -> dict:
+    async def get_user_subject_collection(self, username, subject_id, access_token = None) -> Union[dict, None]:
         """
-        获取用户对应条目收藏
+        获取用户对应条目收藏 没有收藏则返回 None
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/getUserCollection
 
@@ -214,6 +214,8 @@ class BangumiAPI:
             f"{self.api_url}/v0/users/{username}/collections/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
+            if resp.status == 404:
+                return None
             return await resp.json()
     
     async def patch_user_subject_collection(self, access_token, subject_id, collection_type: int = None, rate: int = None, ep_status: int = None, vol_status: int = None, comment: str = None, private: bool = None, tags: list[str] = None) -> None:

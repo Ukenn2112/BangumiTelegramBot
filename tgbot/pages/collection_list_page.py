@@ -16,19 +16,18 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
     subject_type = request.subject_type
     limit = request.limit
     offset = request.offset
-    try:
-        user_collections = await bgm.get_user_subject_collections(
-            request.user_bgm_data["userData"]["username"],
-            request.user_bgm_data["accessToken"],
-            request.subject_type,
-            request.collection_type,
-            request.limit,
-            request.offset,
-            )
-        count = user_collections["total"]  # 总在看数 int
-        subject_list = user_collections["data"] # 收藏列表 list
-        if not subject_list: raise FileNotFoundError
-    except FileNotFoundError:
+    # 获取用户收藏列表
+    user_collections = await bgm.get_user_subject_collections(
+        request.user_bgm_data["userData"]["username"],
+        request.user_bgm_data["accessToken"],
+        request.subject_type,
+        request.collection_type,
+        request.limit,
+        request.offset,
+        )
+    count = user_collections["total"]  # 总在看数 int
+    subject_list = user_collections["data"] # 收藏列表 list
+    if not subject_list:
         request.page_text = (
             f"出错啦，您貌似没有{collection_type_subject_type_str(subject_type, request.collection_type)}"
             f"的{subject_type_to_str(subject_type)}"

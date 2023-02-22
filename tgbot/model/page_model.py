@@ -87,14 +87,16 @@ class CollectionsRequest(BaseRequest):
 
 
 class SubjectRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_id: int, is_root: bool = False):
+    def __init__(self, session: RequestSession, subject_id: int, subject_info: dict = None, is_root: bool = False):
         """条目详情
 
         :param subject_id: 条目ID
+        :param subject_info: 条目信息
         :param is_root: 是否为根节点 如为真则不可返回
         """
         super().__init__(session)
         self.subject_id: int = subject_id
+        self.subject_info: dict = subject_info
         self.is_root: bool = is_root
         self.retain_image = False
 
@@ -106,13 +108,14 @@ class SubjectRequest(BaseRequest):
 
 
 class SummaryRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_id: int):
+    def __init__(self, session: RequestSession, subject_info: dict):
         """条目介绍
 
         :param subject_id: 条目ID
+        :param subject_info: 条目信息
         """
         super().__init__(session)
-        self.subject_id: int = subject_id
+        self.subject_info: dict = subject_info
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

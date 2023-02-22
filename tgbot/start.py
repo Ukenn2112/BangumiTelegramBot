@@ -8,7 +8,7 @@ from utils.user_token import bgm_user_data
 from utils.config_vars import API_SETVER_URL, BOT_USERNAME, bgm, redis, sql
 
 from .help import send_help
-from .model import RequestSession, SubjectRequest
+from .model import RequestSession, SubjectRequest, consumption_request
 
 
 async def send_start(message: Message, bot: AsyncTeleBot):
@@ -41,7 +41,7 @@ async def send_start(message: Message, bot: AsyncTeleBot):
         subject_request = SubjectRequest(session, subject_id, True)
         session.stack = [subject_request]
         session.bot_message = msg
-        # TODO return consumption_request(session)
+        return await consumption_request(bot, session)
     elif user_data:
         return await bot.reply_to(message, "您已绑定，快开始使用吧～")
     else:
