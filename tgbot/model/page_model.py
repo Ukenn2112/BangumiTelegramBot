@@ -111,7 +111,6 @@ class SummaryRequest(BaseRequest):
     def __init__(self, session: RequestSession, subject_info: dict):
         """条目介绍
 
-        :param subject_id: 条目ID
         :param subject_info: 条目信息
         """
         super().__init__(session)
@@ -199,24 +198,22 @@ class SubjectEpsPageRequest(BaseRequest):
     def __init__(
         self,
         session: RequestSession,
-        subject_id: int,
-        type_: Literal[0, 1, 2, 3, None] = None,
+        subject_info: dict,
+        episode_type: Literal[0, 1, 2, 3, 4, 5, 6] = 0,
         limit=100,
         offset=0,
     ):
         """展示条目章节页
 
-        :param subject_id: 条目ID
+        :param subject_info: 条目信息
+        :param episode_type: 章节类型 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他
         """
 
         super().__init__(session)
-        self.subject_id: int = subject_id
+        self.subject_info: dict = subject_info
         self.limit = limit
         self.offset = offset
-        self.type_: Literal[0, 1, 2, 3, None] = type_
-
-        self.user_collection = None
-        self.subject_info = None
+        self.episode_type: Literal[0, 1, 2, 3, 4, 5, 6] = episode_type
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
