@@ -49,8 +49,8 @@ class SQLite:
             expiry_time = (datetime.datetime.now() + datetime.timedelta(days=7)).timestamp() // 1000
             execute += f"access_token='{access_token}', refresh_token='{refresh_token}', expiry_time={expiry_time}"
         if cookie:
-            execute += f"cookie='{cookie}', "
-        self.cursor.execute(execute + "update_time=? WHERE tg_id=?", (now_time, tg_id))
+            execute += f", cookie='{cookie}'"
+        self.cursor.execute(execute + ", update_time=? WHERE tg_id=?", (now_time, tg_id))
         self.conn.commit()
     
     def delete_user_data(self, tg_id: int) -> None:

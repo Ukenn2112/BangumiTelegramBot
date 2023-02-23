@@ -68,7 +68,7 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
     subject_request.possible_request["eps"] = subject_eps_page_request
     button_list[1].append(InlineKeyboardButton(text="收藏管理", callback_data=f"{session_uuid}|collection")) # TODO
     edit_collection_type_page_request = EditCollectionTypePageRequest(
-        subject_request.session, subject_request.subject_id
+        subject_request.session, subject_request.subject_info
     )
     subject_request.possible_request["collection"] = edit_collection_type_page_request
 
@@ -102,7 +102,7 @@ def gender_page_show_buttons(subject_request: SubjectRequest) -> InlineKeyboardM
     )
     subject_request.possible_request["relations"] = relations_request
     subject_request.possible_request["collection"] = EditCollectionTypePageRequest(
-        subject_request.session, subject_request.subject_id
+        subject_request.session, subject_request.subject_info
     )
 
     for i in button_list:
