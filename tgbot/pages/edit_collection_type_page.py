@@ -11,7 +11,7 @@ from ..model.page_model import (
 from utils.converts import collection_type_markup_text_list, subject_type_to_emoji
 
 
-def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
+async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
     session_uuid = request.session.uuid
     subject_info = request.subject_info
     text = (

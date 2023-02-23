@@ -6,16 +6,21 @@ from utils.converts import subject_type_to_emoji
 from ..model.page_model import BackRequest, SummaryRequest
 
 
+EPISODE_DESC_LIMIT = 900
+
 async def generate_page(request: SummaryRequest) -> SummaryRequest:
     session_uuid = request.session.uuid
     """简介页"""
     subject_info = request.subject_info
     subject_id = subject_info["id"]
+    if summary := subject_info["summary"]:
+        if len(summary) > EPISODE_DESC_LIMIT:
+            summary = summary[:EPISODE_DESC_LIMIT] + " ..."
     text = (
         f"{subject_type_to_emoji(subject_info['type'])} *{subject_info['name_cn']}*\n"
         f"{subject_info['name']}\n\n"
         f"*➤ 简介：*\n"+
-        subject_info['summary'].strip("\n").strip("\r\n\r\n")+
+        summary.strip("\n").strip("\r\n\r\n")+
         f"\n\n📖 [详情](https://bgm.tv/subject/{subject_id})"
         f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject_id}/comments)"
     )

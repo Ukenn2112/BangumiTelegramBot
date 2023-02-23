@@ -17,7 +17,7 @@ def do(request: DoEditRatingRequest, tg_id: int) -> DoEditRatingRequest:  # è¿”å
     return request
 
 
-def generate_page(request: EditRatingPageRequest) -> EditRatingPageRequest:
+async def generate_page(request: EditRatingPageRequest) -> EditRatingPageRequest:
     session_uuid = request.session.uuid
     subject_info = request.user_collection["subject"]
     text = (

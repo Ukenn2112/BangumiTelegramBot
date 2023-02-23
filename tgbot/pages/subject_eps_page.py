@@ -37,16 +37,16 @@ async def generate_page(request: SubjectEpsPageRequest) -> SubjectEpsPageRequest
             if request.session.user_bgm_data:
                 text += id_to_emoji.get(i["type"], "⚪")
                 before_status = i["type"]
-                ep_data = i["episode"]
+                episode_info = i["episode"]
             else:
-                ep_data = i
-            button_list.append(InlineKeyboardButton(text=str(ep_data["sort"]), callback_data=f"{session_uuid}|{ep_data['id']}"))
-            page_request = EditEpsPageRequest(request.session, ep_data["id"], episode_info=i)
-            request.possible_request[str(ep_data["id"])] = page_request
+                episode_info = i
+            button_list.append(InlineKeyboardButton(text=str(episode_info["sort"]), callback_data=f"{session_uuid}|{episode_info['id']}"))
+            page_request = EditEpsPageRequest(request.session, episode_info)
+            request.possible_request[str(episode_info["id"])] = page_request
 
             page_request.before_status = before_status
-            text += f"`{ep_data['sort']:02d}`*.*"
-            text += f" {ep_data['name_cn'] or ep_data['name'] or '未公布'} \n"
+            text += f"`{episode_info['sort']:02d}`*.*"
+            text += f" {episode_info['name_cn'] or episode_info['name'] or '未公布'} \n"
     else:
         text += "无章节"
 

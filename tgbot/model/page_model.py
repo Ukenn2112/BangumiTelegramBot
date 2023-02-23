@@ -241,13 +241,11 @@ class EditEpsPageRequest(BaseRequest):
     def __init__(
         self,
         session: RequestSession,
-        episode_id: int,
-        episode_info: dict = None,
-        before_status=None,
+        episode_info: dict,
+        before_status = None,
     ):
-        """修改评分页"""
+        """修改章节页"""
         super().__init__(session)
-        self.episode_id = episode_id
         self.episode_info = episode_info
         self.before_status: int = before_status
 
