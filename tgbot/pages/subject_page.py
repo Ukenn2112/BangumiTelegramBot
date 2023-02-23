@@ -56,9 +56,8 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
     )
     subject_request.possible_request["relations"] = relations_request
     if user_collection:
-        button_list[1].append(InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating")) # TODO
-        edit_rating_page_request = EditRatingPageRequest(subject_request.session, subject_request.subject_id)
-        edit_rating_page_request.user_collection = user_collection
+        button_list[1].append(InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating"))
+        edit_rating_page_request = EditRatingPageRequest(subject_request.session, user_collection)
         subject_request.possible_request["rating"] = edit_rating_page_request
         button_list[0].append(InlineKeyboardButton(text="点格子", callback_data=f"{session_uuid}|eps"))
     else:
