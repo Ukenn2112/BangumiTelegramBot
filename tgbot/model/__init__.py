@@ -6,12 +6,16 @@ from telebot.types import CallbackQuery, InputMedia
 
 from utils.config_vars import config, redis, sql
 
-from ..pages import (collection_list_page, subject_eps_page, subject_page,
-                     summary_page, subject_relations_page, edit_rating_page, edit_collection_type_page, edit_eps_page)
+from ..pages import (collection_list_page, edit_collection_type_page,
+                     edit_eps_page, edit_rating_page, subject_eps_page,
+                     subject_page, subject_relations_page, summary_page,
+                     week_page)
 from .exception import TokenExpired
-from .page_model import (BackRequest, BaseRequest, CollectionsRequest, EditCollectionTypePageRequest, EditEpsPageRequest, EditRatingPageRequest,
-                         RefreshRequest, RequestSession, SubjectEpsPageRequest, SubjectRelationsPageRequest,
-                         SubjectRequest, SummaryRequest)
+from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
+                         EditCollectionTypePageRequest, EditEpsPageRequest,
+                         EditRatingPageRequest, RefreshRequest, RequestSession,
+                         SubjectEpsPageRequest, SubjectRelationsPageRequest,
+                         SubjectRequest, SummaryRequest, WeekRequest)
 
 
 async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
@@ -158,30 +162,32 @@ async def global_callback_handler(call: CallbackQuery, bot: AsyncTeleBot):
 async def request_handler(session: RequestSession):
     callback_text = None
     top = session.stack[-1] # 最后一个请求
-    if isinstance(top, CollectionsRequest):
+    if isinstance(top, CollectionsRequest): # 用户收藏列表
         await collection_list_page.generate_page(top)
-    elif isinstance(top, SubjectRequest):
+    elif isinstance(top, SubjectRequest): # 条目详情页
         await subject_page.generate_page(top)
-    elif isinstance(top, SummaryRequest):
+    elif isinstance(top, SummaryRequest): # 条目简介页
         await summary_page.generate_page(top)
-    elif isinstance(top, SubjectEpsPageRequest):
+    elif isinstance(top, SubjectEpsPageRequest): # 条目剧集页
         await subject_eps_page.generate_page(top)
         if len(session.stack) > 2 and isinstance(session.stack[-2], SubjectEpsPageRequest):
             del session.stack[-2]
-    elif isinstance(top, SubjectRelationsPageRequest):
+    elif isinstance(top, SubjectRelationsPageRequest): # 条目关联页
         await subject_relations_page.generate_page(top)
-    elif isinstance(top, EditRatingPageRequest):
+    elif isinstance(top, EditRatingPageRequest): # 编辑评分页
         await edit_rating_page.generate_page(top)
-    elif isinstance(top, EditCollectionTypePageRequest):
+    elif isinstance(top, EditCollectionTypePageRequest): # 编辑收藏状态页
         await edit_collection_type_page.generate_page(top)
-    elif isinstance(top, EditEpsPageRequest):
+    elif isinstance(top, EditEpsPageRequest): # 编辑剧集页
         await edit_eps_page.generate_page(top)
-    elif isinstance(top, BackRequest):
+    elif isinstance(top, WeekRequest):
+        await week_page.generate_page(top)
+    elif isinstance(top, BackRequest): # 返回上一页
         del session.stack[-2:]  # 删除最后两个
         if top.needs_refresh:
             session.stack.append(RefreshRequest(session))
             await request_handler(session)
-    elif isinstance(top, RefreshRequest):
+    elif isinstance(top, RefreshRequest): # 刷新当前页
         del session.stack[-1]  # 删除这个请求
         top = session.stack[-1]
         top.page_text = None

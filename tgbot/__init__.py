@@ -1,13 +1,15 @@
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_filters import SimpleCustomFilter
-from telebot.types import BotCommand, BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChats
+from telebot.types import (BotCommand, BotCommandScopeAllGroupChats,
+                           BotCommandScopeAllPrivateChats)
 
 from utils.config_vars import BOT_USERNAME, config
 
 from .collection_list import send_collection_list
 from .help import send_help
-from .start import send_start
 from .model import global_callback_handler
+from .start import send_start
+from .week import send_week
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -17,6 +19,7 @@ def bot_register():
     # Commands
     bot.register_message_handler(send_start, commands=["start"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_help, commands=["help"], is_private=True, pass_bot=True)
+    bot.register_message_handler(send_week, commands=["week"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music", "real"], pass_bot=True)
     # CallbackQuery
     bot.register_callback_query_handler(callback_none, func=lambda c: c.data == "None", pass_bot=True)
@@ -38,6 +41,7 @@ async def set_bot_command():
         BotCommand("music", "音乐收藏列表"),
         BotCommand("game", "游戏收藏列表"),
         BotCommand("real", "三次元收藏列表"),
+        BotCommand("week", "每日放送"),
     ]
     group_commands_list = [
         BotCommand("book", "书籍收藏列表"),
@@ -45,6 +49,7 @@ async def set_bot_command():
         BotCommand("music", "音乐收藏列表"),
         BotCommand("game", "游戏收藏列表"),
         BotCommand("real", "三次元收藏列表"),
+        BotCommand("week", "每日放送"),
     ]
     try:
         await bot.set_my_commands(private_commands_list, scope=BotCommandScopeAllPrivateChats())

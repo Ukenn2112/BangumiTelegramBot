@@ -22,7 +22,7 @@ class RequestSession:
     request_message: Message # 用户请求消息
     bot_message: Message # 机器人消息
 
-    def __init__(self, uuid: str, request_message: Message, user_bgm_data: dict):
+    def __init__(self, uuid: str, request_message: Message, user_bgm_data: dict = None):
         """Telegram 页面会话
         :param uuid: 会话 uuid
         :param request_message: 用户请求消息
