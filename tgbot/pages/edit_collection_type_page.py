@@ -1,17 +1,19 @@
 """收藏页"""
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from ..model.page_model import (
-    EditCollectionTagsPageRequest,
-    EditCollectionTypePageRequest,
-    BackRequest,
-    DoEditCollectionTypeRequest,
-    COLLECTION_TYPE_STR,
-)
-from utils.converts import collection_type_markup_text_list, subject_type_to_emoji
+from utils.converts import (collection_type_markup_text_list,
+                            subject_type_to_emoji)
+
+from ..model.exception import UserNotBound
+from ..model.page_model import (COLLECTION_TYPE_STR, BackRequest,
+                                DoEditCollectionTypeRequest,
+                                EditCollectionTagsPageRequest,
+                                EditCollectionTypePageRequest)
 
 
 async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
+    if request.session.user_bgm_data is None:
+        raise UserNotBound("用户未绑定")
     session_uuid = request.session.uuid
     subject_info = request.subject_info
     text = (

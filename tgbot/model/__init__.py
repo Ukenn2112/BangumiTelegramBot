@@ -10,7 +10,7 @@ from ..pages import (collection_list_page, edit_collection_type_page,
                      edit_eps_page, edit_rating_page, subject_eps_page,
                      subject_page, subject_relations_page, summary_page,
                      week_page)
-from .exception import TokenExpired
+from .exception import TokenExpired, UserNotBound
 from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
                          EditCollectionTypePageRequest, EditEpsPageRequest,
                          EditRatingPageRequest, RefreshRequest, RequestSession,
@@ -29,7 +29,12 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
         top.page_text = "您的Token已过期,请重新绑定"
         sql.delete_user_data(session.request_message.from_user.id)
         from ..start import send_start
-        send_start(session.request_message, bot)
+        await send_start(session.request_message, bot)
+    except UserNotBound:
+        top = BaseRequest(session)
+        top.page_text = "此操作需要绑定 Bangumi 账户"
+        from ..start import send_start
+        await send_start(session.request_message, bot)
     except Exception:
         top = BaseRequest(session)
         top.page_text = "发生了未知异常 QAQ"
