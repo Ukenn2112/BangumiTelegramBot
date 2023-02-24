@@ -5,7 +5,7 @@ from ..model.page_model import (BackRequest, DoEditRatingRequest,
                                 EditRatingPageRequest)
 
 
-def do(request: DoEditRatingRequest, tg_id: int) -> DoEditRatingRequest:  # 返回在看列表页数
+def do(request: DoEditRatingRequest) -> DoEditRatingRequest:
     user_status = request.user_collection.get("status", {}).get("type")
     if user_status is None:
         user_status = "collect"

@@ -8,13 +8,11 @@ from utils.converts import (collection_type_markup_text_list, collection_type_su
 from ..model.exception import UserNotBound
 from ..model.page_model import (BackRequest, DoEditCollectionTypeRequest,
                                 EditCollectionTagsPageRequest,
-                                EditCollectionTypePageRequest)
+                                EditCollectionTypePageRequest, EditRatingPageRequest)
 
 collection_types = [("wish", 1), ("collect", 2), ("do", 3), ("on_hold", 4), ("dropped", 5)]
 
 async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
-    if request.session.user_bgm_data is None:
-        raise UserNotBound("用户未绑定")
     session_uuid = request.session.uuid
     subject_info = request.subject_info
     text = (
@@ -37,11 +35,19 @@ async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectio
         request.possible_request[s] = DoEditCollectionTypeRequest(
             request.session, subject_info["id"], subject_info["type"], n
         )
-    markup.add(InlineKeyboardButton(text="标签管理", callback_data=f"{session_uuid}|tags"))
-    collection_tag_page_request = EditCollectionTagsPageRequest(
-        request.session, subject_info
-    )
-    request.possible_request["tags"] = collection_tag_page_request
+    if request.user_collection:
+        markup.add(
+            InlineKeyboardButton(text="标签", callback_data=f"{session_uuid}|tags"),
+            InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating")
+        )
+        collection_tag_page_request = EditCollectionTagsPageRequest(
+            request.session, request.user_collection
+        )
+        request.possible_request["tags"] = collection_tag_page_request
+        edit_rating_page_request = EditRatingPageRequest(
+            request.session, request.user_collection
+        )
+        request.possible_request["rating"] = edit_rating_page_request
     markup.add(*button_list, row_width=3)
 
     request.page_text = text
@@ -60,12 +66,8 @@ async def do(request: DoEditCollectionTypeRequest) -> DoEditCollectionTypeReques
 
 
 async def collection_tags_page(request: EditCollectionTagsPageRequest) -> EditCollectionTagsPageRequest:
-    subject_info = request.subject_info
-    user_collection = await bgm.get_user_subject_collection(
-        request.session.user_bgm_data["userData"]["username"],
-        subject_info["id"],
-        request.session.user_bgm_data["accessToken"]
-    )
+    subject_info = request.user_collection["subject"]
+    user_collection = request.user_collection
     text = (
         f"*{subject_type_to_emoji(subject_info['type'])}"
         f"『 {subject_info['name_cn'] or subject_info['name']} 』标签管理*\n\n"

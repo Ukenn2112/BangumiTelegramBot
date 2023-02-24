@@ -121,13 +121,15 @@ class SummaryRequest(BaseRequest):
 
 
 class EditCollectionTypePageRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_info: dict):
+    def __init__(self, session: RequestSession, subject_info: dict, user_collection: dict = None):
         """修改收藏类型页
 
         :param subject_info: 条目信息
+        :param user_collection: 用户收藏信息
         """
         super().__init__(session)
         self.subject_info: dict = subject_info
+        self.user_collection: dict = user_collection
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
@@ -275,13 +277,13 @@ class DoEditEpisodeRequest(BaseRequest):
 
 
 class EditCollectionTagsPageRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_info: dict):
+    def __init__(self, session: RequestSession, user_collection: dict):
         """修改收藏标签页
 
-        :param subject_info: 条目信息
+        :param user_collection: 用户收藏信息
         """
         super().__init__(session)
-        self.subject_info: dict = subject_info
+        self.user_collection: dict = user_collection
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

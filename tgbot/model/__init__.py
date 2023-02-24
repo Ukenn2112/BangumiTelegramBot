@@ -185,17 +185,17 @@ async def request_handler(session: RequestSession):
         await edit_collection_type_page.generate_page(top)
     elif isinstance(top, EditEpsPageRequest): # 编辑剧集页
         await edit_eps_page.generate_page(top)
-    elif isinstance(top, EditCollectionTagsPageRequest):
+    elif isinstance(top, EditCollectionTagsPageRequest): # 编辑标签页
         await edit_collection_type_page.collection_tags_page(top)
-    elif isinstance(top, WeekRequest):
+    elif isinstance(top, WeekRequest): # 每日放送
         await week_page.generate_page(top)
-    elif isinstance(top, DoEditEpisodeRequest):
+    elif isinstance(top, DoEditEpisodeRequest): # 编辑剧集收藏
         await edit_eps_page.do(top)
         callback_text = top.callback_text
         del session.stack[-1]
         session.stack.append(BackRequest(session, True))
         await request_handler(session)
-    elif isinstance(top, DoEditCollectionTypeRequest):
+    elif isinstance(top, DoEditCollectionTypeRequest): # 编辑收藏状态
         await edit_collection_type_page.do(top)
         callback_text = top.callback_text
         del session.stack[-1]

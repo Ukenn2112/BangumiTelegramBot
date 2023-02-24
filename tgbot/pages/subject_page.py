@@ -55,15 +55,13 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
         subject_request.session, subject_request.subject_info
     )
     subject_request.possible_request["relations"] = relations_request
-    if user_collection:
-        button_list[1].append(InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating"))
-        edit_rating_page_request = EditRatingPageRequest(subject_request.session, user_collection)
-        subject_request.possible_request["rating"] = edit_rating_page_request
+    if subject_request.session.user_bgm_data:
         button_list[1].append(InlineKeyboardButton(text="收藏管理", callback_data=f"{session_uuid}|collection"))
         edit_collection_type_page_request = EditCollectionTypePageRequest(
-            subject_request.session, subject_request.subject_info
+            subject_request.session, subject_request.subject_info, user_collection
         )
         subject_request.possible_request["collection"] = edit_collection_type_page_request
+    if user_collection:
         button_list[0].append(InlineKeyboardButton(text="点格子", callback_data=f"{session_uuid}|eps"))
     else:
         button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
@@ -86,7 +84,7 @@ def gender_page_show_buttons(subject_request: SubjectRequest) -> InlineKeyboardM
     if not subject_request.is_root:
         button_list[1].append(InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back"))
         subject_request.possible_request["back"] = BackRequest(subject_request.session)
-    button_list[1].append(InlineKeyboardButton(text="去管理", url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))  # TODO
+    button_list[1].append(InlineKeyboardButton(text="去管理", url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))
     button_list[0].append(InlineKeyboardButton(text="简介", callback_data=f"{session_uuid}|summary"))
     button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
     button_list[0].append(InlineKeyboardButton(text="关联", callback_data=f"{session_uuid}|relations"))
@@ -101,9 +99,6 @@ def gender_page_show_buttons(subject_request: SubjectRequest) -> InlineKeyboardM
         subject_request.session, subject_request.subject_info
     )
     subject_request.possible_request["relations"] = relations_request
-    subject_request.possible_request["collection"] = EditCollectionTypePageRequest(
-        subject_request.session, subject_request.subject_info
-    )
 
     for i in button_list:
         if i:
