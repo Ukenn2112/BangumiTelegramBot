@@ -1,11 +1,13 @@
 import html
+
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from utils.config_vars import BOT_USERNAME, bgm, redis
-from utils.converts import collection_type_subject_type_str, score_to_str, subject_type_to_emoji
+from utils.converts import (collection_type_subject_type_str, score_to_str,
+                            subject_type_to_emoji)
 
 from ..model.page_model import (BackRequest, EditCollectionTypePageRequest,
-                                EditRatingPageRequest, SubjectEpsPageRequest,
+                                SubjectEpsPageRequest,
                                 SubjectRelationsPageRequest, SubjectRequest,
                                 SummaryRequest)
 

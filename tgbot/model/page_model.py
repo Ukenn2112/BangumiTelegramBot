@@ -10,6 +10,7 @@ class BaseRequest:
         self.page_text: Optional[str] = None # 页面文本
         self.page_image: Optional[str] = None # 页面图片
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None # 页面回调
+        self.reply_process: Optional[bool] = False # 是否需要回复处理
         self.callback_text: Optional[str] = None # 回调文本
         self.retain_image: Optional[bool] = True  # 是否保留页面图片
         self.session: RequestSession = session # 会话

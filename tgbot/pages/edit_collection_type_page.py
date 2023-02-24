@@ -29,7 +29,7 @@ async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectio
         InlineKeyboardButton(text="搁置", callback_data=f"{session_uuid}|on_hold"),
         InlineKeyboardButton(text="抛弃", callback_data=f"{session_uuid}|dropped"),
     ]
-    request.possible_request["back"] = BackRequest(request.session)
+    request.possible_request["back"] = BackRequest(request.session, needs_refresh=True)
     for s, n in collection_types:
         request.possible_request[s] = DoEditCollectionTypeRequest(
             request.session, subject_info["id"], subject_info["type"], n, request.user_collection
@@ -49,6 +49,7 @@ async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectio
         request.possible_request["rating"] = edit_rating_page_request
     markup.add(*button_list, row_width=3)
 
+    request.reply_process = True
     request.page_text = text
     request.page_markup = markup
     return request
@@ -86,19 +87,20 @@ async def collection_tags_page(request: EditCollectionTagsPageRequest) -> EditCo
         text += "此条目暂无标签"
     text += "\n\n➤ *我的标签：*"
     if user_collection and user_collection["tags"]:
-        for tag in user_collection["tags"]:
-            text += f"`{tag}` "
+        text += f"`{'#'.join(user_collection['tags'])}` "
     else:
         text += "未设置条目标签"
     text += (
         f"\n\n📖 [详情](https://bgm.tv/subject/{subject_info['id']})\n"
-        "*回复此消息即可修改标签 (此操作直接对现有设置标签进行覆盖，多标签请用空格隔开)*"
+        "*回复此消息即可修改标签 (此操作直接对现有设置标签进行覆盖，多标签请用#隔开)*"
     )
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton(text="返回", callback_data=f"{request.session.uuid}|back")
     )
     request.possible_request["back"] = BackRequest(request.session)
+
+    request.reply_process = True
     request.page_text = text
     request.page_markup = markup
     return request

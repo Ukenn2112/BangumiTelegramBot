@@ -143,6 +143,10 @@ async def consumption_request(bot: AsyncTeleBot, session: RequestSession):
                     reply_to_message_id=session.request_message.message_id,
                     parse_mode="HTML",
                 )
+    if top.reply_process:
+        redis.set(f"reply_process:{session.bot_message.id}", pickle.dumps(top), ex=config["REDIS"]["SESSION_EXPIRES"])
+    else:
+        redis.delete(f"reply_process:{session.bot_message.id}")
     stack_call = session.call
     session.call = None
     redis.set(session.uuid, pickle.dumps(session), ex=config["REDIS"]["SESSION_EXPIRES"])
@@ -191,7 +195,7 @@ async def request_handler(session: RequestSession):
         await edit_collection_type_page.collection_tags_page(top)
     elif isinstance(top, WeekRequest): # 每日放送
         await week_page.generate_page(top)
-    elif isinstance(top, DoEditRatingRequest):
+    elif isinstance(top, DoEditRatingRequest): # 编辑评分
         await edit_rating_page.do(top)
         callback_text = top.callback_text
         del session.stack[-2:]  # 删除最后两个
