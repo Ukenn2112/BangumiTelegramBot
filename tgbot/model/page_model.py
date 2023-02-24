@@ -275,13 +275,13 @@ class DoEditEpisodeRequest(BaseRequest):
 
 
 class EditCollectionTagsPageRequest(BaseRequest):
-    def __init__(self, session: RequestSession, subject_id: int):
+    def __init__(self, session: RequestSession, subject_info: dict):
         """修改收藏标签页
 
-        :param subject_id: 条目ID
+        :param subject_info: 条目信息
         """
         super().__init__(session)
-        self.subject_id: int = subject_id
+        self.subject_info: dict = subject_info
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

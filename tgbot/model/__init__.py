@@ -11,7 +11,7 @@ from ..pages import (collection_list_page, edit_collection_type_page,
                      subject_page, subject_relations_page, summary_page,
                      week_page)
 from .exception import TokenExpired, UserNotBound
-from .page_model import (BackRequest, BaseRequest, CollectionsRequest, DoEditCollectionTypeRequest, DoEditEpisodeRequest,
+from .page_model import (BackRequest, BaseRequest, CollectionsRequest, DoEditCollectionTypeRequest, DoEditEpisodeRequest, EditCollectionTagsPageRequest,
                          EditCollectionTypePageRequest, EditEpsPageRequest,
                          EditRatingPageRequest, RefreshRequest, RequestSession,
                          SubjectEpsPageRequest, SubjectRelationsPageRequest,
@@ -185,6 +185,8 @@ async def request_handler(session: RequestSession):
         await edit_collection_type_page.generate_page(top)
     elif isinstance(top, EditEpsPageRequest): # 编辑剧集页
         await edit_eps_page.generate_page(top)
+    elif isinstance(top, EditCollectionTagsPageRequest):
+        await edit_collection_type_page.collection_tags_page(top)
     elif isinstance(top, WeekRequest):
         await week_page.generate_page(top)
     elif isinstance(top, DoEditEpisodeRequest):
