@@ -1,6 +1,7 @@
 """已看最新"""
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from utils.config_vars import bgm
 from utils.converts import number_to_episode_type
 
 from ..model.page_model import (BackRequest, DoEditEpisodeRequest,
@@ -35,27 +36,27 @@ async def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
         if request.before_status != 2:
             button_list.append(InlineKeyboardButton(text="看过", callback_data=f"{session_uuid}|watched"))
             request.possible_request["watched"] = DoEditEpisodeRequest(
-                request.session, episode_info["id"], "watched"
+                request.session, episode_info, 2
             )
 
         button_list.append(InlineKeyboardButton(text="看到", callback_data=f"{session_uuid}|watched_batch"))
         request.possible_request["watched_batch"] = DoEditEpisodeRequest(
-            request.session, episode_info["id"], "watched_batch"
+            request.session, episode_info, 4
         )
         if request.before_status != 1:
             button_list.append(InlineKeyboardButton(text="想看", callback_data=f"{session_uuid}|queue"))
             request.possible_request["queue"] = DoEditEpisodeRequest(
-                request.session, episode_info["id"], "queue"
+                request.session, episode_info, 1
             )
         if request.before_status != 3:
             button_list.append(InlineKeyboardButton(text="抛弃", callback_data=f"{session_uuid}|drop"))
             request.possible_request["drop"] = DoEditEpisodeRequest(
-                request.session, episode_info["id"], "drop"
+                request.session, episode_info, 3
             )
         if request.before_status != 0:
             button_list.append(InlineKeyboardButton(text="撤销", callback_data=f"{session_uuid}|remove"))
             request.possible_request["remove"] = DoEditEpisodeRequest(
-                request.session, episode_info["id"], "remove"
+                request.session, episode_info, 0
             )
         markup.add(*button_list, row_width=5)
 
@@ -65,31 +66,41 @@ async def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
     return request
 
 
-# def do(request: DoEditEpisodeRequest, tg_id: int) -> DoEditEpisodeRequest:
-#     if request.status != "watched_batch":
-#         post_eps_status(tg_id, episode_info["id"], request.status)
-#         request.callback_text = "已修改"
-#     else:  # 批量更新
-#         episode_info = get_episode_info(episode_info["id"])  # 查询所有要更新的ep
-#         page = 0
-#         limit = 200
-#         update_eps = []
-#         while True:
-#             data = get_subject_episode(
-#                 episode_info["subject_id"],
-#                 limit=limit,
-#                 offset=limit * page,
-#                 type_=episode_info["type"],
-#             )
-#             page += 1
-#             ok = False
-#             for ep in data["data"]:
-#                 update_eps.append(ep["id"])
-#                 if ep["id"] == episode_info["id"]:
-#                     ok = True
-#                     break
-#             if ok or data["total"] < limit or len(data["data"]) < limit:
-#                 break
-#         post_eps_status(tg_id, episode_info["id"], "watched", update_eps)
-#         request.callback_text = f"已修改{len(update_eps)}个章节为看过"
-#     return request TODO
+async def do(request: DoEditEpisodeRequest) -> DoEditEpisodeRequest:
+    episode_info = request.episode_info
+    if request.status != 4:
+        await bgm.put_user_episode_collection(
+            request.session.user_bgm_data["accessToken"],
+            request.episode_info["id"],
+            request.status
+        )
+        request.callback_text = "已修改"
+    else:  # 批量更新
+        page = 0
+        limit = 200
+        update_eps = []
+        while True:
+            data = await bgm.get_episodes(
+                episode_info["subject_id"],
+                episode_info["type"],
+                limit=limit,
+                offset=limit * page,
+                access_token=request.session.user_bgm_data["accessToken"]
+            )
+            page += 1
+            ok = False
+            for ep in data["data"]:
+                update_eps.append(ep["id"])
+                if ep["id"] == episode_info["id"]:
+                    ok = True
+                    break
+            if ok or data["total"] < limit or len(data["data"]) < limit:
+                break
+        await bgm.patch_uesr_episode_collection(
+            request.session.user_bgm_data["accessToken"],
+            episode_info["subject_id"],
+            update_eps,
+            2
+        )
+        request.callback_text = f"已修改{len(update_eps)}个章节为看过"
+    return request

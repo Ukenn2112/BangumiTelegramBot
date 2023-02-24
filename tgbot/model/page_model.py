@@ -4,7 +4,6 @@ from telebot.types import Message, CallbackQuery
 from telebot import REPLY_MARKUP_TYPES
 
 COLLECTION_TYPE_STR = Literal["wish", "collect", "do", "on_hold", "dropped"]
-EpStatusType = Literal["watched", "queue", "drop", "remove", "watched_batch"]
 
 
 class BaseRequest:
@@ -257,15 +256,15 @@ class EditEpsPageRequest(BaseRequest):
 
 
 class DoEditEpisodeRequest(BaseRequest):
-    def __init__(self, session: RequestSession, episode_id: int, status: EpStatusType):
+    def __init__(self, session: RequestSession, episode_info: dict, status: Literal[0, 1, 2, 3, 4]):
         """修改评分
 
-        :param episode_id: 章节ID
-        :param status: 要修改的状态
+        :param episode_info: 章节信息
+        :param status: 章节状态 0: 未看, 1: 想看, 2: 看过, 3: 抛弃, 4: 看到
         """
         super().__init__(session)
-        self.episode_id: int = episode_id
-        self.status: EpStatusType = status
+        self.episode_info: dict = episode_info
+        self.status: Literal[0, 1, 2, 4] = status
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

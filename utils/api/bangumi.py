@@ -248,12 +248,11 @@ class BangumiAPI:
             send_data["private"] = private
         if tags is not None:
             send_data["tags"] = tags
-        async with self.s.patch(
+        return await self.s.patch(
             f"{self.api_url}/v0/users/-/collections/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
             json = send_data
-        ) as resp:
-            return await resp.json()
+        )
 
     async def get_user_episode_collections(self, access_token, subject_id, offset = 0, limit = 100, episode_type = 0) -> dict:
         """
@@ -279,14 +278,14 @@ class BangumiAPI:
     
     async def get_user_episode_collection(self, access_token, episode_id) -> dict:
         """
-        获取用户章节收藏
+        获取用户单个章节收藏
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/getUserEpisodeCollection
 
         :param access_token: Access Token
         :param episode_id: 章节 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/users/-/collections/episodes/{episode_id}",
+            f"{self.api_url}/v0/users/-/collections/-/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
         ) as resp:
             return await resp.json()
@@ -301,15 +300,14 @@ class BangumiAPI:
         :param subject_id: 条目 ID
         :param episodes_id: 章节 ID 列表
         :param status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
-        async with self.s.patch(
+        return await self.s.patch(
             f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
             headers = {"Authorization": f"Bearer {access_token}"},
             json = {
-                "episodes": episodes_id,
+                "episode_id": episodes_id,
                 "type": status
             }
-        ) as resp:
-            return await resp.json()
+        )
 
     async def put_user_episode_collection(self, access_token, episode_id, status = 2) -> None:
         """
@@ -321,9 +319,9 @@ class BangumiAPI:
         :param episode_id: 章节 ID
         :param status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
         return await self.s.put(
-            f"{self.api_url}/v0/users/-/collections/episodes/{episode_id}",
+            f"{self.api_url}/v0/users/-/collections/-/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
-            data = {
+            json = {
                 "type": status
             }
         )
