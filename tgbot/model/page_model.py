@@ -185,7 +185,6 @@ class DoEditRatingRequest(BaseRequest):
         super().__init__(session)
         self.subject_id: int = subject_id
         self.rating_num: int = rating_num
-        self.user_collection = None
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

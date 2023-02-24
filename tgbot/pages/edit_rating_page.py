@@ -4,12 +4,14 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from ..model.page_model import (BackRequest, DoEditRatingRequest,
                                 EditRatingPageRequest)
 
+from utils.config_vars import bgm
 
-def do(request: DoEditRatingRequest) -> DoEditRatingRequest:
-    user_status = request.user_collection.get("status", {}).get("type")
-    if user_status is None:
-        user_status = "collect"
-    # post_collection(tg_id, subject_info["id"], status=user_status, rating=str(request.rating_num)) TODO
+async def do(request: DoEditRatingRequest) -> DoEditRatingRequest:
+    await bgm.patch_user_subject_collection(
+        request.session.user_bgm_data["accessToken"],
+        request.subject_id,
+        rate=request.rating_num
+    )
     if request.rating_num == 0:
         request.callback_text = "已成功撤销评分"
     else:
@@ -36,7 +38,6 @@ async def generate_page(request: EditRatingPageRequest) -> EditRatingPageRequest
     for num in nums:
         button_list.append(InlineKeyboardButton(text=str(num), callback_data=f"{session_uuid}|{num}"))
         do_edit_rating_request = DoEditRatingRequest(request.session, subject_info["id"], num)
-        do_edit_rating_request.user_collection = request.user_collection
         request.possible_request[str(num)] = do_edit_rating_request
     markup.add(*button_list, row_width=5)
     markup.add(
