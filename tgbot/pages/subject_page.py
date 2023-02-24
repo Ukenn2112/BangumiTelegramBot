@@ -59,6 +59,11 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
         button_list[1].append(InlineKeyboardButton(text="评分", callback_data=f"{session_uuid}|rating"))
         edit_rating_page_request = EditRatingPageRequest(subject_request.session, user_collection)
         subject_request.possible_request["rating"] = edit_rating_page_request
+        button_list[1].append(InlineKeyboardButton(text="收藏管理", callback_data=f"{session_uuid}|collection"))
+        edit_collection_type_page_request = EditCollectionTypePageRequest(
+            subject_request.session, subject_request.subject_info
+        )
+        subject_request.possible_request["collection"] = edit_collection_type_page_request
         button_list[0].append(InlineKeyboardButton(text="点格子", callback_data=f"{session_uuid}|eps"))
     else:
         button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))
@@ -66,11 +71,6 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
         subject_request.session, subject_request.subject_info, limit=12, episode_type=0
     )
     subject_request.possible_request["eps"] = subject_eps_page_request
-    button_list[1].append(InlineKeyboardButton(text="收藏管理", callback_data=f"{session_uuid}|collection"))
-    edit_collection_type_page_request = EditCollectionTypePageRequest(
-        subject_request.session, subject_request.subject_info
-    )
-    subject_request.possible_request["collection"] = edit_collection_type_page_request
 
     for i in button_list:
         if i:

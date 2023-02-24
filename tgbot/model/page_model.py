@@ -3,8 +3,6 @@ from typing import Dict, List, Literal, Optional
 from telebot.types import Message, CallbackQuery
 from telebot import REPLY_MARKUP_TYPES
 
-COLLECTION_TYPE_STR = Literal["wish", "collect", "do", "on_hold", "dropped"]
-
 
 class BaseRequest:
     def __init__(self, session):
@@ -140,15 +138,18 @@ class EditCollectionTypePageRequest(BaseRequest):
 
 class DoEditCollectionTypeRequest(BaseRequest):
     def __init__(
-        self, session: RequestSession, subject_id: int, collection_type: COLLECTION_TYPE_STR
+        self, session: RequestSession, subject_id: int, subject_type: int, collection_type: Literal[1, 2, 3, 4, 5],
     ):
         """修改收藏类型
 
         :param subject_id: 条目ID
+        :param subject_type: 条目类型 1书籍 2动画 3音乐 4游戏 6三次元
+        :param collection_type: 收藏类型 1想看 2看过 3在看 4搁置 5抛弃
         """
         super().__init__(session)
         self.subject_id: int = subject_id
-        self.collection_type: COLLECTION_TYPE_STR = collection_type
+        self.subject_type: Literal[1, 2, 3, 4, 6] = subject_type
+        self.collection_type: Literal[1, 2, 3, 4, 5] = collection_type
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

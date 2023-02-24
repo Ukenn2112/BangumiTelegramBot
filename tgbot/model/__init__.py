@@ -11,7 +11,7 @@ from ..pages import (collection_list_page, edit_collection_type_page,
                      subject_page, subject_relations_page, summary_page,
                      week_page)
 from .exception import TokenExpired, UserNotBound
-from .page_model import (BackRequest, BaseRequest, CollectionsRequest, DoEditEpisodeRequest,
+from .page_model import (BackRequest, BaseRequest, CollectionsRequest, DoEditCollectionTypeRequest, DoEditEpisodeRequest,
                          EditCollectionTypePageRequest, EditEpsPageRequest,
                          EditRatingPageRequest, RefreshRequest, RequestSession,
                          SubjectEpsPageRequest, SubjectRelationsPageRequest,
@@ -189,6 +189,12 @@ async def request_handler(session: RequestSession):
         await week_page.generate_page(top)
     elif isinstance(top, DoEditEpisodeRequest):
         await edit_eps_page.do(top)
+        callback_text = top.callback_text
+        del session.stack[-1]
+        session.stack.append(BackRequest(session, True))
+        await request_handler(session)
+    elif isinstance(top, DoEditCollectionTypeRequest):
+        await edit_collection_type_page.do(top)
         callback_text = top.callback_text
         del session.stack[-1]
         session.stack.append(BackRequest(session, True))

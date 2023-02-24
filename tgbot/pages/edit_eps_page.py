@@ -30,7 +30,7 @@ async def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
     text += f"\n\n💬 [讨论：{episode_info['comment']}](https://bgm.tv/ep/{episode_info['id']})"
     markup = InlineKeyboardMarkup()
     request.possible_request["back"] = BackRequest(request.session)
-    if request.session.bot_message.chat.type == "private" and request.before_status is not None:
+    if request.session.bot_message.chat.type == "private" and request.before_status is not None and request.session.user_bgm_data:
         text += "\n*回复此消息即可对此章节进行评论*"
         button_list = []
         if request.before_status != 2:

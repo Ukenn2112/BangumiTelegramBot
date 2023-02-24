@@ -235,9 +235,9 @@ class BangumiAPI:
         :param tags: 标签, None 为不修改, [] 为清空 不能包含空格"""
         send_data = {}
         if collection_type is not None:
-            send_data["status"] = collection_type
+            send_data["type"] = collection_type
         if rate is not None:
-            send_data["rating"] = rate
+            send_data["rate"] = rate
         if ep_status is not None:
             send_data["ep_status"] = ep_status
         if vol_status is not None:

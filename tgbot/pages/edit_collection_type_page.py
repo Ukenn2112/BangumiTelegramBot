@@ -1,15 +1,16 @@
 """收藏页"""
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from utils.converts import (collection_type_markup_text_list,
+from utils.config_vars import bgm
+from utils.converts import (collection_type_markup_text_list, collection_type_subject_type_str,
                             subject_type_to_emoji)
 
 from ..model.exception import UserNotBound
-from ..model.page_model import (COLLECTION_TYPE_STR, BackRequest,
-                                DoEditCollectionTypeRequest,
+from ..model.page_model import (BackRequest, DoEditCollectionTypeRequest,
                                 EditCollectionTagsPageRequest,
                                 EditCollectionTypePageRequest)
 
+collection_types = [("wish", 1), ("collect", 2), ("do", 3), ("on_hold", 4), ("dropped", 5)]
 
 async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectionTypePageRequest:
     if request.session.user_bgm_data is None:
@@ -32,9 +33,9 @@ async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectio
         InlineKeyboardButton(text="抛弃", callback_data=f"{session_uuid}|dropped"),
     ]
     request.possible_request["back"] = BackRequest(request.session)
-    for i in COLLECTION_TYPE_STR.__args__:
-        request.possible_request[i] = DoEditCollectionTypeRequest(
-            request.session, subject_info["id"], i
+    for s, n in collection_types:
+        request.possible_request[s] = DoEditCollectionTypeRequest(
+            request.session, subject_info["id"], subject_info["type"], n
         )
     markup.add(InlineKeyboardButton(text="标签管理", callback_data=f"{session_uuid}|tags"))
     collection_tag_page_request = EditCollectionTagsPageRequest(
@@ -48,43 +49,14 @@ async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectio
     return request
 
 
-# def do(request: DoEditCollectionTypeRequest, tg_id: int) -> DoEditCollectionTypeRequest:
-#     subject_id = subject_info["id"]
-#     collection_type = request.collection_type
-#     access_token = user_data_get(tg_id).get("access_token")
-#     if not access_token:
-#         request.callback_text = "您尚未绑定Bangumi账户，请私聊bot绑定"
-#         return request
-#     rating = str(user_collection_get(None, subject_id, access_token).get("rating"))
-#     if collection_type == "wish":  # 想看
-#         post_collection(
-#             None, subject_id, status=collection_type, rating=rating, access_token=access_token
-#         )
-#         # request.callback_text = "已将收藏更改为想看"
-#     if collection_type == "collect":  # 看过
-#         post_collection(
-#             None, subject_id, status=collection_type, rating=rating, access_token=access_token
-#         )
-#         # request.callback_text = "已将收藏更改为看过"
-#     if collection_type == "do":  # 在看
-#         post_collection(
-#             None, subject_id, status=collection_type, rating=rating, access_token=access_token
-#         )
-#         # request.callback_text = "已将收藏更改为在看"
-#     if collection_type == "on_hold":  # 搁置
-#         post_collection(
-#             None, subject_id, status=collection_type, rating=rating, access_token=access_token
-#         )
-#         # request.callback_text = "已将收藏更改为搁置"
-#     if collection_type == "dropped":  # 抛弃
-#         post_collection(
-#             None, subject_id, status=collection_type, rating=rating, access_token=access_token
-#         )
-#         # request.callback_text = "已将收藏更改为抛弃"
-#     request.callback_text = "已更改收藏状态"
-#     if not request.page_image:
-#         request.page_image = anime_img(subject_info["id"])
-#     return request
+async def do(request: DoEditCollectionTypeRequest) -> DoEditCollectionTypeRequest:
+    await bgm.patch_user_subject_collection(
+            request.session.user_bgm_data["accessToken"],
+            request.subject_id,
+            request.collection_type
+        )
+    request.callback_text = f"已更改收藏状态为 {collection_type_subject_type_str(request.subject_type, request.collection_type)}"
+    return request
 
 
 # def collection_tags_page(request: EditCollectionTagsPageRequest, tg_id: int):
