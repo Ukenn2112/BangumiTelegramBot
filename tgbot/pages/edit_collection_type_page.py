@@ -32,7 +32,7 @@ async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectio
     request.possible_request["back"] = BackRequest(request.session)
     for s, n in collection_types:
         request.possible_request[s] = DoEditCollectionTypeRequest(
-            request.session, subject_info["id"], subject_info["type"], n
+            request.session, subject_info["id"], subject_info["type"], n, request.user_collection
         )
     if request.user_collection:
         markup.add(
@@ -55,7 +55,14 @@ async def generate_page(request: EditCollectionTypePageRequest) -> EditCollectio
 
 
 async def do(request: DoEditCollectionTypeRequest) -> DoEditCollectionTypeRequest:
-    await bgm.patch_user_subject_collection(
+    if request.user_collection is not None:
+        await bgm.patch_user_subject_collection(
+            request.session.user_bgm_data["accessToken"],
+            request.subject_id,
+            request.collection_type
+        )
+    else:
+        await bgm.post_user_subject_collection(
             request.session.user_bgm_data["accessToken"],
             request.subject_id,
             request.collection_type

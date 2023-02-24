@@ -11,7 +11,9 @@ from ..pages import (collection_list_page, edit_collection_type_page,
                      subject_page, subject_relations_page, summary_page,
                      week_page)
 from .exception import TokenExpired, UserNotBound
-from .page_model import (BackRequest, BaseRequest, CollectionsRequest, DoEditCollectionTypeRequest, DoEditEpisodeRequest, DoEditRatingRequest, EditCollectionTagsPageRequest,
+from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
+                         DoEditCollectionTypeRequest, DoEditEpisodeRequest,
+                         DoEditRatingRequest, EditCollectionTagsPageRequest,
                          EditCollectionTypePageRequest, EditEpsPageRequest,
                          EditRatingPageRequest, RefreshRequest, RequestSession,
                          SubjectEpsPageRequest, SubjectRelationsPageRequest,

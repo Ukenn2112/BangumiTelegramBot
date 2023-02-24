@@ -140,7 +140,7 @@ class EditCollectionTypePageRequest(BaseRequest):
 
 class DoEditCollectionTypeRequest(BaseRequest):
     def __init__(
-        self, session: RequestSession, subject_id: int, subject_type: int, collection_type: Literal[1, 2, 3, 4, 5],
+        self, session: RequestSession, subject_id: int, subject_type: int, collection_type: Literal[1, 2, 3, 4, 5], user_collection: dict = None
     ):
         """修改收藏类型
 
@@ -152,6 +152,8 @@ class DoEditCollectionTypeRequest(BaseRequest):
         self.subject_id: int = subject_id
         self.subject_type: Literal[1, 2, 3, 4, 6] = subject_type
         self.collection_type: Literal[1, 2, 3, 4, 5] = collection_type
+
+        self.user_collection: Optional[dict] = user_collection
 
         self.possible_request: Dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None

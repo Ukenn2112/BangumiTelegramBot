@@ -68,6 +68,17 @@ async def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
 
 async def do(request: DoEditEpisodeRequest) -> DoEditEpisodeRequest:
     episode_info = request.episode_info
+    user_collection = await bgm.get_user_subject_collection(
+        request.session.user_bgm_data["userData"]["username"],
+        episode_info["subject_id"],
+        access_token=request.session.user_bgm_data["accessToken"]
+    )
+    if user_collection is None:
+        await bgm.post_user_subject_collection(
+            request.session.user_bgm_data["accessToken"],
+            episode_info["subject_id"],
+            collection_type = 3
+        )
     if request.status != 4:
         await bgm.put_user_episode_collection(
             request.session.user_bgm_data["accessToken"],

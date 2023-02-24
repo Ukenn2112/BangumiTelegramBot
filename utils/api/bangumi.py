@@ -217,10 +217,41 @@ class BangumiAPI:
             if resp.status == 404:
                 return None
             return await resp.json()
+        
+    async def post_user_subject_collection(self, access_token, subject_id, collection_type: int = 3, rate: int = None, comment: str = None, private: bool = None, tags: str = None) -> None:
+        """
+        添加用户条目收藏 (旧 API)
+
+        Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/postUserCollection
+
+        :param access_token: Access Token
+        :param subject_id: 条目 ID
+        :param collection_type: 收藏状态, 可选值: 1: 想看, 2: 看过, 3: 在看 (默认), 4: 搁置, 5: 抛弃
+        :param rate: 评分, 0-10, 不填默认重置为未评分
+        :param comment: 吐槽, 最多 200 字符
+        :param private: 是否私有收藏, 默认 False
+        :param tags: 标签, 多个以以半角空格分割"""
+
+        _type = {1: "wish", 2: "collect", 3: "do", 4: "on_hold", 5: "dropped"}
+
+        send_data = {"status": _type.get(collection_type, "do")}
+        if rate is not None:
+            send_data["rating"] = rate
+        if comment is not None:
+            send_data["comment"] = comment
+        if private is not None:
+            send_data["private"] = 0 if private else 1
+        if tags is not None:
+            send_data["tags"] = tags
+        return await self.s.post(
+            f"{self.api_url}/collection/{subject_id}/update",
+            headers = {"Authorization": f"Bearer {access_token}"},
+            data = send_data
+        )
     
     async def patch_user_subject_collection(self, access_token, subject_id, collection_type: int = None, rate: int = None, ep_status: int = None, vol_status: int = None, comment: str = None, private: bool = None, tags: list[str] = None) -> None:
         """
-        发送用户条目收藏
+        修改用户条目收藏
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/patchUserCollection
 
@@ -292,7 +323,7 @@ class BangumiAPI:
     
     async def patch_uesr_episode_collection(self, access_token, subject_id, episodes_id: list[int], status: int = 2) -> None:
         """
-        发送用户条目章节收藏
+        修改用户条目章节收藏
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/patchUserSubjectEpisodeCollection
 
@@ -311,7 +342,7 @@ class BangumiAPI:
 
     async def put_user_episode_collection(self, access_token, episode_id, status = 2) -> None:
         """
-        更新用户章节收藏 (单集修改)
+        修改用户章节收藏 (单集修改)
 
         Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/putUserEpisodeCollection
 
