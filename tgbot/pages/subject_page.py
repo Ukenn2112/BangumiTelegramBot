@@ -45,7 +45,7 @@ def gender_page_manager_button(subject_request: SubjectRequest, user_collection:
     button_list = [[], []]
     if not subject_request.is_root:
         button_list[1].append(InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back"))
-        subject_request.possible_request["back"] = BackRequest(subject_request.session)
+        subject_request.possible_request["back"] = BackRequest(subject_request.session, needs_refresh=True)
     button_list[0].append(InlineKeyboardButton(text="简介", callback_data=f"{session_uuid}|summary"))
     subject_request.possible_request["summary"] = SummaryRequest(
         subject_request.session, subject_request.subject_info
@@ -83,7 +83,7 @@ def gender_page_show_buttons(subject_request: SubjectRequest) -> InlineKeyboardM
     button_list = [[], []]
     if not subject_request.is_root:
         button_list[1].append(InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back"))
-        subject_request.possible_request["back"] = BackRequest(subject_request.session)
+        subject_request.possible_request["back"] = BackRequest(subject_request.session, needs_refresh=True)
     button_list[1].append(InlineKeyboardButton(text="去管理", url=f"t.me/{BOT_USERNAME}?start={subject_request.subject_id}"))
     button_list[0].append(InlineKeyboardButton(text="简介", callback_data=f"{session_uuid}|summary"))
     button_list[0].append(InlineKeyboardButton(text="章节", callback_data=f"{session_uuid}|eps"))

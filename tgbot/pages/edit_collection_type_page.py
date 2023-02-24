@@ -5,7 +5,6 @@ from utils.config_vars import bgm
 from utils.converts import (collection_type_markup_text_list, collection_type_subject_type_str,
                             subject_type_to_emoji)
 
-from ..model.exception import UserNotBound
 from ..model.page_model import (BackRequest, DoEditCollectionTypeRequest,
                                 EditCollectionTagsPageRequest,
                                 EditCollectionTypePageRequest, EditRatingPageRequest)
