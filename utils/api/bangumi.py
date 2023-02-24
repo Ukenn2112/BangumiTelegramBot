@@ -356,6 +356,43 @@ class BangumiAPI:
                 "type": status
             }
         )
+    
+    def post_episode_reply(self, cookie: str, episode_id: int, reply_text: str) -> None:
+        """
+        吐槽章节
+
+        :param cookie: 用户 Cookie
+        :param episode_id: 章节 ID
+        :param reply_text: 吐槽内容"""
+        get_data = requests.get(
+            f"https://bgm.tv/ep/{episode_id}",
+            headers = {
+                **self.headers[0],
+                "Cookie": cookie,
+            },
+            timeout = 10
+        )
+        html_data = HTML(get_data.text)
+        formhash = html_data.xpath('//input[@name="formhash"]/@value')[0]
+        lastview = html_data.xpath('//input[@name="lastview"]/@value')[0]
+        reply_text += "\n[color=grey][size=10][来自Bangumi for TelegramBot] [url=https://bgm.tv/group/topic/366880][color=grey]获取[/color][/url][/size][/color]"
+        return requests.post(
+            f"https://bgm.tv/subject/ep/{episode_id}/new_reply",
+            headers = {
+                **self.headers[0],
+                "Cookie": cookie,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            data = {
+                "content": reply_text,
+                "related_photo": 0,
+                "formhash": formhash,
+                "lastview": lastview,
+                "submit": "submit",
+            },
+            timeout = 10
+        )
+
     # 条目
     @cache_data
     async def get_calendar(self) -> list:

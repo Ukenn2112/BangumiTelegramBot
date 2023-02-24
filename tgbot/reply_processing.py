@@ -4,8 +4,9 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
 
 from utils.config_vars import redis, bgm
+from utils.converts import convert_telegram_message_to_bbcode
 
-from .model.page_model import EditCollectionTypePageRequest, EditCollectionTagsPageRequest
+from .model.page_model import EditCollectionTypePageRequest, EditCollectionTagsPageRequest, EditEpsPageRequest
 from .pages.edit_collection_type_page import collection_tags_page
 
 
@@ -22,6 +23,18 @@ async def send_reply(message: Message, bot: AsyncTeleBot):
             comment=message.text,
         )
         return await bot.reply_to(message, f"`{request.subject_info['name']}`的评论已更新")
+    elif isinstance(request, EditEpsPageRequest):
+        if request.session.user_bgm_data["Cookie"] is None:
+            return await bot.reply_to(message, "发送章节评论需要使用 Web 端 API 操作，如需使用章节评论功能请先使用 /unbind 解绑账号，再使用 /start 的*登录绑定 Bangumi*进行绑定")
+        try:
+            bgm.post_episode_reply(
+                request.session.user_bgm_data["Cookie"],
+                request.episode_info["id"],
+                convert_telegram_message_to_bbcode(message.text, message.entities)
+            )
+            return await bot.reply_to(message, f"已发送至 EP:{request.episode_info['sort']} 的评论")
+        except Exception as e:
+            return await bot.reply_to(message, f"发送失败，错误信息：{e}")
     elif isinstance(request, EditCollectionTagsPageRequest):
         tags = message.text.replace(" ", "").split("#")
         await bgm.patch_user_subject_collection(

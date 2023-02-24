@@ -61,6 +61,8 @@ async def generate_page(request: EditEpsPageRequest) -> EditEpsPageRequest:
         markup.add(*button_list, row_width=5)
 
     markup.add(InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back"))
+
+    request.reply_process = True
     request.page_markup = markup
     request.page_text = text
     return request
