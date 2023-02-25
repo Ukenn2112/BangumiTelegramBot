@@ -69,14 +69,14 @@ class SQLite:
             """)
         self.conn.commit()
 
-    def insert_subscribe_data(self, tg_id: int, user_id: int, subject_id: int) -> None:
+    def insert_subscribe_data(self, tg_id: int, bgm_id: int, subject_id: int) -> None:
         """插入订阅数据"""
-        self.cursor.execute("INSERT INTO sub (tg_id, user_id, subject_id) VALUES (?, ?, ?)", (tg_id, user_id, subject_id))
+        self.cursor.execute("INSERT INTO sub (tg_id, user_id, subject_id) VALUES (?, ?, ?)", (tg_id, bgm_id, subject_id))
         self.conn.commit()
     
-    def delete_subscribe_data(self, tg_id: int, subject_id: int) -> None:
+    def delete_subscribe_data(self, subject_id: int, tg_id: int = None, bgm_id: int = None) -> None:
         """删除订阅数据"""
-        self.cursor.execute("DELETE FROM sub WHERE tg_id=? AND subject_id=?", (tg_id, subject_id))
+        self.cursor.execute("DELETE FROM sub WHERE (tg_id=? OR user_id=?) AND subject_id=?", (tg_id, bgm_id, subject_id))
         self.conn.commit()
     
     def inquiry_subscribe_data(self, subject_id: int) -> list:

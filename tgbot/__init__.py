@@ -12,6 +12,7 @@ from .reply_processing import send_reply
 from .start import send_start
 from .week import send_week
 from .unbind import send_unbind
+from .unsubscribe import unaddsub
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -28,6 +29,7 @@ def bot_register():
     bot.register_message_handler(send_reply, chat_types=["private"], is_reply=True, pass_bot=True)
     # CallbackQuery
     bot.register_callback_query_handler(callback_none, func=lambda c: c.data == "None", pass_bot=True)
+    bot.register_callback_query_handler(unaddsub, func=lambda c: c.data.startswith("unaddsub"), pass_bot=True)
     bot.register_callback_query_handler(global_callback_handler, func=lambda c: True, pass_bot=True)
 
 
