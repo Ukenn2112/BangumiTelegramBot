@@ -14,6 +14,7 @@ from .start import send_start
 from .unbind import send_unbind
 from .unsubscribe import unaddsub
 from .week import send_week
+from .info import send_info
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -25,6 +26,7 @@ def bot_register():
     bot.register_message_handler(send_start, commands=["start"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_help, commands=["help"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_week, commands=["week"], pass_bot=True)
+    bot.register_message_handler(send_info, commands=["info"], pass_bot=True)
     bot.register_message_handler(send_unbind, commands=["unbind"], chat_types=["private"], pass_bot=True)
     bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music", "real"], pass_bot=True)
     bot.register_message_handler(send_reply, chat_types=["private"], is_reply=True, pass_bot=True)
