@@ -660,7 +660,7 @@ class BangumiAPI:
                         else None
                     )
                     _info = row.xpath("a")
-                    info = _info[0].text.strip() if _info else None
+                    info = _info[0].text if _info else None
                     _mono_data = row.xpath("a")
                     mono_id, mono_type = None, None
                     if _mono_data:
@@ -677,6 +677,6 @@ class BangumiAPI:
                         "name": name,
                         "name_cn": name_cn,
                         "img_url": img_url,
-                        "info": info,
+                        "info": info.strip() if info else None,
                     })
                 return {"error": None, "list": list_data}

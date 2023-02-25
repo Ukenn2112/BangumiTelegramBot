@@ -1,6 +1,7 @@
 """inline 方式私聊搜索或者在任何位置搜索前使用@"""
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import (InlineQuery, InlineQueryResultArticle,
+from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           InlineQuery, InlineQueryResultArticle,
                            InputTextMessageContent)
 
 from utils.config_vars import BOT_USERNAME, bgm
@@ -181,64 +182,61 @@ async def query_person_related_subjects(inline_query: InlineQuery):
 #     }
 
 
-# def query_mono(inline_query, cat):
-#     """人物搜索
-#     :param inline_query: 查询人物关键词
-#     :param cat = prsn -> 查询人物
-#     :param cat = crt -> 查询角色"""
-#     offset = int(inline_query.offset or 0)
-#     query_result_list: List[InlineQueryResultArticle] = []
-#     query_param = inline_query.query.split(" ")
-#     keywords = inline_query.query[len(query_param[0]) + 1 :]
+async def query_mono(inline_query: InlineQuery, cat: str):
+    """人物搜索
+    :param inline_query: 查询人物关键词
+    :param cat = prsn/crt -> 查询人物/角色"""
+    offset = int(inline_query.offset or 0)
+    query_result_list: list[InlineQueryResultArticle] = []
+    query_param = inline_query.query.split(" ")
+    keywords = inline_query.query[len(query_param[0]) + 1 :]
 
-#     data = get_mono_search(keywords, page=offset + 1, cat=cat)
-#     if data["error"]:
-#         switch_pm_text = data["error"]
-#     else:
-#         if cat == "prsn":
-#             switch_pm_text = f"现实人物[{keywords}]的搜索结果"
-#         elif cat == "crt":
-#             switch_pm_text = f"虚拟角色[{keywords}]的搜索结果"
-#         else:
-#             switch_pm_text = f"人物[{keywords}]的搜索结果"
-#     next_offset = str(offset + 1) if len(data["list"]) >= 9 else None
+    data = await bgm.search_mono(keywords, page=offset + 1, cat=cat)
+    if data["error"]:
+        switch_pm_text = data["error"]
+    else:
+        if cat == "prsn":
+            switch_pm_text = f"现实人物[{keywords}]的搜索结果"
+        elif cat == "crt":
+            switch_pm_text = f"虚拟角色[{keywords}]的搜索结果"
+        else:
+            switch_pm_text = f"人物[{keywords}]的搜索结果"
+    next_offset = str(offset + 1) if len(data["list"]) >= 9 else None
 
-#     for cop in data["list"]:
-#         text = f"*{cop["name_cn"] or cop["name"]}*\n"
-#         text += f"{cop["name"]}\n" if cop["name_cn"] else ""
-#         description = cop["info"]
-#         text += (
-#             f"\n{description}\n"
-#             f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop["type"]}/{cop["id"]}"
-#             f"&rhash=48797fd986e111)"
-#             f"\n📖 [详情](https://bgm.tv/{cop["type"]}/{cop["id"]})"
-#         )
-#         qr = InlineQueryResultArticle(
-#             id=f"sc:{cop["id"]}",
-#             title=cop["name_cn"] or cop["name"],
-#             description=description,
-#             input_message_content=InputTextMessageContent(
-#                 text, parse_mode="markdown", disable_web_page_preview=False
-#             ),
-#             thumb_url=cop["img_url"],
-#             reply_markup=(
-#                 InlineKeyboardMarkup().add(
-#                     InlineKeyboardButton(
-#                         text="人物关联", switch_inline_query_current_chat=f"PS {cop["id"]}"
-#                     )
-#                 )
-#             )
-#             if cat == "prsn"
-#             else None,
-#         )
-#         query_result_list.append(qr)
-#     return {
-#         "results": query_result_list,
-#         "next_offset": next_offset,
-#         "switch_pm_text": switch_pm_text,
-#         "switch_pm_parameter": "search",
-#         "cache_time": 0,
-#     }
+    for cop in data["list"]:
+        text = f"*{cop['name_cn'] or cop['name']}*\n"
+        text += f"{cop['name']}\n" if cop["name_cn"] else ""
+        description = cop["info"]
+        text += (
+            f"\n{description}\n"
+            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop['type']}/{cop['id']}"
+            f"&rhash=48797fd986e111)"
+            f"\n📖 [详情](https://bgm.tv/{cop['type']}/{cop['id']})"
+        )
+        query_result_list.append(InlineQueryResultArticle(
+            id=f"sc:{cop['id']}",
+            title=cop["name_cn"] or cop["name"],
+            description=description,
+            input_message_content=InputTextMessageContent(
+                text, parse_mode = "markdown", disable_web_page_preview = False
+            ),
+            thumb_url=cop["img_url"],
+            reply_markup=(
+                InlineKeyboardMarkup().add(
+                    InlineKeyboardButton(
+                        text = "人物关联", switch_inline_query_current_chat = f"PS {cop['id']}"
+                    )
+                )
+            )
+            if cat == "prsn" else None,
+        ))
+    return {
+        "results": query_result_list,
+        "next_offset": next_offset,
+        "switch_pm_text": switch_pm_text,
+        "switch_pm_parameter": "search",
+        "cache_time": 0,
+    }
 
 
 # def query_mono_subject(inline_query, cat):
@@ -289,6 +287,7 @@ async def query_sender_text(inline_query: InlineQuery, bot: AsyncTeleBot):
     """私聊搜索"""
     query: str = inline_query.query
     query_param: list[str] = inline_query.query.split(" ")
+    kwargs = {"results": []}
     if len(query_param) == 1:
         return await bot.answer_inline_query(inline_query.id, results=[])
     # 使用 ID 搜索
@@ -298,13 +297,13 @@ async def query_sender_text(inline_query: InlineQuery, bot: AsyncTeleBot):
         kwargs = await query_person_related_subjects(inline_query)
 
     # 使用关键词搜索
-    # elif query.startswith("p "):  # 现实人物搜索
-    #     if inline_query.query.endswith((" 条目", " 关联")):
-    #         return
-    #     elif inline_query.query.endswith(" 角色"):
-    #         return
-    #     else:
-    #         kwargs = query_mono(inline_query, "prsn")
+    elif query.startswith("p "):  # 现实人物搜索
+        if inline_query.query.endswith((" 条目", " 关联")):
+            return
+        elif inline_query.query.endswith(" 角色"):
+            return
+        else:
+            kwargs = await query_mono(inline_query, "prsn")
 
     # elif query.startswith("c "):  # 虚拟人物搜索
     #     if inline_query.query.endswith((" 条目", " 关联")):
