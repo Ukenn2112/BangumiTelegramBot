@@ -659,8 +659,8 @@ class BangumiAPI:
                         if _img_url and _img_url[0].get("src") != "/img/info_only.png"
                         else None
                     )
-                    _info = row.xpath("a")
-                    info = _info[0].text if _info else None
+                    _info = row.xpath('div[2]/div/span')
+                    info = _info[0].text.strip() if _info else None
                     _mono_data = row.xpath("a")
                     mono_id, mono_type = None, None
                     if _mono_data:
@@ -677,6 +677,6 @@ class BangumiAPI:
                         "name": name,
                         "name_cn": name_cn,
                         "img_url": img_url,
-                        "info": info.strip() if info else None,
+                        "info": info,
                     })
                 return {"error": None, "list": list_data}
