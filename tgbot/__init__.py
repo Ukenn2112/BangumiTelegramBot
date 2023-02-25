@@ -11,6 +11,7 @@ from .model import global_callback_handler
 from .reply_processing import send_reply
 from .start import send_start
 from .week import send_week
+from .unbind import send_unbind
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -21,7 +22,8 @@ def bot_register():
     # Commands
     bot.register_message_handler(send_start, commands=["start"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_help, commands=["help"], is_private=True, pass_bot=True)
-    bot.register_message_handler(send_week, commands=["week"], is_private=True, pass_bot=True)
+    bot.register_message_handler(send_week, commands=["week"], pass_bot=True)
+    bot.register_message_handler(send_unbind, commands=["unbind"], chat_types=["private"], pass_bot=True)
     bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music", "real"], pass_bot=True)
     bot.register_message_handler(send_reply, chat_types=["private"], is_reply=True, pass_bot=True)
     # CallbackQuery
@@ -45,6 +47,7 @@ async def set_bot_command():
         BotCommand("game", "游戏收藏列表"),
         BotCommand("real", "三次元收藏列表"),
         BotCommand("week", "每日放送"),
+        BotCommand("unbind", "解除 Bangumi 账号绑定"),
     ]
     group_commands_list = [
         BotCommand("book", "书籍收藏列表"),
