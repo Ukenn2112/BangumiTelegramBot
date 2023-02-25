@@ -7,12 +7,13 @@ from utils.config_vars import BOT_USERNAME, config
 
 from .collection_list import send_collection_list
 from .help import send_help
+from .inline.anitabi import query_anitabi_text
 from .model import global_callback_handler
 from .reply_processing import send_reply
 from .start import send_start
-from .week import send_week
 from .unbind import send_unbind
 from .unsubscribe import unaddsub
+from .week import send_week
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -31,11 +32,22 @@ def bot_register():
     bot.register_callback_query_handler(callback_none, func=lambda c: c.data == "None", pass_bot=True)
     bot.register_callback_query_handler(unaddsub, func=lambda c: c.data.startswith("unaddsub"), pass_bot=True)
     bot.register_callback_query_handler(global_callback_handler, func=lambda c: True, pass_bot=True)
+    # InlineQuery
+    bot.register_inline_handler(inline_none, func=lambda query: not query.query, pass_bot=True)
+    bot.register_inline_handler(query_anitabi_text, func=lambda query: query.query.startswith("anitabi"), pass_bot=True)
 
 
 async def callback_none(call):
     return await bot.answer_callback_query(call.id)
 
+async def inline_none(inline_query):
+    return await bot.answer_inline_query(
+        inline_query.id,
+        [],
+        switch_pm_text="@BGM条目ID或关键字搜索或使用mybgm查询数据",
+        switch_pm_parameter="None",
+        cache_time=0,
+    )
 
 async def set_bot_command():
     """设置Bot命令"""
