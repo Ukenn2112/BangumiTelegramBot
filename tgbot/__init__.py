@@ -7,14 +7,15 @@ from utils.config_vars import BOT_USERNAME, config
 
 from .collection_list import send_collection_list
 from .help import send_help
+from .info import send_info
 from .inline.anitabi import query_anitabi_text
+from .inline.sender import query_sender_text
 from .model import global_callback_handler
 from .reply_processing import send_reply
 from .start import send_start
 from .unbind import send_unbind
 from .unsubscribe import unaddsub
 from .week import send_week
-from .info import send_info
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -37,6 +38,7 @@ def bot_register():
     # InlineQuery
     bot.register_inline_handler(inline_none, func=lambda query: not query.query, pass_bot=True)
     bot.register_inline_handler(query_anitabi_text, func=lambda query: query.query.startswith("anitabi"), pass_bot=True)
+    bot.register_inline_handler(query_sender_text, func=lambda query: query.chat_type == "sender", pass_bot=True)
 
 
 async def callback_none(call):

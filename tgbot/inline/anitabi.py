@@ -49,12 +49,12 @@ async def bgmid_anitabi(inline_query: InlineQuery, bgm_id: int):
 
 async def query_anitabi_text(inline_query: InlineQuery, bot: AsyncTeleBot):
     message_data = inline_query.query.split(" ")
-    if len(message_data) < 2: return
+    if len(message_data) < 2:
+        return await bot.answer_inline_query(inline_query.id, results=[], switch_pm_text="请输入 BGM ID", switch_pm_parameter="help")
+    
     msg_data: str = message_data[1]
+    if not msg_data.isdigit():
+        return await bot.answer_inline_query(inline_query.id, results=[], switch_pm_text="请输入 BGM ID", switch_pm_parameter="help")
 
-    if msg_data.isdigit():
-        kwargs = await bgmid_anitabi(inline_query, int(msg_data))
-    else:
-        return
-
+    kwargs = await bgmid_anitabi(inline_query, int(msg_data))
     return await bot.answer_inline_query(inline_query_id=inline_query.id, **kwargs)
