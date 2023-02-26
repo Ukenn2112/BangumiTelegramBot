@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional
+from typing import Literal, Optional
 
 from telebot.types import Message, CallbackQuery
 from telebot import REPLY_MARKUP_TYPES
@@ -6,7 +6,7 @@ from telebot import REPLY_MARKUP_TYPES
 
 class BaseRequest:
     def __init__(self, session):
-        self.possible_request: Dict[str, BaseRequest] = {} # 可能的请求
+        self.possible_request: dict[str, BaseRequest] = {} # 可能的请求
         self.page_text: Optional[str] = None # 页面文本
         self.page_image: Optional[str] = None # 页面图片
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None # 页面回调
@@ -26,7 +26,7 @@ class RequestSession:
         :param request_message: 用户请求消息
         :param user_bgm_data: 用户 Bangumi 数据
         """
-        self.stack: List[BaseRequest] = [] # 请求栈
+        self.stack: list[BaseRequest] = [] # 请求栈
         self.uuid: str = uuid # 会话 uuid
         self.call: Optional[CallbackQuery] = None # 回调
         self.request_message: Message = request_message # 用户请求消息
@@ -44,7 +44,7 @@ class WeekRequest(BaseRequest):
 
         self.retain_image = False
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -77,7 +77,7 @@ class CollectionsRequest(BaseRequest):
         self.user_bgm_data = user_bgm_data
         self.retain_image = False
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -98,7 +98,7 @@ class SubjectRequest(BaseRequest):
         self.is_root: bool = is_root
         self.retain_image = False
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -114,7 +114,7 @@ class SummaryRequest(BaseRequest):
         super().__init__(session)
         self.subject_info: dict = subject_info
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -132,7 +132,7 @@ class EditCollectionTypePageRequest(BaseRequest):
         self.subject_info: dict = subject_info
         self.user_collection: dict = user_collection
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -156,7 +156,7 @@ class DoEditCollectionTypeRequest(BaseRequest):
 
         self.user_collection: Optional[dict] = user_collection
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -172,7 +172,7 @@ class EditRatingPageRequest(BaseRequest):
         super().__init__(session)
         self.user_collection = user_collection
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -189,7 +189,7 @@ class DoEditRatingRequest(BaseRequest):
         self.subject_id: int = subject_id
         self.rating_num: int = rating_num
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -217,7 +217,7 @@ class SubjectEpsPageRequest(BaseRequest):
         self.offset = offset
         self.episode_type: Literal[0, 1, 2, 3, 4, 5, 6] = episode_type
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -234,7 +234,7 @@ class SubjectRelationsPageRequest(BaseRequest):
         super().__init__(session)
         self.subject_info: dict = subject_info
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -253,7 +253,7 @@ class EditEpsPageRequest(BaseRequest):
         self.episode_info = episode_info
         self.before_status: int = before_status
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -271,7 +271,7 @@ class DoEditEpisodeRequest(BaseRequest):
         self.episode_info: dict = episode_info
         self.status: Literal[0, 1, 2, 4] = status
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -287,7 +287,7 @@ class EditCollectionTagsPageRequest(BaseRequest):
         super().__init__(session)
         self.user_collection: dict = user_collection
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -300,7 +300,7 @@ class BackRequest(BaseRequest):
         super().__init__(session)
         self.needs_refresh = needs_refresh
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
@@ -311,7 +311,7 @@ class RefreshRequest(BaseRequest):
         """刷新请求"""
         super().__init__(session)
 
-        self.possible_request: Dict[str, BaseRequest] = {}
+        self.possible_request: dict[str, BaseRequest] = {}
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
