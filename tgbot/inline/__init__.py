@@ -35,7 +35,7 @@ async def global_inline_handler(inline_query: InlineQuery, bot: AsyncTeleBot):
         if query.startswith("PS ") and len(query_param) > 1 and query_param[1].isdecimal():  # 人物关联条目
             kwargs = await query_person_related_subjects(inline_query, is_sender)
     elif query.startswith("CP ") or (query.startswith("CP") and len(query) == 2):
-        kwargs = {"results": [], "switch_pm_text": "角色关联条目 Character ID", "switch_pm_parameter": "help", "cache_time": 0}
+        kwargs = {"results": [], "switch_pm_text": "角色关联人物 Character ID", "switch_pm_parameter": "help", "cache_time": 0}
         if query.startswith("CP ") and len(query_param) > 1 and query_param[1].isdecimal():  # 角色关联人物
             kwargs = await query_character_related_persons(inline_query)
     elif query.startswith("CS ") or (query.startswith("CS") and len(query) == 2):

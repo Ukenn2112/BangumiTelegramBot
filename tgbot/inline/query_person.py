@@ -45,6 +45,7 @@ async def query_person_related_subjects(inline_query: InlineQuery, is_sender: bo
             button_list = [
                 InlineKeyboardButton(text="巡礼", switch_inline_query_current_chat=f"anitabi {subject['id']}"),
                 InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"),
+                InlineKeyboardButton(text="人物", switch_inline_query_current_chat=f"SP {subject['id']}"),
                 InlineKeyboardButton(text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"),
             ]
             query_result_list.append(InlineQueryResultArticle(

@@ -49,10 +49,10 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
             reply_markup=(
                 InlineKeyboardMarkup().add(
                     InlineKeyboardButton(
-                        text = "人物关联", switch_inline_query_current_chat = f"PS {cop['id']}"
+                        text = "关联条目", switch_inline_query_current_chat = (f"PS {cop['id']}" if cat == "prsn" else f"CS {cop['id']}")
                     )
                 )
-            ) if cat == "prsn" else None,
+            ),
         ))
         if query_type == "条目":
             def subject_text(subject, is_sender):
@@ -79,6 +79,7 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
                     button_list = [
                         InlineKeyboardButton(text="巡礼", switch_inline_query_current_chat=f"anitabi {subject['id']}"),
                         InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"),
+                        InlineKeyboardButton(text="人物", switch_inline_query_current_chat=f"SP {subject['id']}"),
                         InlineKeyboardButton(text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"),
                     ]
                     return InlineQueryResultArticle(
@@ -100,13 +101,22 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
                 if character_related_subjects:
                     query_result_list += [subject_text(c, is_sender) for c in character_related_subjects if subject_text(c, is_sender) is not None][:5]
         elif query_type in ["角色", "人物"]:
-            def character_text(character):
+            def character_text(character, cat):
                 text = (
                     f"*{character['name']}*"
                     f"\n{character['staff']}\n"
                     f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}&rhash=48797fd986e111)"
                     f"\n📖 [详情](https://bgm.tv/character/{character['id']})"
                 )
+                button_list = []
+                if cat == "prsn":
+                    button_list = [
+                        InlineKeyboardButton(text="关联条目", switch_inline_query_current_chat=f"CS {character['id']}"),
+                    ]
+                elif cat == "crt":
+                    button_list = [
+                        InlineKeyboardButton(text="关联条目", switch_inline_query_current_chat=f"PS {character['id']}"),
+                    ]
                 return InlineQueryResultArticle(
                     id = f"PC:{character['id']}{str(random.randint(0, 1000000000))}",
                     title = character["name"],
@@ -115,6 +125,7 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
                         text, parse_mode = "markdown", disable_web_page_preview = False
                     ),
                     thumb_url = character["images"]["grid"] if character["images"] else None,
+                    reply_markup=InlineKeyboardMarkup().add(*button_list),
                 )
             if cat == "prsn":
                 person_related_characters = await bgm.get_person_characters(cop["id"])

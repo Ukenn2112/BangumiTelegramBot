@@ -93,6 +93,11 @@ async def query_search(inline_query: InlineQuery, query_type: str = None, is_sen
                             text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"
                         )
                     )
+                    button_list.append(
+                        InlineKeyboardButton(
+                            text="人物", switch_inline_query_current_chat=f"SP {subject['id']}"
+                        )
+                    )
                 button_list.append(
                     InlineKeyboardButton(
                         text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"

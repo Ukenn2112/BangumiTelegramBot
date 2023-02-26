@@ -26,10 +26,11 @@ async def generate_page(request: SummaryRequest) -> SummaryRequest:
     )
     markup = InlineKeyboardMarkup()
     markup.add(
-        InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"),
         InlineKeyboardButton(text="巡礼", switch_inline_query_current_chat=f"anitabi {subject_id}"),
         InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {subject_id}"),
+        InlineKeyboardButton(text="人物", switch_inline_query_current_chat=f"SP {subject_id}"),
     )
+    markup.add(InlineKeyboardButton(text='返回', callback_data=f"{session_uuid}|back"))
     request.page_text = text
     request.page_markup = markup
     request.possible_request['back'] = BackRequest(request.session)

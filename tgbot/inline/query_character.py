@@ -45,6 +45,7 @@ async def query_character_related_subjects(inline_query: InlineQuery, is_sender:
             button_list = [
                 InlineKeyboardButton(text="巡礼", switch_inline_query_current_chat=f"anitabi {subject['id']}"),
                 InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"),
+                InlineKeyboardButton(text="人物", switch_inline_query_current_chat=f"SP {subject['id']}"),
                 InlineKeyboardButton(text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"),
             ]
             query_result_list.append(InlineQueryResultArticle(
@@ -68,7 +69,7 @@ async def query_character_related_subjects(inline_query: InlineQuery, is_sender:
 
 
 async def query_character_related_persons(inline_query: InlineQuery):
-    """CS + 角色ID 获取角色关联人物"""  
+    """CP + 角色ID 获取角色关联人物"""  
     offset = int(inline_query.offset or 0)
     query_result_list: list[InlineQueryResultArticle] = []
     character_id = inline_query.query.split(" ")[1]
@@ -79,21 +80,23 @@ async def query_character_related_persons(inline_query: InlineQuery):
     character_info = await bgm.get_character(character_id)
     switch_pm_text = character_info["name"] + " 关联人物"
 
-    for character in character_related_persons[offset : offset + 49]:
+    for person in character_related_persons[offset : offset + 49]:
         text = (
-            f"*{character['name']}*"
-            f"\n{character['subject_name_cn'] or character['subject_name']} | {character['staff']}\n"
-            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}&rhash=48797fd986e111)"
-            f"\n📖 [详情](https://bgm.tv/character/{character['id']})"
+            f"*{person['name']}*"
+            f"\n{person['subject_name_cn'] or person['subject_name']} | {person['staff']}\n"
+            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/person/{person['id']}&rhash=48797fd986e111)"
+            f"\n📖 [详情](https://bgm.tv/person/{person['id']})"
         )
+        button_list = [InlineKeyboardButton(text="关联条目", switch_inline_query_current_chat=f"PS {person['id']}")]
         query_result_list.append(InlineQueryResultArticle(
-            id = f"PC:{character['id']}:{str(random.randint(0, 1000000000))}",
-            title = character["name"],
-            description = f"{character['subject_name_cn'] or character['subject_name']} | {character['staff']}\n",
+            id = f"CP:{person['id']}:{str(random.randint(0, 1000000000))}",
+            title = person["name"],
+            description = f"{person['subject_name_cn'] or person['subject_name']} | {person['staff']}\n",
             input_message_content = InputTextMessageContent(
                 text, parse_mode = "markdown", disable_web_page_preview = False
             ),
-            thumb_url = character["images"]["grid"] if character["images"] else None,
+            thumb_url = person["images"]["grid"] if person["images"] else None,
+            reply_markup=InlineKeyboardMarkup().add(*button_list),
         ))
     if len(character_related_persons) == 0:
         query_result_list.append(InlineQueryResultArticle(

@@ -1,5 +1,7 @@
 import random
-from telebot.types import (InlineQuery, InlineQueryResultArticle,
+
+from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           InlineQuery, InlineQueryResultArticle,
                            InputTextMessageContent)
 
 from utils.config_vars import bgm
@@ -30,6 +32,10 @@ async def query_subject_characters(inline_query: InlineQuery):
         description = character["relation"]
         if character["actors"]:
             description += f" | CV: {[cv['name'] for cv in character['actors']][0]}"
+        button_list = [
+            InlineKeyboardButton(text="关联人物", switch_inline_query_current_chat=f"CP {character['id']}"),
+            InlineKeyboardButton(text="关联条目", switch_inline_query_current_chat=f"CS {character['id']}")
+        ]
         text += (
             f"\n{description}\n"
             f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}&rhash=48797fd986e111)"
@@ -43,6 +49,7 @@ async def query_subject_characters(inline_query: InlineQuery):
                 text, parse_mode = "markdown", disable_web_page_preview = False
             ),
             thumb_url = character["images"]["grid"] if character["images"] else None,
+            reply_markup=InlineKeyboardMarkup().add(*button_list),
         ))
     if len(new_subject_characters) == 0:
         query_result_list.append(InlineQueryResultArticle(
@@ -82,9 +89,13 @@ async def query_subject_person(inline_query: InlineQuery):
         text = (
             f"*{person['name']}*"
             f"\n{person['relation']}\n"
-            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{person['id']}&rhash=48797fd986e111)"
-            f"\n📖 [详情](https://bgm.tv/character/{person['id']})"
+            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/person/{person['id']}&rhash=48797fd986e111)"
+            f"\n📖 [详情](https://bgm.tv/person/{person['id']})"
         )
+        button_list = [
+            InlineKeyboardButton(text="关联角色", switch_inline_query_current_chat=f"PC {person['id']}"),
+            InlineKeyboardButton(text="关联条目", switch_inline_query_current_chat=f"PS {person['id']}")
+        ]
         query_result_list.append(InlineQueryResultArticle(
             id = f"SP:{person['id']}:{str(random.randint(0, 1000000000))}",
             title = person["name"],
@@ -93,6 +104,7 @@ async def query_subject_person(inline_query: InlineQuery):
                 text, parse_mode = "markdown", disable_web_page_preview = False
             ),
             thumb_url = person["images"]["grid"] if person["images"] else None,
+            reply_markup=InlineKeyboardMarkup().add(*button_list)
         ))
     if len(subject_related_persons) == 0:
         query_result_list.append(InlineQueryResultArticle(
