@@ -1,14 +1,15 @@
 import random
 
-from telebot.types import (InlineQuery, InlineQueryResultArticle,
+from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           InlineQuery, InlineQueryResultArticle,
                            InputTextMessageContent)
 
 from utils.config_vars import BOT_USERNAME, bgm
-from utils.converts import subject_type_to_emoji
+from utils.converts import number_to_week, parse_markdown_v2, subject_type_to_emoji
 
 
-async def query_search_sender(inline_query: InlineQuery, query_type: str = None):
-    """私聊或@ 关键词 搜索发送命令"""
+async def query_search(inline_query: InlineQuery, query_type: str = None, is_sender: bool = False):
+    """关键词 搜索"""
     offset = int(inline_query.offset or 0)
     query_result_list: list[InlineQueryResultArticle] = []
     query_param = inline_query.query.split(" ")
@@ -37,17 +38,77 @@ async def query_search_sender(inline_query: InlineQuery, query_type: str = None)
     if subject_list.get("list"):
         for subject in subject_list["list"]:
             emoji = subject_type_to_emoji(subject["type"])
-            qr = InlineQueryResultArticle(
-                id=subject["id"],
-                title=emoji + (subject["name_cn"] or subject["name"]),
-                input_message_content=InputTextMessageContent(
-                    message_text=f"/info@{BOT_USERNAME} {subject['id']}",
-                    disable_web_page_preview=True,
-                ),
-                description=subject["name"] if subject["name_cn"] else None,
-                thumb_url=subject["images"]["medium"] if subject["images"] else None,
-            )
-            query_result_list.append(qr)
+            if is_sender:
+                qr = InlineQueryResultArticle(
+                    id=subject["id"],
+                    title=emoji + (subject["name_cn"] or subject["name"]),
+                    input_message_content=InputTextMessageContent(
+                        message_text=f"/info@{BOT_USERNAME} {subject['id']}",
+                        disable_web_page_preview=True,
+                    ),
+                    description=subject["name"] if subject["name_cn"] else None,
+                    thumb_url=subject["images"]["medium"] if subject["images"] else None,
+                )
+                query_result_list.append(qr)
+            else:
+                text = f"搜索结果{emoji}:\n*{parse_markdown_v2(subject['name'])}*\n"
+                if subject['name_cn']:
+                    text += f"{parse_markdown_v2(subject['name_cn'])}\n"
+                text += "\n"
+                text += f"*BGM ID：*`{subject['id']}`\n"
+                if 'rating' in subject and subject['rating']['score']:
+                    text += f"*➤ BGM 平均评分：*`{subject['rating']['score']}`🌟\n"
+                if subject["type"] == 2 or subject["type"] == 6:  # 当类型为anime或real时
+                    if 'eps' in subject and subject['eps']:
+                        text += f"*➤ 集数：*共`{subject['eps']}`集\n"
+                    if subject['air_date']:
+                        text += f"*➤ 放送日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
+                    if subject['air_weekday']:
+                        text += f"*➤ 放送星期：*`{number_to_week(subject['air_weekday'])}`\n"
+                if subject["type"] == 1:  # 当类型为book时
+                    if 'eps' in subject and subject['eps']:
+                        text += f"*➤ 话数：*共`{subject['eps']}`话\n"
+                    if subject['air_date']:
+                        text += f"*➤ 发售日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
+                if subject["type"] == 3:  # 当类型为music时
+                    if subject['air_date']:
+                        text += f"*➤ 发售日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
+                if subject["type"] == 4:  # 当类型为game时
+                    if subject['air_date']:
+                        text += f"*➤ 发行日期：*`{parse_markdown_v2(subject['air_date'])}`\n"
+                text += (
+                    f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)"
+                    f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})"
+                    f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
+                )
+                button_list = []
+                if subject["type"] != 3:  # 当类型为anime或real时
+                    button_list.append(
+                        InlineKeyboardButton(
+                            text="巡礼", switch_inline_query_current_chat=f"anitabi {subject['id']}"
+                        ),
+                    )
+                    button_list.append(
+                        InlineKeyboardButton(
+                            text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"
+                        )
+                    )
+                button_list.append(
+                    InlineKeyboardButton(
+                        text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"
+                    )
+                )
+                qr = InlineQueryResultArticle(
+                    id=subject['id'],
+                    title=emoji + (subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                    input_message_content=InputTextMessageContent(
+                        text, parse_mode="markdownV2", disable_web_page_preview=False
+                    ),
+                    description=subject["name"] if subject["name_cn"] else None,
+                    thumb_url=subject["images"]["medium"] if subject["images"] else None,
+                    reply_markup=InlineKeyboardMarkup().add(*button_list),
+                )
+                query_result_list.append(qr)
             if query_type == "角色":
                 def character_text(character):
                     text = (

@@ -7,7 +7,7 @@ from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup,
 from utils.config_vars import BOT_USERNAME, bgm
 
 
-async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None):
+async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None, is_sender: bool = False):
     """人物搜索
     :param inline_query: 查询人物关键词
     :param cat = prsn/crt -> 查询人物/角色"""
@@ -55,24 +55,50 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
             ) if cat == "prsn" else None,
         ))
         if query_type == "条目":
-            def subject_text(subject):
-                return InlineQueryResultArticle(
-                    id=f"PS:{subject['staff']}{subject['id']}",
-                    title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
-                    input_message_content=InputTextMessageContent(
-                        message_text=f"/info@{BOT_USERNAME} {subject['id']}", disable_web_page_preview=True
-                    ),
-                    description=f"[关联{query_type}] " + (f"{subject['name']} | " if subject["name_cn"] else "") + (subject["staff"] if subject["staff"] else ""),
-                    thumb_url=subject["image"] if subject["image"] else None,
-                )
+            def subject_text(subject, is_sender):
+                if is_sender:
+                    return InlineQueryResultArticle(
+                        id=f"PS:{subject['staff']}{subject['id']}",
+                        title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                        input_message_content=InputTextMessageContent(
+                            message_text=f"/info@{BOT_USERNAME} {subject['id']}", disable_web_page_preview=True
+                        ),
+                        description=f"[关联{query_type}] " + (f"{subject['name']} | " if subject["name_cn"] else "") + (subject["staff"] if subject["staff"] else ""),
+                        thumb_url=subject["image"] if subject["image"] else None,
+                    )
+                else:
+                    text = f"*{subject['name_cn'] or subject['name']}*\n"
+                    text += f"{subject['name']}\n" if subject['name_cn'] else ''
+                    text += f"\n*BGM ID：*`{subject['id']}`"
+                    text += (
+                        f"\n📚 [简介](https://t.me/iv?url=https://bgm.tv/subject/{subject['id']}&rhash=ce4f44b013e2e8)"
+                        f"\n📖 [详情](https://bgm.tv/subject/{subject['id']})"
+                        f"\n💬 [吐槽箱](https://bgm.tv/subject/{subject['id']}/comments)"
+                    )
+
+                    button_list = [
+                        InlineKeyboardButton(text="巡礼", switch_inline_query_current_chat=f"anitabi {subject['id']}"),
+                        InlineKeyboardButton(text="角色", switch_inline_query_current_chat=f"SC {subject['id']}"),
+                        InlineKeyboardButton(text='去管理', url=f"t.me/{BOT_USERNAME}?start={subject['id']}"),
+                    ]
+                    return InlineQueryResultArticle(
+                        id=f"PS:{subject['staff']}{subject['id']}",
+                        title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                        input_message_content=InputTextMessageContent(
+                            text, parse_mode="markdown", disable_web_page_preview=False
+                        ),
+                        description=f"[关联{query_type}] " + (f"{subject['name']} | " if subject["name_cn"] else "") + (subject["staff"] if subject["staff"] else ""),
+                        thumb_url=subject["image"] if subject["image"] else None,
+                        reply_markup=InlineKeyboardMarkup().add(*button_list),
+                    )
             if cat == "prsn":
                 person_related_subjects = await bgm.get_person_subjects(cop["id"])
                 if person_related_subjects:
-                    query_result_list += [subject_text(p) for p in person_related_subjects if "演出" in p.get("staff") and subject_text(p) is not None][:5]
+                    query_result_list += [subject_text(p, is_sender) for p in person_related_subjects if "演出" in p.get("staff") and subject_text(p, is_sender) is not None][:5]
             elif cat == "crt":
                 character_related_subjects = await bgm.get_character_subjects(cop["id"])
                 if character_related_subjects:
-                    query_result_list += [subject_text(c) for c in character_related_subjects if subject_text(c) is not None][:5]
+                    query_result_list += [subject_text(c, is_sender) for c in character_related_subjects if subject_text(c, is_sender) is not None][:5]
         elif query_type in ["角色", "人物"]:
             def character_text(character):
                 text = (

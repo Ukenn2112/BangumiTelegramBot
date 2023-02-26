@@ -38,7 +38,7 @@ def bot_register():
     # InlineQuery
     bot.register_inline_handler(inline_none, func=lambda query: not query.query, pass_bot=True)
     bot.register_inline_handler(query_anitabi_text, func=lambda query: query.query.startswith("anitabi"), pass_bot=True)
-    bot.register_inline_handler(global_inline_handler, func=lambda query: query.chat_type == "sender", pass_bot=True)
+    bot.register_inline_handler(global_inline_handler, func=lambda query: True, pass_bot=True)
 
 
 async def callback_none(call):
