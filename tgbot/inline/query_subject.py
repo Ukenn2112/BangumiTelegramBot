@@ -15,7 +15,7 @@ async def query_subject_characters(inline_query: InlineQuery):
     subject_id = inline_query.query.split(" ")[1]
 
     subject_characters = await bgm.get_subject_characters(subject_id)
-    if subject_characters is None: return {"results": query_result_list}        
+    if subject_characters is None: return {"results": query_result_list}
 
     subject_info = await bgm.get_subject(subject_id)
     switch_pm_text = (subject_info["name_cn"] or subject_info["name"]) + " 角色列表"

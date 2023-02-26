@@ -177,6 +177,21 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
     # 收藏
+    async def get_user_collections_status(self, username) -> Union[list, None]:
+        """
+        获取用户的收藏状态 (旧 API)
+
+        Docs: https://bangumi.github.io/api/#/%E6%94%B6%E8%97%8F/getUserCollectionsStatusByUsername
+
+        :param username: 用户名 可 UID"""
+        async with self.s.get(
+            f"{self.api_url}/user/{username}/collections/status",
+            params = {
+                "app_id": self.app_id,
+            }
+        ) as resp:
+            return await resp.json()
+
     async def get_user_subject_collections(self, username, access_token = None, subject_type = 2, collection_type = 3, limit = 30, offset = 0) -> dict:
         """
         获取用户的条目收藏
@@ -201,7 +216,7 @@ class BangumiAPI:
         ) as resp:
             return await resp.json()
 
-    async def get_user_subject_collection(self, username, subject_id, access_token = None) -> Union[dict, None]:
+    async def get_user_subject_collection(self, username, subject_id, access_token = None) -> dict:
         """
         获取用户对应条目收藏 没有收藏则返回 None
 
@@ -214,8 +229,6 @@ class BangumiAPI:
             f"{self.api_url}/v0/users/{username}/collections/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
-            if resp.status == 404:
-                return None
             return await resp.json()
         
     async def post_user_subject_collection(self, access_token, subject_id, collection_type: int = 3, rate: int = None, comment: str = None, private: bool = None, tags: str = None) -> None:

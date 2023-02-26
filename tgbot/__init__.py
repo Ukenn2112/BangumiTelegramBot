@@ -10,6 +10,7 @@ from .help import send_help
 from .info import send_info
 from .inline import global_inline_handler
 from .inline.anitabi import query_anitabi_text
+from .inline.mybgm import query_mybgm_text
 from .model import global_callback_handler
 from .reply_processing import send_reply
 from .start import send_start
@@ -38,6 +39,7 @@ def bot_register():
     # InlineQuery
     bot.register_inline_handler(inline_none, func=lambda query: not query.query, pass_bot=True)
     bot.register_inline_handler(query_anitabi_text, func=lambda query: query.query.startswith("anitabi"), pass_bot=True)
+    bot.register_inline_handler(query_mybgm_text, func=lambda query: query.query.startswith("mybgm"), pass_bot=True)
     bot.register_inline_handler(global_inline_handler, func=lambda query: True, pass_bot=True)
 
 
