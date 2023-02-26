@@ -604,7 +604,7 @@ class BangumiAPI:
             return await resp.json()
     # 搜索
     @cache_data
-    async def search_subjects(self, keywords, subject_type, response_group: Literal["small", "medium", "large"] = "small", start = 0, max_results = 25) -> list:
+    async def search_subjects(self, keywords, subject_type: int = None, response_group: Literal["small", "medium", "large"] = "small", start = 0, max_results = 10) -> list:
         """
         条目搜索 (Old API) 由于新 API 暂时为试验性可能变动较大, 故暂时使用旧 API
 
@@ -615,16 +615,21 @@ class BangumiAPI:
         :param response_group: 返回数据组, small: 小, medium: 中 large: 大, 默认 small
         :param start: 返回起始位置, 默认 0
         :param max_results: 返回数量, 默认 25 (最大 25)"""
+        params = {
+            "responseGroup": response_group,
+            "start": start,
+            "max_results": max_results,
+        }
+        if subject_type:
+            params["type"] = subject_type
         async with self.s.get(
             f"{self.api_url}/search/subject/{keywords}",
-            params = {
-                "type": subject_type,
-                "responseGroup": response_group,
-                "start": start,
-                "max_results": max_results,
-            }
+            params = params
         ) as resp:
-            return await resp.json()
+            try:
+                return await resp.json()
+            except:
+                return {"results": 0, "list": []}
 
     @cache_data
     async def search_mono(self, keywords, page = 1, cat: Literal["all", "crt", "prsn"] = "all"):
