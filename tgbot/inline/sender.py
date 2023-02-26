@@ -272,55 +272,12 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
     }
 
 
-# def query_mono_subject(inline_query, cat):
-#     offset = int(inline_query.offset or 1)
-#     query_result_list: List[InlineQueryResultArticle] = []
-#     query_param = inline_query.query.split(" ")
-#     keywords = inline_query.querya[len(query_param[0]) + 1:-len(query_param[-1]) - 1]
-#     page = offset // 9 + 1
-#     data = get_mono_search(keywords, page=page, cat=cat)
-#     if data["error"]:
-#         switch_pm_text = data["error"]
-#     else:
-#         if cat == "prsn":
-#             switch_pm_text = f"角色参与条目:"
-#         elif cat == "crt":
-#             switch_pm_text = f"人物参与条目:"
-#         else:
-#             switch_pm_text = f"参与条目:"
-#
-#
-#     for cop in data["list"]:
-#         text = f"*{cop["name_cn"] or cop["name"]}*\n"
-#         text += f"{cop["name"]}\n" if cop["name_cn"] else ""
-#         description = cop["info"]
-#         text += (f"\n{description}\n"
-#                  f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop["type"]}/{cop["id"]}"
-#                  f"&rhash=48797fd986e111)"
-#                  f"\n📖 [详情](https://bgm.tv/{cop["type"]}/{cop["id"]})")
-#         qr = InlineQueryResultArticle(
-#             id=f"sc:{cop["id"]}",
-#             title=cop["name_cn"] or cop["name"],
-#             description=description,
-#             input_message_content=InputTextMessageContent(
-#                 text,
-#                 parse_mode="markdown",
-#                 disable_web_page_preview=False
-#             ),
-#             thumb_url=cop["img_url"],
-#             reply_markup=(InlineKeyboardMarkup().add(InlineKeyboardButton(
-#                 text="人物关联", switch_inline_query_current_chat=f"PS {cop["id"]}"))) if cat == "prsn" else None
-#         )
-#         query_result_list.append(qr)
-#     return {"results": query_result_list, "next_offset": next_offset,
-#             "switch_pm_text": switch_pm_text, "switch_pm_parameter": "search", "cache_time": 3600}
-
-
 async def query_sender_text(inline_query: InlineQuery, bot: AsyncTeleBot):
     """私聊搜索"""
     query: str = inline_query.query
     query_param: list[str] = inline_query.query.split(" ")
     kwargs = {"results": [], "switch_pm_text": "私聊搜索帮助", "switch_pm_parameter": "help", "cache_time": 0}
+
     # 使用 ID 搜索
     if query.startswith("SC ") or (query.startswith("SC") and len(query) == 2):
         kwargs = {"results": [], "switch_pm_text": "条目关联角色 Subject ID", "switch_pm_parameter": "help", "cache_time": 0}
@@ -349,13 +306,6 @@ async def query_sender_text(inline_query: InlineQuery, bot: AsyncTeleBot):
             elif inline_query.query.endswith((" 人物", " 出演", " cv", " CV")):
                 query_type = "人物"
             kwargs = await query_mono(inline_query, "crt", query_type)
-
-    # elif query.startswith("@"):  # @ 搜索 转换至公共搜索
-    #     inline_query.query = inline_query.query.lstrip("@")
-    #     from plugins.inline.public import query_public_text
-
-    #     return query_public_text(inline_query, bot)  # 公共搜索
-
     else:  # 普通搜索
         query_type = None
         if inline_query.query.endswith(" 角色"):
