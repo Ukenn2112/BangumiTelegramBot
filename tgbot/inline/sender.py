@@ -231,44 +231,57 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
             ) if cat == "prsn" else None,
         ))
         if query_type == "条目":
+            def subject_text(subject):
+                return InlineQueryResultArticle(
+                    id=f"PS:{subject['staff']}{subject['id']}",
+                    title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
+                    input_message_content=InputTextMessageContent(
+                        message_text=f"/info@{BOT_USERNAME} {subject['id']}", disable_web_page_preview=True
+                    ),
+                    description=f"[关联{query_type}] " + (f"{subject['name']} | " if subject["name_cn"] else "") + (subject["staff"] if subject["staff"] else ""),
+                    thumb_url=subject["image"] if subject["image"] else None,
+                )
             if cat == "prsn":
                 person_related_subjects = await bgm.get_person_subjects(cop["id"])
                 if person_related_subjects is None:
                     pass
                 else:
-                    for subject in person_related_subjects[:5]:
-                        query_result_list.append(InlineQueryResultArticle(
-                            id=f"PS:{subject['staff']}{subject['id']}",
-                            title=(subject["name_cn"] if subject["name_cn"] else subject["name"]),
-                            input_message_content=InputTextMessageContent(
-                                message_text=f"/info@{BOT_USERNAME} {subject['id']}", disable_web_page_preview=True
-                            ),
-                            description=(f"{subject['name']} | " if subject["name_cn"] else "") + (subject["staff"] if subject["staff"] else ""),
-                            thumb_url=subject["image"] if subject["image"] else None,
-                        ))
-        elif query_type == "角色":
+                    query_result_list += [subject_text(p) for p in person_related_subjects if "演出" in p["staff"] and subject_text(p) is not None][:5]
+            elif cat == "crt":
+                character_related_subjects = await bgm.get_character_subjects(cop["id"])
+                if character_related_subjects is None:
+                    pass
+                else:
+                    query_result_list += [subject_text(c) for c in character_related_subjects if subject_text(c) is not None][:5]
+        elif query_type in ["角色", "人物"]:
+            def character_text(character):
+                text = (
+                    f"*{character['name']}*"
+                    f"\n{character['staff']}\n"
+                    f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}&rhash=48797fd986e111)"
+                    f"\n📖 [详情](https://bgm.tv/character/{character['id']})"
+                )
+                return InlineQueryResultArticle(
+                    id = f"PC:{character['id']}{str(random.randint(0, 1000000000))}",
+                    title = f"[关联{query_type}] " + character["name"],
+                    description = character['staff'],
+                    input_message_content = InputTextMessageContent(
+                        text, parse_mode = "markdown", disable_web_page_preview = False
+                    ),
+                    thumb_url = character["images"]["grid"] if character["images"] else None,
+                )
             if cat == "prsn":
                 person_related_characters = await bgm.get_person_characters(cop["id"])
                 if not person_related_characters:
                     pass
                 else:
-                    def character_text(character):
-                        text = (
-                            f"*{character['name']}*"
-                            f"\n{character['staff']}\n"
-                            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{character['id']}&rhash=48797fd986e111)"
-                            f"\n📖 [详情](https://bgm.tv/character/{character['id']})"
-                        )
-                        return InlineQueryResultArticle(
-                            id = f"PC:{character['id']}{str(random.randint(0, 1000000000))}",
-                            title = character["name"],
-                            description = character['staff'],
-                            input_message_content = InputTextMessageContent(
-                                text, parse_mode = "markdown", disable_web_page_preview = False
-                            ),
-                            thumb_url = character["images"]["grid"] if character["images"] else None,
-                        )
-                    query_result_list += [character_text(p) for p in person_related_characters if p["staff"] != "主角"][:5]
+                    query_result_list += [character_text(p) for p in person_related_characters if p["staff"] == "主角" and character_text(p) is not None][:5]
+            elif cat == "crt":
+                character_related_characters = await bgm.get_character_persons(cop["id"])
+                if not character_related_characters:
+                    pass
+                else:
+                    query_result_list += [character_text(c) for c in character_related_characters if character_text(c) is not None][:5]
     return {
         "results": query_result_list[:50],
         "next_offset": next_offset,
@@ -326,31 +339,35 @@ async def query_sender_text(inline_query: InlineQuery, bot: AsyncTeleBot):
     """私聊搜索"""
     query: str = inline_query.query
     query_param: list[str] = inline_query.query.split(" ")
-    kwargs = {"results": []}
-    if len(query_param) == 1:
-        return await bot.answer_inline_query(inline_query.id, results=[])
+    kwargs = {"results": [], "switch_pm_text": "私聊搜索帮助", "switch_pm_parameter": "help", "cache_time": 0}
     # 使用 ID 搜索
-    if query.startswith("SC ") and query_param[1].isdecimal():  # 条目关联的角色
-        kwargs = await query_subject_characters(inline_query)
-    elif query.startswith("PS ") and query_param[1].isdecimal():  # 人物出演的条目
-        kwargs = await query_person_related_subjects(inline_query)
-
+    if query.startswith("SC "):
+        kwargs = {"results": [], "switch_pm_text": "条目关联角色 Subject ID", "switch_pm_parameter": "help", "cache_time": 0}
+        if len(query_param) > 1 and query_param[1].isdecimal():  # 条目关联的角色
+            kwargs = await query_subject_characters(inline_query)
+    elif query.startswith("PS "):
+        kwargs = {"results": [], "switch_pm_text": "人物关联条目 Person ID", "switch_pm_parameter": "help", "cache_time": 0}
+        if len(query_param) > 1 and query_param[1].isdecimal():  # 人物出演的条目
+            kwargs = await query_person_related_subjects(inline_query)
     # 使用关键词搜索
     elif query.startswith("p "):  # 现实人物搜索
+        kwargs = {"results": [], "switch_pm_text": "关键词人物搜索 + [条目/角色]", "switch_pm_parameter": "help", "cache_time": 0}
         query_type = None
-        if inline_query.query.endswith((" 条目", " 关联")):
-            query_type = "条目"
-        elif inline_query.query.endswith(" 角色"):
-            query_type = "角色"
-        kwargs = await query_mono(inline_query, "prsn", query_type)
-
-    # elif query.startswith("c "):  # 虚拟人物搜索
-    #     if inline_query.query.endswith((" 条目", " 关联")):
-    #         return
-    #     elif inline_query.query.endswith((" 人物", " 出演", " cv", " CV")):
-    #         return
-    #     else:
-    #         kwargs = query_mono(inline_query, "crt")
+        if len(query_param) > 1:
+            if inline_query.query.endswith((" 条目", " 关联")):
+                query_type = "条目"
+            elif inline_query.query.endswith(" 角色"):
+                query_type = "角色"
+            kwargs = await query_mono(inline_query, "prsn", query_type)
+    elif query.startswith("c "):  # 虚拟人物搜索
+        kwargs = {"results": [], "switch_pm_text": "关键词角色搜索 + [条目/人物(cv)]", "switch_pm_parameter": "help", "cache_time": 0}
+        query_type = None
+        if len(query_param) > 1:
+            if inline_query.query.endswith((" 条目", " 关联")):
+                query_type = "条目"
+            elif inline_query.query.endswith((" 人物", " 出演", " cv", " CV")):
+                query_type = "人物"
+            kwargs = await query_mono(inline_query, "crt", query_type)
 
     # elif query.startswith("@"):  # @ 搜索 转换至公共搜索
     #     inline_query.query = inline_query.query.lstrip("@")
