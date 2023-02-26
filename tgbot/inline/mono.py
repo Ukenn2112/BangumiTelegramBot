@@ -121,9 +121,9 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
                 if person_related_characters:
                     query_result_list += [character_text(p) for p in person_related_characters if p.get("staff") == "主角" and character_text(p) is not None][:5]
             elif cat == "crt":
-                character_related_characters = await bgm.get_character_persons(cop["id"])
-                if character_related_characters:
-                    query_result_list += [character_text(c) for c in character_related_characters if character_text(c) is not None][:5]
+                character_related_persons = await bgm.get_character_persons(cop["id"])
+                if character_related_persons:
+                    query_result_list += [character_text(c) for c in character_related_persons if character_text(c) is not None][:5]
     return {
         "results": query_result_list[:50],
         "next_offset": next_offset,

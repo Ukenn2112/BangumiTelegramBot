@@ -1,3 +1,4 @@
+import random
 from telebot.types import (InlineQuery, InlineQueryResultArticle,
                            InputTextMessageContent)
 
@@ -53,6 +54,56 @@ async def query_subject_characters(inline_query: InlineQuery):
             thumb_url=None,
         ))
     if len(new_subject_characters) <= offset + 49:
+        next_offset = None
+    else:
+        next_offset = offset + 49
+    return {
+        "results": query_result_list,
+        "next_offset": next_offset,
+        "switch_pm_text": switch_pm_text,
+        "switch_pm_parameter": subject_id,
+        "cache_time": 3600,
+    }
+
+
+async def query_subject_person(inline_query: InlineQuery):
+    """SP + 条目ID 获取条目关联人物"""
+    offset = int(inline_query.offset or 0)
+    query_result_list: list[InlineQueryResultArticle] = []
+    subject_id = inline_query.query.split(" ")[1]
+
+    subject_related_persons = await bgm.get_subject_persons(subject_id)
+    if subject_related_persons is None: return {"results": query_result_list}
+
+    subject_info = await bgm.get_subject(subject_id)
+    switch_pm_text = (subject_info["name_cn"] or subject_info["name"]) + " 人物列表"
+
+    for person in subject_related_persons[offset : offset + 49]:
+        text = (
+            f"*{person['name']}*"
+            f"\n{person['relation']}\n"
+            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/character/{person['id']}&rhash=48797fd986e111)"
+            f"\n📖 [详情](https://bgm.tv/character/{person['id']})"
+        )
+        query_result_list.append(InlineQueryResultArticle(
+            id = f"SP:{person['id']}:{str(random.randint(0, 1000000000))}",
+            title = person["name"],
+            description = person['relation'],
+            input_message_content = InputTextMessageContent(
+                text, parse_mode = "markdown", disable_web_page_preview = False
+            ),
+            thumb_url = person["images"]["grid"] if person["images"] else None,
+        ))
+    if len(subject_related_persons) == 0:
+        query_result_list.append(InlineQueryResultArticle(
+            id="-1",
+            title="这个条目没有人物QAQ",
+            input_message_content=InputTextMessageContent(
+                "点我干嘛!😡", parse_mode="markdown", disable_web_page_preview=False
+            ),
+            thumb_url=None,
+        ))
+    if len(subject_related_persons) <= offset + 49:
         next_offset = None
     else:
         next_offset = offset + 49
