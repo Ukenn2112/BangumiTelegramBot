@@ -89,7 +89,7 @@ async def query_subject_person(inline_query: InlineQuery):
         text = (
             f"*{person['name']}*"
             f"\n{person['relation']}\n"
-            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/person/{person['id']}&rhash=48797fd986e111)"
+            f"\n📚 [简介](https://t.me/iv?url=https://chii.in/person/{person['id']}&rhash=507aecefd1f07c)"
             f"\n📖 [详情](https://bgm.tv/person/{person['id']})"
         )
         button_list = [

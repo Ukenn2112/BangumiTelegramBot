@@ -84,7 +84,7 @@ async def query_character_related_persons(inline_query: InlineQuery):
         text = (
             f"*{person['name']}*"
             f"\n{person['subject_name_cn'] or person['subject_name']} | {person['staff']}\n"
-            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/person/{person['id']}&rhash=48797fd986e111)"
+            f"\n📚 [简介](https://t.me/iv?url=https://chii.in/person/{person['id']}&rhash=507aecefd1f07c)"
             f"\n📖 [详情](https://bgm.tv/person/{person['id']})"
         )
         button_list = [InlineKeyboardButton(text="关联条目", switch_inline_query_current_chat=f"PS {person['id']}")]

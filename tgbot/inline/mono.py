@@ -34,8 +34,8 @@ async def query_mono(inline_query: InlineQuery, cat: str, query_type: str = None
         text = (
             f"*{cop['name_cn'] or cop['name']}*\n"+
             (f"{cop['name']}\n" if cop["name_cn"] else "")+
-            f"\n{cop['info']}\n"
-            f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop['type']}/{cop['id']}&rhash=48797fd986e111)"
+            f"\n{cop['info']}\n"+
+            (f"\n📚 [简介](https://t.me/iv?url=https://bangumi.tv/{cop['type']}/{cop['id']}&rhash=48797fd986e111)" if cop['type'] == "character" else f"\n📚 [简介](https://t.me/iv?url=https://chii.in/{cop['type']}/{cop['id']}&rhash=507aecefd1f07c)")+
             f"\n📖 [详情](https://bgm.tv/{cop['type']}/{cop['id']})"
         )
         query_result_list.append(InlineQueryResultArticle(
