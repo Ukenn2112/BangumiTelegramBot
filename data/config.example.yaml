@@ -13,7 +13,7 @@ BOT_USERNAME：bgm_bot # 不要@，只填写用户名
 API_SERVER:
   POST: 6008
   WEBSITE_BASE: http://127.0.0.1
-  INVERSE_URL: 
+  INVERSE_URL: # 反向代理的URL，如 https://bgm.ukenn.me 如需使用 Web 绑定功能，请填写此项 必须为 https
   AUTH_KEY: sdasd-ee5dsdsf-4asdad5-9dsd0c-8asdaf82
 
 # Redis Server
