@@ -315,3 +315,15 @@ class RefreshRequest(BaseRequest):
         self.page_text: Optional[str] = None
         self.page_image: Optional[str] = None
         self.page_markup: Optional[REPLY_MARKUP_TYPES] = None
+
+
+class CloseRequest(BaseRequest):
+    def __init__(self, session: RequestSession, tg_id: int):
+        """关闭请求"""
+        super().__init__(session)
+        self.tg_id: int = tg_id
+
+        self.possible_request: dict[str, BaseRequest] = {}
+        self.page_text: Optional[str] = None
+        self.page_image: Optional[str] = None
+        self.page_markup: Optional[REPLY_MARKUP_TYPES] = None

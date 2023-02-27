@@ -8,7 +8,8 @@ from utils.config_vars import bgm
 from utils.converts import (collection_type_subject_type_str,
                             subject_type_to_str)
 
-from ..model.page_model import BackRequest, CollectionsRequest, SubjectRequest
+from ..model.page_model import (BackRequest, CloseRequest, CollectionsRequest,
+                                SubjectRequest)
 
 
 async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
@@ -64,13 +65,13 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
     if count > limit:
         button_list2 = []
         if offset - limit >= 0:
-            button_list2.append(InlineKeyboardButton(text='上一页', callback_data=f'{session_uuid}|back'))
+            button_list2.append(InlineKeyboardButton(text="上一页", callback_data=f'{session_uuid}|back'))
             request.possible_request["back"] = BackRequest(request.session)
         else:
-            button_list2.append(InlineKeyboardButton(text='这是首页', callback_data="None"))
+            button_list2.append(InlineKeyboardButton(text="这是首页", callback_data="None"))
         button_list2.append(InlineKeyboardButton(text=f'{int(offset / limit) + 1}/{math.ceil(count / limit)}', callback_data="None"))
         if offset + limit < count:
-            button_list2.append(InlineKeyboardButton(text='下一页', callback_data=f'{session_uuid}|{offset + limit}'))
+            button_list2.append(InlineKeyboardButton(text="下一页", callback_data=f'{session_uuid}|{offset + limit}'))
             next_request = CollectionsRequest(
                 request.session,
                 subject_type,
@@ -83,6 +84,9 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
         else:
             button_list2.append(InlineKeyboardButton(text='这是末页', callback_data="None"))
         markup.add(*button_list2)
+    if request.session.bot_message.chat.type != "private":
+        markup.add(InlineKeyboardButton(text="关闭此对话", callback_data=f'{session_uuid}|close'))
+        request.possible_request["close"] = CloseRequest(request.session, request.session.user_bgm_data['tgID'])
     request.page_text = text
     request.page_markup = markup
     return request

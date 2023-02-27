@@ -11,7 +11,7 @@ from ..pages import (collection_list_page, edit_collection_type_page,
                      subject_page, subject_relations_page, summary_page,
                      week_page)
 from .exception import TokenExpired, UserNotBound
-from .page_model import (BackRequest, BaseRequest, CollectionsRequest,
+from .page_model import (BackRequest, BaseRequest, CloseRequest, CollectionsRequest,
                          DoEditCollectionTypeRequest, DoEditEpisodeRequest,
                          DoEditRatingRequest, EditCollectionTagsPageRequest,
                          EditCollectionTypePageRequest, EditEpsPageRequest,
@@ -165,6 +165,13 @@ async def global_callback_handler(call: CallbackQuery, bot: AsyncTeleBot):
     next_page = session.stack[-1].possible_request.get(request_key, None)
     if not next_page:
         return await bot.answer_callback_query(call.id, "您的请求出错了", cache_time=3600)
+    if isinstance(next_page, CloseRequest): # 关闭会话
+        if next_page.tg_id == call.from_user.id:
+            await bot.delete_message(
+                message_id=next_page.session.bot_message.message_id, chat_id=next_page.session.bot_message.chat.id
+            )
+            await bot.answer_callback_query(call.id, "已关闭对话", cache_time=1)
+            return redis.delete(redis_key)
     session.stack.append(next_page)
     session.call = call
     await consumption_request(bot, session)
