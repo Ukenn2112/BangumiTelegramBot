@@ -1,3 +1,4 @@
+import re
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_filters import SimpleCustomFilter
 from telebot.types import (BotCommand, BotCommandScopeAllGroupChats,
@@ -59,6 +60,13 @@ async def inline_none(inline_query):
         switch_pm_parameter="None",
         cache_time=0,
     )
+
+@bot.message_handler(regexp=r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)')
+async def link_subject_info(message):
+    for i in re.findall(
+        r'(bgm\.tv|bangumi\.tv|chii\.in)/subject/([0-9]+)', message.text, re.I | re.M
+    ):
+        await send_info(message, bot, i[1])
 
 async def set_bot_command():
     """设置Bot命令"""

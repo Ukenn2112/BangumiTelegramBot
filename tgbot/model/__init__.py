@@ -172,6 +172,7 @@ async def global_callback_handler(call: CallbackQuery, bot: AsyncTeleBot):
             )
             await bot.answer_callback_query(call.id, "已关闭对话", cache_time=1)
             return redis.delete(redis_key)
+        else: return await bot.answer_callback_query(call.id, "您没有权限关闭对话", cache_time=1)
     session.stack.append(next_page)
     session.call = call
     await consumption_request(bot, session)
