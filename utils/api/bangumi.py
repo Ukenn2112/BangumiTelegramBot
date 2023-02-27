@@ -190,9 +190,11 @@ class BangumiAPI:
                 "app_id": self.app_id,
             }
         ) as resp:
+            if resp.status == 404:
+                return None
             return await resp.json()
 
-    async def get_user_subject_collections(self, username, access_token = None, subject_type = 2, collection_type = 3, limit = 30, offset = 0) -> dict:
+    async def get_user_subject_collections(self, username, access_token = None, subject_type = 2, collection_type = 3, limit = 30, offset = 0) -> Union[dict, None]:
         """
         获取用户的条目收藏
 
@@ -214,9 +216,11 @@ class BangumiAPI:
                 "offset": offset
             }
         ) as resp:
+            if resp.status == 404:
+                return None
             return await resp.json()
 
-    async def get_user_subject_collection(self, username, subject_id, access_token = None) -> dict:
+    async def get_user_subject_collection(self, username, subject_id, access_token = None) -> Union[dict, None]:
         """
         获取用户对应条目收藏 没有收藏则返回 None
 
@@ -229,6 +233,8 @@ class BangumiAPI:
             f"{self.api_url}/v0/users/{username}/collections/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
+            if resp.status == 404:
+                return None
             return await resp.json()
         
     async def post_user_subject_collection(self, access_token, subject_id, collection_type: int = 3, rate: int = None, comment: str = None, private: bool = None, tags: str = None) -> None:
@@ -298,7 +304,7 @@ class BangumiAPI:
             json = send_data
         )
 
-    async def get_user_episode_collections(self, access_token, subject_id, offset = 0, limit = 100, episode_type = 0) -> dict:
+    async def get_user_episode_collections(self, access_token, subject_id, offset = 0, limit = 100, episode_type = 0) -> Union[dict, None]:
         """
         获取用户条目章节收藏
 
@@ -318,9 +324,11 @@ class BangumiAPI:
                 "episode_type": episode_type
             }
         ) as resp:
+            if resp.status == 404:
+                return None
             return await resp.json()
     
-    async def get_user_episode_collection(self, access_token, episode_id) -> dict:
+    async def get_user_episode_collection(self, access_token, episode_id) -> Union[dict, None]:
         """
         获取用户单个章节收藏
 
@@ -332,6 +340,8 @@ class BangumiAPI:
             f"{self.api_url}/v0/users/-/collections/-/episodes/{episode_id}",
             headers = {"Authorization": f"Bearer {access_token}"},
         ) as resp:
+            if resp.status == 404:
+                return None
             return await resp.json()
     
     async def patch_uesr_episode_collection(self, access_token, subject_id, episodes_id: list[int], status: int = 2) -> None:
