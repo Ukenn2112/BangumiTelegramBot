@@ -17,6 +17,7 @@ from .start import send_start
 from .unbind import send_unbind
 from .unsubscribe import unaddsub
 from .week import send_week
+from .image_search import send_image_search
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -31,13 +32,15 @@ def bot_register():
     bot.register_message_handler(send_info, commands=["info"], pass_bot=True)
     bot.register_message_handler(send_unbind, commands=["unbind"], chat_types=["private"], pass_bot=True)
     bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music", "real"], pass_bot=True)
+    bot.register_message_handler(send_image_search, commands=["isearch"], func=lambda m: m.reply_to_message is not None and m.reply_to_message.content_type == "photo", pass_bot=True)
+    bot.register_message_handler(send_image_search, chat_types=["private"], content_types=["photo"], pass_bot=True)
     bot.register_message_handler(send_reply, chat_types=["private"], is_reply=True, pass_bot=True)
     # CallbackQuery
-    bot.register_callback_query_handler(callback_none, func=lambda c: c.data == "None", pass_bot=True)
+    bot.register_callback_query_handler(callback_none, func=lambda c: c.data == "None")
     bot.register_callback_query_handler(unaddsub, func=lambda c: c.data.startswith("unaddsub"), pass_bot=True)
     bot.register_callback_query_handler(global_callback_handler, func=lambda c: True, pass_bot=True)
     # InlineQuery
-    bot.register_inline_handler(inline_none, func=lambda query: not query.query, pass_bot=True)
+    bot.register_inline_handler(inline_none, func=lambda query: not query.query)
     bot.register_inline_handler(query_anitabi_text, func=lambda query: query.query.startswith("anitabi"), pass_bot=True)
     bot.register_inline_handler(query_mybgm_text, func=lambda query: query.query.startswith("mybgm"), pass_bot=True)
     bot.register_inline_handler(global_inline_handler, func=lambda query: True, pass_bot=True)
@@ -50,7 +53,7 @@ async def inline_none(inline_query):
     return await bot.answer_inline_query(
         inline_query.id,
         [],
-        switch_pm_text="@BGM条目ID或关键字搜索或使用mybgm查询数据",
+        switch_pm_text="@BGM条目ID或关键字搜索",
         switch_pm_parameter="None",
         cache_time=0,
     )
@@ -67,9 +70,11 @@ async def set_bot_command():
         BotCommand("game", "游戏收藏列表"),
         BotCommand("real", "三次元收藏列表"),
         BotCommand("week", "每日放送"),
+        BotCommand("isearch", "回复图片搜索条目"),
         BotCommand("unbind", "解除 Bangumi 账号绑定"),
     ]
     group_commands_list = [
+        BotCommand("isearch", "回复图片搜索条目"),
         BotCommand("book", "书籍收藏列表"),
         BotCommand("anime", "动画收藏列表"),
         BotCommand("music", "音乐收藏列表"),
