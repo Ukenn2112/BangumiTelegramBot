@@ -18,6 +18,7 @@ from .unbind import send_unbind
 from .unsubscribe import unaddsub
 from .week import send_week
 from .image_search import send_image_search
+from .search import send_search
 
 bot = AsyncTeleBot(config["BOT_TOKEN"], parse_mode="Markdown")
 
@@ -30,6 +31,7 @@ def bot_register():
     bot.register_message_handler(send_help, commands=["help"], is_private=True, pass_bot=True)
     bot.register_message_handler(send_week, commands=["week"], pass_bot=True)
     bot.register_message_handler(send_info, commands=["info"], pass_bot=True)
+    bot.register_message_handler(send_search, commands=["search"], pass_bot=True)
     bot.register_message_handler(send_unbind, commands=["unbind"], chat_types=["private"], pass_bot=True)
     bot.register_message_handler(send_collection_list, commands=["book", "anime", "game", "music", "real"], pass_bot=True)
     bot.register_message_handler(send_image_search, commands=["isearch"], func=lambda m: m.reply_to_message is not None and m.reply_to_message.content_type == "photo", pass_bot=True)
@@ -69,6 +71,7 @@ async def set_bot_command():
         BotCommand("music", "音乐收藏列表"),
         BotCommand("game", "游戏收藏列表"),
         BotCommand("real", "三次元收藏列表"),
+        BotCommand("search", "搜索条目"),
         BotCommand("week", "每日放送"),
         BotCommand("isearch", "回复图片搜索条目"),
         BotCommand("unbind", "解除 Bangumi 账号绑定"),
@@ -80,6 +83,7 @@ async def set_bot_command():
         BotCommand("music", "音乐收藏列表"),
         BotCommand("game", "游戏收藏列表"),
         BotCommand("real", "三次元收藏列表"),
+        BotCommand("search", "搜索条目"),
         BotCommand("week", "每日放送"),
     ]
     try:
