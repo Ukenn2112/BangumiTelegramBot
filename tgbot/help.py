@@ -23,6 +23,6 @@ async def send_help(message: Message, bot: AsyncTeleBot):
     )
     await bot.send_photo(
         message.chat.id,
-        photo="https://cdn.jsdelivr.net/gh/Ukenn2112/image@1.0.0/inline_query.png",
+        photo="https://article.biliimg.com/bfs/article/81e655fd1dafd9fbb7dc060eba248cf857a83cc0.png",
         caption=text,
     )
