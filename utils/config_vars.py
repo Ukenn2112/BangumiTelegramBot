@@ -9,10 +9,7 @@ with open('data/config.yaml', 'r') as f:
     config: dict = yaml.safe_load(f)
 
 # API 服务器地址
-if config["API_SERVER"]["INVERSE_URL"]:
-    API_SETVER_URL = f"{config['API_SERVER']['INVERSE_URL']}"
-else:
-    API_SETVER_URL = f"{config['API_SERVER']['WEBSITE_BASE']}:{config['API_SERVER']['POST']}"
+API_SETVER_URL = f"{config['API_SERVER']['WEBSITE_BASE']}"
 CALLBACK_URL = f"{API_SETVER_URL}/oauth_callback"
 
 BOT_USERNAME = config["BOT_USERNAME"]

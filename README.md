@@ -18,7 +18,7 @@
 
   根据文件内提示修改 `config.yaml` 配置文件
 
-  > 如需使用 Web 绑定功能需配置反代 `INVERSE_URL` 为 HTTPS `可选｜Optional`
+  > 如需使用 Web 绑定功能需配置反代 `WEBSITE_BASE` 必须为 HTTPS `可选｜Optional`
 
 - 安装依赖
   > **Warning** 需要 Python >= 3.9
