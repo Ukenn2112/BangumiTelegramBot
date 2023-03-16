@@ -13,17 +13,21 @@ async def generate_page(request: WeekRequest) -> WeekRequest:
     if week_data is None: raise RuntimeError("出错了")
     for i in week_data:
         if i.get("weekday", {}).get("id") == int(request.week_day):
-            items = i.get("items")
+            items = i["items"]
             air_weekday = i.get("weekday", {}).get("cn")
             count = len(items)
             markup = InlineKeyboardMarkup()
             week_text_data = ""
-            nums = range(1, count + 1)
             button_list = []
-            for item, num in zip(items, nums):
+            for num, item in enumerate(items):
+                num += 1
                 week_text_data += (
-                    f"*[{num}]* {item['name_cn'] or item['name']}\n\n"
+                    f"*[{num}]* {item['name_cn'] or item['name']}"
                 )
+                if item.get("_air_time"):
+                    week_text_data += f" | {item['_air_time'][:2]}:{item['_air_time'][2:]}\n\n"
+                else:
+                    week_text_data += "\n\n"
                 request.possible_request[str(item["id"])] = SubjectRequest(
                     request.session, item["id"]
                 )

@@ -9,6 +9,7 @@ from lxml.etree import HTML
 
 from ..before_api import cache_data, redis
 from ..subject_img import subject_image
+from .onair import get_onair_data
 
 
 class BangumiAPI:
@@ -426,7 +427,48 @@ class BangumiAPI:
         async with self.s.get(
             f"{self.api_url}/calendar"
         ) as resp:
-            return await resp.json()
+            week_data = await resp.json()
+            onair_data = get_onair_data()
+            if onair_data is None:
+                return week_data
+            output = [
+                {"weekday": {'en': 'Mon', 'cn': '星期一', 'ja': '月耀日', 'id': 1}, "items": []},
+                {"weekday": {'en': 'Tue', 'cn': '星期二', 'ja': '火耀日', 'id': 2}, "items": []},
+                {"weekday": {'en': 'Wed', 'cn': '星期三', 'ja': '水耀日', 'id': 3}, "items": []},
+                {"weekday": {'en': 'Thu', 'cn': '星期四', 'ja': '木耀日', 'id': 4}, "items": []},
+                {"weekday": {'en': 'Fri', 'cn': '星期五', 'ja': '金耀日', 'id': 5}, "items": []},
+                {"weekday": {'en': 'Sat', 'cn': '星期六', 'ja': '土耀日', 'id': 6}, "items": []},
+                {"weekday": {'en': 'Sun', 'cn': '星期日', 'ja': '日耀日', 'id': 7}, "items": []},
+            ]
+            for week in week_data:
+                for subject in week["items"]:
+                    check = False
+                    for odata in onair_data:
+                        if subject["id"] == int(odata["id"]):
+                            check = True
+                            if ontime := odata["timeCN"]:
+                                subject["_air_time"] = ontime
+                                subject["air_weekday"] = odata["weekDayCN"] if odata["weekDayCN"] != 0 else 7
+                                output[subject["air_weekday"] - 1]["items"].append(subject)
+                            elif sites := odata.get("sites"):
+                                if begin := sites[0].get("begin"):
+                                    begin = datetime.datetime.fromisoformat(begin.replace("Z", "+00:00")) + datetime.timedelta(hours=8)
+                                    subject["_air_time"] = begin.strftime("%H%M")
+                                    weekday = int(begin.strftime("%w"))
+                                    subject["air_weekday"] = weekday if weekday != 0 else 7
+                                    output[subject["air_weekday"] - 1]["items"].append(subject)
+                                elif ontime := odata["timeJP"]:
+                                    subject["_air_time"] = ontime
+                                    subject["air_weekday"] = odata["weekDayJP"] if odata["weekDayJP"] != 0 else 7
+                                    output[subject["air_weekday"] - 1]["items"].append(subject)
+                            elif ontime := odata["timeJP"]:
+                                subject["_air_time"] = ontime
+                                subject["air_weekday"] = odata["weekDayJP"] if odata["weekDayJP"] != 0 else 7
+                                output[subject["air_weekday"] - 1]["items"].append(subject)
+                            break
+                    if not check: output[subject["air_weekday"] - 1]["items"].append(subject)
+            return output
+
 
     @cache_data
     async def get_subject(self, subject_id, access_token: str = None) -> dict:

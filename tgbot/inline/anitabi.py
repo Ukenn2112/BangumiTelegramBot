@@ -1,7 +1,9 @@
+import random
+
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineQuery, InlineQueryResultVenue
-import random
-from utils.api.anitabicn import AnitabiAPI
+
+from utils.api import AnitabiAPI
 
 api = AnitabiAPI()
 
