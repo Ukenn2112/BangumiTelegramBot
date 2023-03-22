@@ -13,21 +13,19 @@ async def generate_page(request: WeekRequest) -> WeekRequest:
     if week_data is None: raise RuntimeError("出错了")
     for i in week_data:
         if i.get("weekday", {}).get("id") == int(request.week_day):
-            items = i["items"]
+            items = sorted(i["items"], key=lambda x: x.get('_air_time', '9999'))
             air_weekday = i.get("weekday", {}).get("cn")
             count = len(items)
             markup = InlineKeyboardMarkup()
             week_text_data = ""
             button_list = []
-            for num, item in enumerate(items):
-                num += 1
-                week_text_data += (
-                    f"*[{num}]* {item['name_cn'] or item['name']}"
-                )
-                if item.get("_air_time"):
-                    week_text_data += f" | {item['_air_time'][:2]}:{item['_air_time'][2:]}\n\n"
-                else:
-                    week_text_data += "\n\n"
+            now_time = None
+            for num, item in enumerate(items, start=1):
+                _air_time = item.get("_air_time", "未知")
+                if _air_time != now_time:
+                    now_time = _air_time
+                    week_text_data += f"\n\n`{_air_time[:2]}:{_air_time[2:]}`" if _air_time != "未知" else "\n\n`未知`"
+                week_text_data += f"\n   _{num}_  *#" + (item['name_cn'] or item['name']).replace(" ", "_") + "*"
                 request.possible_request[str(item["id"])] = SubjectRequest(
                     request.session, item["id"]
                 )
@@ -36,7 +34,7 @@ async def generate_page(request: WeekRequest) -> WeekRequest:
                         text=str(num), callback_data=f"{session_uuid}|{item['id']}"
                     )
                 )
-            text = f"*在{air_weekday}放送的节目*\n\n{week_text_data}" f"共{count}部"
+            text = f"*在{air_weekday}放送的节目 (共 {count} 部)*{week_text_data}"
             markup.add(*button_list, row_width=5)
             week_button_list = []
             for week_day in range(1, 8):
