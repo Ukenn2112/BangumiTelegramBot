@@ -161,8 +161,8 @@ def push():
         s.mount("https://", HTTPAdapter(max_retries=3))
         r = s.post("https://api.bangumi.online/bgm/subject", data={"vid": video_id}, timeout=10).json()
         if r["code"] == 10000:
-            subject_id = r["data"]["season"]["bgm_id"]
-            subject_info = r["data"]["season"]["title"]
+            subject_id = r["data"]["season"]["id"]
+            subject_info = r["data"]["season"]["title"]["zh"] or r["data"]["season"]["title"]["ja"]
             volume = r["data"]["episode"]["volume"]
     if subject_id and video_id:
         subscribe_list = sql.inquiry_subscribe_data(subject_id)
