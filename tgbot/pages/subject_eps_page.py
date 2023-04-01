@@ -113,7 +113,7 @@ async def generate_page(request: SubjectEpsPageRequest) -> SubjectEpsPageRequest
     if watched_last_episode:
         markup.add(InlineKeyboardButton(text="将此章节收藏改为完成？", callback_data=f"{session_uuid}|collect"))
         request.possible_request["collect"] = DoEditCollectionTypeRequest(
-            request.session, subject_info["id"], subject_info["type"], 2
+            request.session, subject_info["id"], subject_info["type"], 2, {}
         )
     markup.add(InlineKeyboardButton(text="返回", callback_data=f"{session_uuid}|back"))
     request.possible_request["back"] = BackRequest(request.session, needs_refresh=True)
