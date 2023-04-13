@@ -168,7 +168,7 @@ def push():
         subscribe_list = sql.inquiry_subscribe_data(subject_id)
         if subscribe_list:
             text = (
-                f"*🌸 #{subject_info['zh'] or subject_info['ja']} [*[{volume}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n"
+                f"*🌸 #{subject_info} [*[{volume}](https://cover.bangumi.online/episode/{video_id}.png)*] 更新咯～*\n\n"
                 f"[>>🍿 前往观看](https://bangumi.online/watch/{video_id}?s=bgmbot)\n"
             )
             markup = InlineKeyboardMarkup()
