@@ -164,6 +164,8 @@ def push():
             subject_id = r["data"]["season"]["id"]
             subject_info = r["data"]["season"]["title"]["zh"] or r["data"]["season"]["title"]["ja"]
             volume = r["data"]["episode"]["volume"]
+        else:
+            return jsonify({"code": 500, "message": "获取视频信息失败"}), 500
     if subject_id and video_id:
         subscribe_list = sql.inquiry_subscribe_data(subject_id)
         if subscribe_list:
