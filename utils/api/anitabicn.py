@@ -15,9 +15,11 @@ class AnitabiAPI:
         )
 
     @cache_data
-    async def get_anitabi_data(self):
+    async def get_anitabi_data(self, subject_id):
         """获取 anitabi 数据"""
         async with self.s.get(
-            "https://anitabi.cn/api/bangumi/points.geo",
+            f"https://api.anitabi.cn/bangumi/{subject_id}/lite",
         ) as resp:
+            if resp.status == 404:
+                return None
             return await resp.json()
