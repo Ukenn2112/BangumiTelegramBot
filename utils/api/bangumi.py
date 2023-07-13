@@ -25,7 +25,7 @@ class BangumiAPI:
         self.app_id = app_id
         self.app_secret = app_secret
         self.redirect_uri = redirect_uri
-        self.nsfw_token = nsfw_token
+        self.nsfw_token = nsfw_token # 携带登陆密钥才能获取 NSFW 数据
         self.headers = {
                 "User-Agent":"Ukenn/BangumiBot (https://github.com/Ukenn2112/BangumiTelegramBot)"
             },
@@ -471,7 +471,7 @@ class BangumiAPI:
 
 
     @cache_data
-    async def get_subject(self, subject_id, access_token: str = None) -> dict:
+    async def get_subject(self, subject_id, access_token: str = None, re=0) -> dict:
         """
         获取条目信息
 
@@ -479,13 +479,16 @@ class BangumiAPI:
 
         :param subject_id: 条目 ID
         :param access_token: Access Token"""
-        if not access_token:
+        if not access_token and re == 0:
             access_token = self.nsfw_token
         async with self.s.get(
             f"{self.api_url}/v0/subjects/{subject_id}",
             headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             loads = await resp.json()
+            if resp.status != 200 and re == 0:
+                print(f"Error: {loads}")
+                return await self.get_subject(subject_id, None, 1)
             loads["_air_weekday"] = None
             for info in loads["infobox"]:
                 if info["key"] == "放送星期":
@@ -740,7 +743,7 @@ class BangumiAPI:
                             mono_type = "character"
                         elif mono_data.startswith("/person/"):
                             mono_id = int(mono_data[8:])
-                            mono_type = "person"
+                            mono_type = "person" # 人物
                     list_data.append({
                         "id": mono_id,
                         "type": mono_type,
