@@ -5,6 +5,7 @@ from typing import Literal, Union
 
 import aiohttp
 import requests
+import logging
 from lxml.etree import HTML
 
 from ..before_api import cache_data, redis
@@ -487,7 +488,7 @@ class BangumiAPI:
         ) as resp:
             loads = await resp.json()
             if resp.status != 200 and re == 0:
-                print(f"Error: {loads}")
+                logging.warning(f"获取条目信息失败, 可能长期密钥已过期, 去除密钥重新请求\n\n{loads}")
                 return await self.get_subject(subject_id, None, 1)
             loads["_air_weekday"] = None
             for info in loads["infobox"]:
