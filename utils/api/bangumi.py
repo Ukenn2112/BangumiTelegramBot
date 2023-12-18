@@ -1,16 +1,16 @@
 import base64
 import builtins
 import datetime
+import logging
 from typing import Literal, Union
 
 import aiohttp
 import requests
-import logging
 from lxml.etree import HTML
 
+from .onair import get_onair_data
 from ..before_api import cache_data, redis
 from ..subject_img import subject_image
-from .onair import get_onair_data
 
 
 class BangumiAPI:
@@ -26,24 +26,24 @@ class BangumiAPI:
         self.app_id = app_id
         self.app_secret = app_secret
         self.redirect_uri = redirect_uri
-        self.nsfw_token = nsfw_token # 携带登陆密钥才能获取 NSFW 数据
+        self.nsfw_token = nsfw_token  # 携带登陆密钥才能获取 NSFW 数据
         self.headers = {
-                "User-Agent":"Ukenn/BangumiBot (https://github.com/Ukenn2112/BangumiTelegramBot)"
-            },
+            "User-Agent": "Ukenn/BangumiBot (https://github.com/Ukenn2112/BangumiTelegramBot)"
+        },
         self.s = aiohttp.ClientSession(
-            headers = self.headers[0],
-            timeout = aiohttp.ClientTimeout(total=10),
+            headers=self.headers[0],
+            timeout=aiohttp.ClientTimeout(total=10),
         )
 
     def web_authorization_captcha(self):
         """获取验证码图片
         :return (图片 Base64, RequestsCookieJar)"""
-        set_cookie = requests.get("https://bgm.tv/login", headers = self.headers[0], timeout=10).cookies
+        set_cookie = requests.get("https://bgm.tv/login", headers=self.headers[0], timeout=10).cookies
         now = datetime.datetime.now()
         with requests.get(
-            f"https://bgm.tv/signup/captcha?{int(now.timestamp() * 1000)}1",
-            headers = self.headers[0],
-            cookies=set_cookie,
+                f"https://bgm.tv/signup/captcha?{int(now.timestamp() * 1000)}1",
+                headers=self.headers[0],
+                cookies=set_cookie,
         ) as resp:
             return (base64.b64encode(resp.content).decode('utf-8'), set_cookie)
 
@@ -51,22 +51,22 @@ class BangumiAPI:
         """Web 登录
         :return (是否成功 bool, 错误信息/RequestsCookieJar)"""
         with requests.post(
-            "https://bgm.tv/FollowTheRabbit",
-            headers = {
-                **self.headers[0],
-                "Cookie": cookies,
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            data = {
-                "email": email,
-                "password": password,
-                "captcha_challenge_field": captcha_challenge_field,
-                "loginsubmit": "登录",
-                "referer": "https://bgm.tv/FollowTheRabbit",
-                "dreferer": "https://bgm.tv/FollowTheRabbit",
-            },
-            allow_redirects=False,
-            timeout = 10,
+                "https://bgm.tv/FollowTheRabbit",
+                headers={
+                    **self.headers[0],
+                    "Cookie": cookies,
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                data={
+                    "email": email,
+                    "password": password,
+                    "captcha_challenge_field": captcha_challenge_field,
+                    "loginsubmit": "登录",
+                    "referer": "https://bgm.tv/FollowTheRabbit",
+                    "dreferer": "https://bgm.tv/FollowTheRabbit",
+                },
+                allow_redirects=False,
+                timeout=10,
         ) as resp:
             if resp.status_code == 200:
                 resp.encoding = "utf-8"
@@ -86,31 +86,31 @@ class BangumiAPI:
         }
         get_data = requests.get(
             "https://bgm.tv/oauth/authorize",
-            headers = {
+            headers={
                 **self.headers[0],
                 "Cookie": cookies,
             },
-            params = params,
-            timeout = 10,
+            params=params,
+            timeout=10,
         )
         html_data = HTML(get_data.text)
         formhash = html_data.xpath("//input[@name='formhash']/@value")
         if not formhash: return None
         return requests.post(
             "https://bgm.tv/oauth/authorize",
-            headers = {
+            headers={
                 **self.headers[0],
                 "Cookie": cookies,
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            data = {
+            data={
                 "client_id": self.app_id,
                 "formhash": formhash[0],
                 "redirect_uri": None,
                 "submit": "授权",
             },
-            params = params,
-            timeout = 10,
+            params=params,
+            timeout=10,
             allow_redirects=False
         ).headers.get('Location').split("code=")[-1]
 
@@ -126,32 +126,33 @@ class BangumiAPI:
             "user_id": xxxxxx  bgm用户uid
         }"""
         with requests.post(
-            "https://bgm.tv/oauth/access_token",
-            headers = self.headers[0],
-            data = {
-                "client_id": self.app_id,
-                "client_secret": self.app_secret,
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": self.redirect_uri
-            },
-            timeout=10
+                "https://bgm.tv/oauth/access_token",
+                headers=self.headers[0],
+                data={
+                    "client_id": self.app_id,
+                    "client_secret": self.app_secret,
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": self.redirect_uri
+                },
+                timeout=10
         ) as resp:
             return resp.json()
 
     async def oauth_refresh_token(self, refresh_token) -> dict:
         """刷新 access_token"""
         async with self.s.post(
-            "https://bgm.tv/oauth/access_token",
-            data = {
-                "client_id": self.app_id,
-                "client_secret": self.app_secret,
-                "grant_type": "refresh_token",
-                "refresh_token": refresh_token,
-                "redirect_uri": self.redirect_uri
-            }
+                "https://bgm.tv/oauth/access_token",
+                data={
+                    "client_id": self.app_id,
+                    "client_secret": self.app_secret,
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                    "redirect_uri": self.redirect_uri
+                }
         ) as resp:
             return await resp.json()
+
     # 用户
     async def get_me_info(self, access_token) -> dict:
         """
@@ -161,11 +162,11 @@ class BangumiAPI:
         
         access_token: Access Token"""
         async with self.s.get(
-            f"{self.api_url}/v0/me",
-            headers = {"Authorization": f"Bearer {access_token}"}
+                f"{self.api_url}/v0/me",
+                headers={"Authorization": f"Bearer {access_token}"}
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_user_info(self, bgm_id) -> dict:
         """
@@ -175,9 +176,10 @@ class BangumiAPI:
 
         :param bgm_id: BGM ID 或 用户名 可反查"""
         async with self.s.get(
-            f"{self.api_url}/user/{bgm_id}",
+                f"{self.api_url}/user/{bgm_id}",
         ) as resp:
             return await resp.json()
+
     # 收藏
     async def get_user_collections_status(self, username) -> Union[list, None]:
         """
@@ -187,16 +189,17 @@ class BangumiAPI:
 
         :param username: 用户名 可 UID"""
         async with self.s.get(
-            f"{self.api_url}/user/{username}/collections/status",
-            params = {
-                "app_id": self.app_id,
-            }
+                f"{self.api_url}/user/{username}/collections/status",
+                params={
+                    "app_id": self.app_id,
+                }
         ) as resp:
             if resp.status == 404:
                 return None
             return await resp.json()
 
-    async def get_user_subject_collections(self, username, access_token = None, subject_type = 2, collection_type = 3, limit = 30, offset = 0) -> Union[dict, None]:
+    async def get_user_subject_collections(self, username, access_token=None, subject_type=2, collection_type=3,
+                                           limit=30, offset=0) -> Union[dict, None]:
         """
         获取用户的条目收藏
 
@@ -209,20 +212,20 @@ class BangumiAPI:
         :param imit: 返回条目数量, 默认 30, 最大 100
         :param offset: 返回条目偏移, 默认 0"""
         async with self.s.get(
-            f"{self.api_url}/v0/users/{username}/collections",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
-            params = {
-                "subject_type": subject_type,
-                "type": collection_type,
-                "limit": limit,
-                "offset": offset
-            }
+                f"{self.api_url}/v0/users/{username}/collections",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
+                params={
+                    "subject_type": subject_type,
+                    "type": collection_type,
+                    "limit": limit,
+                    "offset": offset
+                }
         ) as resp:
             if resp.status == 404:
                 return None
             return await resp.json()
 
-    async def get_user_subject_collection(self, username, subject_id, access_token = None) -> Union[dict, None]:
+    async def get_user_subject_collection(self, username, subject_id, access_token=None) -> Union[dict, None]:
         """
         获取用户对应条目收藏 没有收藏则返回 None
 
@@ -232,14 +235,15 @@ class BangumiAPI:
         :param subject_id: 条目 ID
         :param access_token: Access Token (可选) 查看私有收藏则需要"""
         async with self.s.get(
-            f"{self.api_url}/v0/users/{username}/collections/{subject_id}",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+                f"{self.api_url}/v0/users/{username}/collections/{subject_id}",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             if resp.status == 404:
                 return None
             return await resp.json()
-        
-    async def post_user_subject_collection(self, access_token, subject_id, collection_type: int = 3, rate: int = None, comment: str = None, private: bool = None, tags: str = None) -> None:
+
+    async def post_user_subject_collection(self, access_token, subject_id, collection_type: int = 3, rate: int = None,
+                                           comment: str = None, private: bool = None, tags: str = None) -> None:
         """
         添加用户条目收藏 (旧 API)
 
@@ -266,11 +270,13 @@ class BangumiAPI:
             send_data["tags"] = tags
         return await self.s.post(
             f"{self.api_url}/collection/{subject_id}/update",
-            headers = {"Authorization": f"Bearer {access_token}"},
-            data = send_data
+            headers={"Authorization": f"Bearer {access_token}"},
+            data=send_data
         )
-    
-    async def patch_user_subject_collection(self, access_token, subject_id, collection_type: int = None, rate: int = None, ep_status: int = None, vol_status: int = None, comment: str = None, private: bool = None, tags: list[str] = None) -> None:
+
+    async def patch_user_subject_collection(self, access_token, subject_id, collection_type: int = None,
+                                            rate: int = None, ep_status: int = None, vol_status: int = None,
+                                            comment: str = None, private: bool = None, tags: list[str] = None) -> None:
         """
         修改用户条目收藏
 
@@ -302,11 +308,12 @@ class BangumiAPI:
             send_data["tags"] = tags
         return await self.s.patch(
             f"{self.api_url}/v0/users/-/collections/{subject_id}",
-            headers = {"Authorization": f"Bearer {access_token}"},
-            json = send_data
+            headers={"Authorization": f"Bearer {access_token}"},
+            json=send_data
         )
 
-    async def get_user_episode_collections(self, access_token, subject_id, offset = 0, limit = 100, episode_type = 0) -> Union[dict, None]:
+    async def get_user_episode_collections(self, access_token, subject_id, offset=0, limit=100, episode_type=0) -> \
+            Union[dict, None]:
         """
         获取用户条目章节收藏
 
@@ -318,18 +325,18 @@ class BangumiAPI:
         :param limit: 返回条目数量, 默认 100, 最大 100
         :param episode_type: 集数类型, 0: 本篇 (默认), 1: 特别篇, 2: OP, 3: ED, 4, 预告/宣传/广告, 5: MAD, 6: 其他"""
         async with self.s.get(
-            f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
-            headers = {"Authorization": f"Bearer {access_token}"},
-            params = {
-                "offset": offset,
-                "limit": limit,
-                "episode_type": episode_type
-            }
+                f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
+                headers={"Authorization": f"Bearer {access_token}"},
+                params={
+                    "offset": offset,
+                    "limit": limit,
+                    "episode_type": episode_type
+                }
         ) as resp:
             if resp.status == 404:
                 return None
             return await resp.json()
-    
+
     async def get_user_episode_collection(self, access_token, episode_id) -> Union[dict, None]:
         """
         获取用户单个章节收藏
@@ -339,14 +346,15 @@ class BangumiAPI:
         :param access_token: Access Token
         :param episode_id: 章节 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/users/-/collections/-/episodes/{episode_id}",
-            headers = {"Authorization": f"Bearer {access_token}"},
+                f"{self.api_url}/v0/users/-/collections/-/episodes/{episode_id}",
+                headers={"Authorization": f"Bearer {access_token}"},
         ) as resp:
             if resp.status == 404:
                 return None
             return await resp.json()
-    
-    async def patch_uesr_episode_collection(self, access_token, subject_id, episodes_id: list[int], status: int = 2) -> None:
+
+    async def patch_uesr_episode_collection(self, access_token, subject_id, episodes_id: list[int],
+                                            status: int = 2) -> None:
         """
         修改用户条目章节收藏
 
@@ -358,14 +366,14 @@ class BangumiAPI:
         :param status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
         return await self.s.patch(
             f"{self.api_url}/v0/users/-/collections/{subject_id}/episodes",
-            headers = {"Authorization": f"Bearer {access_token}"},
-            json = {
+            headers={"Authorization": f"Bearer {access_token}"},
+            json={
                 "episode_id": episodes_id,
                 "type": status
             }
         )
 
-    async def put_user_episode_collection(self, access_token, episode_id, status = 2) -> None:
+    async def put_user_episode_collection(self, access_token, episode_id, status=2) -> None:
         """
         修改用户章节收藏 (单集修改)
 
@@ -376,12 +384,12 @@ class BangumiAPI:
         :param status: 收藏状态, 可选值: 0: 未收藏, 1: 想看, 2: 看过, 3: 抛弃"""
         return await self.s.put(
             f"{self.api_url}/v0/users/-/collections/-/episodes/{episode_id}",
-            headers = {"Authorization": f"Bearer {access_token}"},
-            json = {
+            headers={"Authorization": f"Bearer {access_token}"},
+            json={
                 "type": status
             }
         )
-    
+
     def post_episode_reply(self, cookie: str, episode_id: int, reply_text: str) -> None:
         """
         吐槽章节
@@ -391,11 +399,11 @@ class BangumiAPI:
         :param reply_text: 吐槽内容"""
         get_data = requests.get(
             f"https://bgm.tv/ep/{episode_id}",
-            headers = {
+            headers={
                 **self.headers[0],
                 "Cookie": cookie,
             },
-            timeout = 10
+            timeout=10
         )
         html_data = HTML(get_data.text)
         formhash = html_data.xpath('//input[@name="formhash"]/@value')[0]
@@ -403,19 +411,19 @@ class BangumiAPI:
         reply_text += "\n[color=grey][size=10][来自Bangumi for TelegramBot] [url=https://bgm.tv/group/topic/366880][color=grey]获取[/color][/url][/size][/color]"
         return requests.post(
             f"https://bgm.tv/subject/ep/{episode_id}/new_reply",
-            headers = {
+            headers={
                 **self.headers[0],
                 "Cookie": cookie,
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            data = {
+            data={
                 "content": reply_text,
                 "related_photo": 0,
                 "formhash": formhash,
                 "lastview": lastview,
                 "submit": "submit",
             },
-            timeout = 10
+            timeout=10
         )
 
     # 条目
@@ -426,7 +434,7 @@ class BangumiAPI:
 
         Docs: https://bangumi.github.io/api/#/%E6%9D%A1%E7%9B%AE/getCalendar"""
         async with self.s.get(
-            f"{self.api_url}/calendar"
+                f"{self.api_url}/calendar"
         ) as resp:
             week_data = await resp.json()
             onair_data = get_onair_data()
@@ -453,7 +461,8 @@ class BangumiAPI:
                                 output[subject["air_weekday"] - 1]["items"].append(subject)
                             elif sites := odata.get("sites"):
                                 if begin := sites[0].get("begin"):
-                                    begin = datetime.datetime.fromisoformat(begin.replace("Z", "+00:00")) + datetime.timedelta(hours=8)
+                                    begin = datetime.datetime.fromisoformat(
+                                        begin.replace("Z", "+00:00")) + datetime.timedelta(hours=8)
                                     subject["_air_time"] = begin.strftime("%H%M")
                                     weekday = int(begin.strftime("%w"))
                                     subject["air_weekday"] = weekday if weekday != 0 else 7
@@ -470,9 +479,8 @@ class BangumiAPI:
                     if not check: output[subject["air_weekday"] - 1]["items"].append(subject)
             return output
 
-
     @cache_data
-    async def get_subject(self, subject_id, access_token: str = None, re=0) -> dict:
+    async def get_subject(self, subject_id, access_token: str = None) -> dict:
         """
         获取条目信息
 
@@ -480,25 +488,40 @@ class BangumiAPI:
 
         :param subject_id: 条目 ID
         :param access_token: Access Token"""
-        if not access_token and re == 0:
+        if not access_token:
             access_token = self.nsfw_token
+        loads = await self.get_subject_core(subject_id, access_token)
+        loads["_air_weekday"] = None
+        for info in loads["infobox"]:
+            if info["key"] == "放送星期":
+                loads["_air_weekday"] = info["value"]  # 加一个下划线 用于区别
+                break
+        if loads["images"]["large"]:
+            redis.set(f"_subject_image:{subject_id}", subject_image(loads), ex=60 * 60 * 24)
+        return loads
+
+    async def get_subject_core(self, subject_id, access_token) -> dict:
+        retry = True
+        if access_token == "-1":
+            retry = False
+            access_token = None
         async with self.s.get(
-            f"{self.api_url}/v0/subjects/{subject_id}",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+                f"{self.api_url}/v0/subjects/{subject_id}",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
-            loads = await resp.json()
-            if resp.status != 200 and re == 0:
-                logging.warning(f"获取条目信息失败, 可能长期密钥已过期, 去除密钥重新请求\n\n{loads}")
-                return await self.get_subject(subject_id, None, 1)
-            loads["_air_weekday"] = None
-            for info in loads["infobox"]:
-                if info["key"] == "放送星期":
-                    loads["_air_weekday"] = info["value"]  # 加一个下划线 用于区别
-                    break
-            if loads["images"]["large"]:
-                redis.set(f"_subject_image:{subject_id}", subject_image(loads), ex = 60 * 60 * 24)
-            return loads
-    
+            if resp.status != 200:
+                if access_token != self.nsfw_token and access_token is not None:  # 失败 且为用户Token
+                    logging.warning(
+                        f"获取条目信息失败, 可能用户密钥过期或不支持, 去除密钥重新请求\n\n{await resp.json()}")
+                    return await self.get_subject_core(subject_id, None)
+                elif retry:  # 失败 且为长期密钥
+                    logging.warning(f"获取条目信息失败, 可能长期密钥已过期, 使用空token重试\n\n{await resp.json()}")
+                    return await self.get_subject_core(subject_id, "-1")
+                else:  # 失败 且为空token
+                    logging.error(f"获取条目信息失败\n\n{await resp.json()}")
+                    raise RuntimeWarning("获取条目信息失败")
+            return await resp.json()
+
     @cache_data
     async def get_subject_persons(self, subject_id, access_token: str = None) -> list:
         """
@@ -511,11 +534,11 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/subjects/{subject_id}/persons",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+                f"{self.api_url}/v0/subjects/{subject_id}/persons",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_subject_characters(self, subject_id, access_token: str = None) -> list:
         """
@@ -528,11 +551,11 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/subjects/{subject_id}/characters",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+                f"{self.api_url}/v0/subjects/{subject_id}/characters",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_subject_related(self, subject_id, access_token: str = None) -> list:
         """
@@ -545,13 +568,14 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/subjects/{subject_id}/subjects",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+                f"{self.api_url}/v0/subjects/{subject_id}/subjects",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
+
     # 章节
     @cache_data
-    async def get_episodes(self, subject_id, episode_type = 0, limit = 100, offset = 100, access_token: str = None) -> dict:
+    async def get_episodes(self, subject_id, episode_type=0, limit=100, offset=100, access_token: str = None) -> dict:
         """
         获取条目章节信息
 
@@ -565,17 +589,17 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/episodes",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
-            params = {
-                "subject_id": subject_id,
-                "type": episode_type,
-                "limit": limit,
-                "offset": offset,
-            }
+                f"{self.api_url}/v0/episodes",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
+                params={
+                    "subject_id": subject_id,
+                    "type": episode_type,
+                    "limit": limit,
+                    "offset": offset,
+                }
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_episode(self, episode_id, access_token: str = None) -> dict:
         """
@@ -588,8 +612,8 @@ class BangumiAPI:
         if not access_token:
             access_token = self.nsfw_token
         async with self.s.get(
-            f"{self.api_url}/v0/episodes/{episode_id}",
-            headers = {"Authorization": f"Bearer {access_token}"} if access_token else None,
+                f"{self.api_url}/v0/episodes/{episode_id}",
+                headers={"Authorization": f"Bearer {access_token}"} if access_token else None,
         ) as resp:
             return await resp.json()
 
@@ -603,7 +627,7 @@ class BangumiAPI:
 
         :param person_id: 人物 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/persons/{person_id}",
+                f"{self.api_url}/v0/persons/{person_id}",
         ) as resp:
             return await resp.json()
 
@@ -616,10 +640,10 @@ class BangumiAPI:
 
         :param person_id: 人物 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/persons/{person_id}/subjects",
+                f"{self.api_url}/v0/persons/{person_id}/subjects",
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_person_characters(self, person_id) -> list:
         """
@@ -629,9 +653,10 @@ class BangumiAPI:
 
         :param person_id: 人物 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/persons/{person_id}/characters",
+                f"{self.api_url}/v0/persons/{person_id}/characters",
         ) as resp:
             return await resp.json()
+
     # 角色
     @cache_data
     async def get_character(self, character_id) -> dict:
@@ -642,10 +667,10 @@ class BangumiAPI:
 
         :param character_id: 角色 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/characters/{character_id}",
+                f"{self.api_url}/v0/characters/{character_id}",
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_character_subjects(self, character_id) -> list:
         """
@@ -655,10 +680,10 @@ class BangumiAPI:
 
         :param character_id: 角色 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/characters/{character_id}/subjects",
+                f"{self.api_url}/v0/characters/{character_id}/subjects",
         ) as resp:
             return await resp.json()
-    
+
     @cache_data
     async def get_character_persons(self, character_id) -> list:
         """
@@ -668,12 +693,15 @@ class BangumiAPI:
 
         :param character_id: 角色 ID"""
         async with self.s.get(
-            f"{self.api_url}/v0/characters/{character_id}/persons",
+                f"{self.api_url}/v0/characters/{character_id}/persons",
         ) as resp:
             return await resp.json()
+
     # 搜索
     @cache_data
-    async def search_subjects(self, keywords, subject_type: int = None, response_group: Literal["small", "medium", "large"] = "small", start = 0, max_results = 10) -> list:
+    async def search_subjects(self, keywords, subject_type: int = None,
+                              response_group: Literal["small", "medium", "large"] = "small", start=0,
+                              max_results=10) -> list:
         """
         条目搜索 (Old API) 由于新 API 暂时为试验性可能变动较大, 故暂时使用旧 API
 
@@ -692,8 +720,8 @@ class BangumiAPI:
         if subject_type:
             params["type"] = subject_type
         async with self.s.get(
-            f"{self.api_url}/search/subject/{keywords}",
-            params = params
+                f"{self.api_url}/search/subject/{keywords}",
+                params=params
         ) as resp:
             try:
                 return await resp.json()
@@ -701,7 +729,7 @@ class BangumiAPI:
                 return {"results": 0, "list": []}
 
     @cache_data
-    async def search_mono(self, keywords, page = 1, cat: Literal["all", "crt", "prsn"] = "all"):
+    async def search_mono(self, keywords, page=1, cat: Literal["all", "crt", "prsn"] = "all"):
         """
         人物搜索 (Web API)
 
@@ -709,11 +737,11 @@ class BangumiAPI:
         :param page: 页码, 默认 1
         :param cat: 搜索类型, all: 全部, crt: 角色, prsn: 人物, 默认 all"""
         async with self.s.get(
-            f"http://bgm.tv/mono_search/{keywords}",
-            params = {
-                "cat": cat,
-                "page": page,
-            }
+                f"http://bgm.tv/mono_search/{keywords}",
+                params={
+                    "cat": cat,
+                    "page": page,
+                }
         ) as resp:
             html_data = HTML(await resp.text())
             error = html_data.xpath("//*[@id='colunmNotice']/div/p[1]")
@@ -744,7 +772,7 @@ class BangumiAPI:
                             mono_type = "character"
                         elif mono_data.startswith("/person/"):
                             mono_id = int(mono_data[8:])
-                            mono_type = "person" # 人物
+                            mono_type = "person"  # 人物
                     list_data.append({
                         "id": mono_id,
                         "type": mono_type,

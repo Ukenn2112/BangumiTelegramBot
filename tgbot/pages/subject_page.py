@@ -5,7 +5,6 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 from utils.config_vars import BOT_USERNAME, bgm, redis
 from utils.converts import (collection_type_subject_type_str, score_to_str,
                             subject_type_to_emoji)
-
 from ..model.page_model import (BackRequest, EditCollectionTypePageRequest,
                                 SubjectEpsPageRequest,
                                 SubjectRelationsPageRequest, SubjectRequest,
@@ -23,7 +22,9 @@ async def generate_page(subject_request: SubjectRequest) -> SubjectRequest:
                     subject_request.session.user_bgm_data["accessToken"],
                 )
     if not subject_request.subject_info:
-        subject_request.subject_info = await bgm.get_subject(subject_request.subject_id)
+        subject_request.subject_info = await bgm.get_subject(
+            subject_request.subject_id
+            , access_token=subject_request.session.user_bgm_data["accessToken"])
     if subject_image := redis.get(f"subject_image:{subject_request.subject_id}"):
         subject_request.page_image = subject_image.decode()
     if not subject_request.page_text or not subject_request.page_image:
