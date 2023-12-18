@@ -38,7 +38,7 @@ async def generate_page(request: CollectionsRequest) -> CollectionsRequest:
     loop = asyncio.get_running_loop()
     tasks = []
     for info in subject_list:
-        task = loop.create_task(bgm.get_subject(info["subject"]["id"],access_token=request.user_bgm_data["accessToken"]))
+        task = loop.create_task(bgm.get_subject(info["subject"]["id"], access_token=request.user_bgm_data["accessToken"]))
         tasks.append(task)
     # noinspection PyAsyncCall
     asyncio.gather(*tasks)
