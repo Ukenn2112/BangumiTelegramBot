@@ -159,7 +159,7 @@ def push():
     if video_id:
         s = Session()
         s.mount("https://", HTTPAdapter(max_retries=3))
-        r = s.post("https://gray.bangumi.online/api/bgm/subject", data={"vid": video_id}, timeout=10).json()
+        r = s.post("https://api.bangumi.online/bgm/subject", data={"vid": video_id}, timeout=10).json()
         if r["code"] == 10000:
             subject_id = r["data"]["season"]["id"]
             subject_info = r["data"]["season"]["title"]["zh"] or r["data"]["season"]["title"]["ja"]
